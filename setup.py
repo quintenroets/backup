@@ -41,8 +41,9 @@ subprocess.run(
     shell=True
     )
 
-if not os.path.exists(src):
-    subprocess.run(f"yes | gpg {src}.gpg", shell=True) # decrypt credentials
+if not os.path.exists(dst):
+    if not os.path.exists(src):
+        subprocess.run(f"yes | gpg {src}.gpg", shell=True) # decrypt credentials
 
-os.makedirs(os.path.dirname(dst), exist_ok=True)
-shutil.copyfile(src, dst)
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    shutil.copyfile(src, dst)

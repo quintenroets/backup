@@ -5,6 +5,7 @@ import pathlib
 import shutil
 import sys
 import xattr
+from pathlib import Path
 
 from libs.cli import Cli
 from libs.climessage import CliMessage
@@ -241,7 +242,7 @@ class BackupManager:
     @staticmethod
     def check_browser(command):
         config_folder = os.path.join(os.environ["home"], "snap", "chromium", "common", "chromium", "Default")
-        config_file = os.path.join(os.environ["docs"], "config.zip")
+        config_file = Path.home() / ".config" / "browser" / "config.zip"
         local = os.environ["docs"]
         remote = "Browser"
         filters = ["+ /config.zip"]
@@ -261,12 +262,11 @@ class BackupManager:
             with CliMessage("Compressing.."):
                 Cli.run(
                     f"cd '{os.path.dirname(config_folder)}'",
-                    f"zip -r -q '{config_file}' '{os.path.basename(config_folder)}' {ignore}"
+                    f"zip -r -q -f '{config_file}' '{os.path.basename(config_folder)}' {ignore}"
                 )
 
             with CliMessage("Uploading.."):
                 Backup.upload(local, remote, filters=filters)
-                os.remove(config_file)
 
         elif command == "pull":
             Backup.download(local, remote, filters=filters)
@@ -274,7 +274,6 @@ class BackupManager:
             Cli.get(
                 f"unzip -o '{config_file}' -d '{os.path.dirname(config_folder)}'"
             )
-            os.remove(config_file)
 
         else:
             print("Choose pull or push")

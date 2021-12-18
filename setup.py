@@ -4,9 +4,6 @@ import os
 import shutil
 import subprocess
 
-from backup.backup import Backup
-from backup.filemanager import FileManager
-
 NAME = "backup"
 
 def read(filename):
@@ -49,8 +46,3 @@ if not os.path.exists(src):
 
 os.makedirs(os.path.dirname(dst), exist_ok=True)
 shutil.copyfile(src, dst)
-
-# download path assets before other drive sync can happen
-Backup.download(FileManager.root, "Config/.config/scripts/backup", filters=["+ **"])
-# download core config files
-Backup.download(Path.home(), "Config", filters=["+ *"])

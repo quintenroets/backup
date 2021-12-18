@@ -1,0 +1,5 @@
+pyinotify
+konsave
+xattr
+libs @ git+https://@github.com/quintenroets/libs
+colortheme @ git+https://@github.com/quintenroets/colortheme

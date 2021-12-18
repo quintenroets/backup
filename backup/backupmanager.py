@@ -183,7 +183,7 @@ class BackupManager:
     def get_git_folders(path):
         folders = Cli.get(
             f"find {path} -type d -execdir test -d" + " {}/.git \; -print -prune"
-            ).split("\n")
+            ).split("\n") if os.path.exists(path) else []
         folders = [f for f in folders if f]
         return folders
 

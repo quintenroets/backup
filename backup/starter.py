@@ -7,8 +7,8 @@ from . import watch_syncer
 def main():
     args = sys.argv[1:]
 
-    if "autodapt" in args:
-        autodapt_syncer.main()
+    if "syncer" in args:
+        watch_syncer.main()
 
     elif not args:
         check_changes()

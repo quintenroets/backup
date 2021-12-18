@@ -13,4 +13,4 @@ class FileManager(FileManagerLib):
 
     @staticmethod
     def get_sync_paths():
-        return FileManager.load("syncs", "paths")
+        return FileManager.load("paths", "syncs", "syncs")

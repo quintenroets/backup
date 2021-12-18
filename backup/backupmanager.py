@@ -151,7 +151,7 @@ class BackupManager:
         filters += [f"- {ignore}/**" for ignore in ignore_patterns]
 
         for path, subpath in zip(paths, subpaths):
-            if not os.path.isdir(path):
+            if not os.path.isdir(path) and os.path.exists(path):
                 filters.append(f"+ /{subpath}")
             else:
                 filters += BackupManager.get_ignores(path, path_name)

@@ -37,7 +37,12 @@ setup(
 src = Path(__file__).parent / "assets" / "rclone.conf"
 dst = Path(os.environ["HOME"]) / ".config" / "rclone" / "rclone.conf"
 
-subprocess.run("curl https://rclone.org/install.sh | sudo bash", shell=True) # install newest version of rclone
+# install newest version of rclone
+subprocess.run(
+    "sudo apt install -y curl; curl https://rclone.org/install.sh | sudo bash", 
+    shell=True
+    )
+
 if not os.path.exists(src):
     subprocess.run(f"yes | gpg {src}.gpg", shell=True) # decrypt credentials
 

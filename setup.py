@@ -48,5 +48,6 @@ if not os.path.exists(dst):
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     shutil.copyfile(src, dst)
 
-    assets = Path.home() / ".config" / "scripts" / NAME
-    subprocess.run(f"rclone copy Config/.config/scripts/backup '{assets}'", shell=True)
+    src = "backup:Config/.config/scripts/backup/paths"
+    dst = Path.home() / ".config" / "scripts" / NAME / "paths"
+    subprocess.run(f"rclone copy '{src}' '{dst}'", shell=True)

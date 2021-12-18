@@ -4,8 +4,6 @@ import os
 import shutil
 import subprocess
 
-from backup.filemanager import FileManager
-
 NAME = "backup"
 
 def read(filename):

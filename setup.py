@@ -35,7 +35,7 @@ setup(
 )
 
 src = Path(__file__).parent / "assets" / "rclone.conf"
-dst = Path(os.environ["HOME"]) / ".config" / "rclone" / "rclone.conf"
+dst = Path.home() / ".config" / "rclone" / "rclone.conf"
 
 # install newest version of rclone
 subprocess.run(
@@ -51,3 +51,5 @@ shutil.copyfile(src, dst)
 
 # download path assets before other drive sync can happen
 Backup.download(FileManager.root, "Config/.config/scripts/backup", filters=["+ **"])
+# download core config files
+Backup.download(Path.home(), "Config", filters=["+ *"])

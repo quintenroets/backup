@@ -34,8 +34,9 @@ setup(
     },
 )
 
-src = Path(__file__).parent / "assets" / "rclone.conf"
-dst = Path.home() / ".config" / "rclone" / "rclone.conf"
+filename = "rclone.conf"
+src = Path(__file__).parent / "assets" / filename
+dst = Path.home() / ".config" / "rclone" / filename
 
 # install newest version of rclone
 subprocess.run(

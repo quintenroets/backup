@@ -242,8 +242,9 @@ class BackupManager:
     @staticmethod
     def check_browser(command):
         config_folder = os.path.join(os.environ["home"], "snap", "chromium", "common", "chromium", "Default")
-        config_file = Path.home() / ".config" / "browser" / "config.zip"
-        local = os.environ["docs"]
+        local = Path.home() / ".config" / "browser"
+        config_file = local / "config.zip"
+        
         remote = "Browser"
         filters = ["+ /config.zip"]
 

@@ -4,6 +4,8 @@ import os
 import shutil
 import subprocess
 
+from backup.filemanager import FileManager
+
 NAME = "backup"
 
 def read(filename):
@@ -47,3 +49,5 @@ if not os.path.exists(dst):
 
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     shutil.copyfile(src, dst)
+
+    subprocess.run(f"rclone copy Config/.config/scripts/backup '{FileManager.root}'", shell=True)

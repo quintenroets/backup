@@ -1,11 +1,9 @@
-import getpass
-import json
 import os
-import pathlib
-import shutil
 import sys
 import xattr
 from pathlib import Path
+
+Path().glob()
 
 from libs.cli import Cli
 from libs.climessage import CliMessage
@@ -219,7 +217,6 @@ class BackupManager:
                 "konsave -i ~/light.knsv",
                 "konsave -i ~/dark.knsv",
                 f"konsave -a $(konsave -l | grep {theme} | cut -f1)"
-                #f"sudo cp ~/.config/crontab.conf /var/spool/cron/crontabs/{getpass.getuser()}"
             )
             ThemeManager.restartplasma()
 
@@ -236,7 +233,7 @@ class BackupManager:
             os.path.islink(path)
             or xattr.xattr(path).list()
             or os.path.getsize(path) > 50 * 10 ** 6
-            or str(pathlib.Path(path).resolve()) != path
+            or str(Path(path).resolve()) != path
         )
 
     @staticmethod

@@ -3,8 +3,6 @@ import sys
 import xattr
 from pathlib import Path
 
-Path().glob()
-
 from libs.cli import Cli
 from libs.climessage import CliMessage
 from libs.tagmanager import TagManager

@@ -192,7 +192,6 @@ class BackupManager:
                 ThemeManager.change_config("dark", "light")
             if export:
                 Cli.get(f"konsave -e $(konsave -l | grep {theme} | cut -f1)" for theme in ["light", "dark"])
-            #"crontab -l > ~/.config/crontab.conf"
 
     @staticmethod
     def after_push(path_name):

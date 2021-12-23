@@ -1,8 +1,4 @@
 from setuptools import setup, find_packages
-from pathlib import Path
-import os
-import shutil
-import subprocess
 
 NAME = "backup"
 
@@ -21,6 +17,7 @@ setup(
     name=NAME,
     version='1.0',
     packages=find_packages(),
+    setup_requires=read("setup_requirements.txt"),
     install_requires=read("requirements.txt"),
     entry_points={
         "console_scripts": [
@@ -30,24 +27,25 @@ setup(
         ]
     },
 )
+        
+from libs.cli import Cli
+from libs.path import Path
+from backup.backup import Backup
+
+# install newest version of rclone
+Cli.install("curl")
+Cli.run("curl https://rclone.org/install.sh | sudo bash")
 
 filename = "rclone.conf"
 src = Path(__file__).parent / "assets" / filename
 dst = Path.home() / ".config" / "rclone" / filename
 
-# install newest version of rclone
-subprocess.run(
-    "sudo apt install -y curl; curl https://rclone.org/install.sh | sudo bash", 
-    shell=True
-    )
 
-if not os.path.exists(dst):
-    if not os.path.exists(src):
-        subprocess.run(f"yes | gpg {src}.gpg", shell=True) # decrypt credentials
-
-    os.makedirs(os.path.dirname(dst), exist_ok=True)
-    shutil.copyfile(src, dst)
-
-    src = "backup:Config/.config/scripts/backup/paths"
-    dst = Path.home() / ".config" / "scripts" / NAME / "paths"
-    subprocess.run(f"rclone copy '{src}' '{dst}'", shell=True)
+if not dst.exists():
+    if not src.exists():
+        Cli.run(f"yes | gpg {src}.gpg") # decrypt credentials
+        
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    src.rename(dst)
+    
+    Backup.download(Path.assets / NAME / "paths", "Config/.config/scripts/backup/paths")

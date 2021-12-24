@@ -57,9 +57,9 @@ class BackupManager:
 
     @staticmethod
     def get_paths(path_name):
-        path_root = root_mapper[path_name]
+        root = root_mapper[path_name]
         paths = FileManager.load("paths", path_name)
-        return parser.parse_paths(root, paths)
+        return parser.parse_paths2(root, paths)
 
     @staticmethod
     def get_items(paths):

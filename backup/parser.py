@@ -36,7 +36,7 @@ def make_filters(paths, include=True, recursive=True):
     return filters
 
 
-
+import os
 def parse_paths2(anchor_root, paths):
     struct_list = [{anchor_root: paths}]
     finished = False

@@ -178,40 +178,30 @@ class BackupManager:
 
     @staticmethod
     def check_browser(command):
-        config_folder = os.path.join(os.environ["home"], "snap", "chromium", "common", "chromium", "Default")
+        config_folder = Path.home() / "snap" / "chromium" / "common" / "chromium" / "Default"
         local = Path.home() / ".config" / "browser"
         config_file = local / "config.zip"
-        
+
         remote = "Browser"
         filters = ["+ /config.zip"]
 
         if command == "push":
-            ignores = [
-                "*/Cache/*",
-                "*/Code Cache/*",
-                "*/Application Cache/*",
-                "*/CacheStorage/*",
-                "*/ScriptCache/*",
-                "*/GPUCache/"
-            ]
-            ignores = [f"-x '{i}' " for i in ignores]
-            ignore = "".join(ignores)
+            ignores = ["Cache", "Code Cache", "Application Cache", "CacheStorage", "ScriptCache", "GPUCache"]
+            flags = "".join([
+                f"-x '*/{i}/*' " for i in ignores
+            ])
+            if config_file.exists():
+                flags += " -f" # only add changes to zip
 
             with CliMessage("Compressing.."):
-                Cli.run(
-                    f"cd '{os.path.dirname(config_folder)}'",
-                    f"zip -r -q -f '{config_file}' '{os.path.basename(config_folder)}' {ignore}"
-                )
-
+                # make sure that all zipped files have the same root
+                Cli.run(f"zip -r -q {flags} '{config_file}' '{config_folder.name}'", pwd=config_folder.parent)
             with CliMessage("Uploading.."):
                 Backup.upload(local, remote, filters=filters)
 
         elif command == "pull":
             Backup.download(local, remote, filters=filters)
-            os.makedirs(config_folder, exist_ok=True)
-            Cli.get(
-                f"unzip -o '{config_file}' -d '{os.path.dirname(config_folder)}'"
-            )
-
+            config_folder.mkdir(parents=True, exist_ok=True)
+            Cli.get(f"unzip -o '{config_file}' -d '{config_folder.parent}'")
         else:
             print("Choose pull or push")

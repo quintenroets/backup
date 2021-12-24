@@ -31,7 +31,7 @@ def parse_paths(structure):
 def make_filters(paths, include=True, recursive=True):
     symbol = "+" if include else "-"
     filters = [
-        f"{symbol} /{p}**" for p in paths
+        f'{symbol} /{p}**' for p in paths
     ]
     return filters
 

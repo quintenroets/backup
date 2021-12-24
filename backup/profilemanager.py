@@ -17,7 +17,7 @@ class ProfileManager:
     def copy(source, dest):
         filters = ProfileManager.get_filters()
         # cannot use delete_missing because source and dest overlap partly
-        return Backup.sync(source, dest, filters=filters, delete_missing=False, quiet=False)
+        return Backup.sync(source, dest, filters=filters, delete_missing=False, quiet=True)
 
     @staticmethod
     def save(name):
@@ -35,16 +35,35 @@ class ProfileManager:
 
     @staticmethod
     def apply(name):
-        active_path = FileManager.get_profile_path()
-        active_name = active_path.load() or "light"
-        ProfileManager.save(active_name)
+        active = ProfileManager.get_active()
+        ProfileManager.save(active)
         ProfileManager.load(name)
-        active_path.save(name)
+        ProfileManager.set_active(name)
 
     @staticmethod
-    def apply_dark():
-        ProfileManager.apply("dark")
+    def get_active():
+        path = FileManager.get_profile_path()
+        name = active_path.load() or "light"
+        return name
 
     @staticmethod
-    def apply_light():
-        ProfileManager.apply("light")
+    def set_active(name):
+        path = FileManager.get_profile_path()
+        return path.save(name)
+
+    @staticmethod
+    def reload():
+        """
+        Reload config of active profile
+        """
+        ProfileManager.load(
+            ProfileManager.get_active()
+        )
+
+
+def apply_dark():
+    ProfileManager.apply("dark")
+
+
+def apply_light():
+    ProfileManager.apply("light")

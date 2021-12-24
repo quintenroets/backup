@@ -9,6 +9,7 @@ from libs.tagmanager import TagManager
 
 from .backup import Backup
 from .filemanager import FileManager
+from .profilemanager import ProfileManager
 from . import parser
 
 args = sys.argv[1:]
@@ -159,37 +160,9 @@ class BackupManager:
         return folders
 
     @staticmethod
-    def before_push(path_name, export=True):
-        if path_name == "config":
-            from colortheme.thememanager import ThemeManager
-            if ThemeManager.get_theme() == "dark":
-                ThemeManager.change_config("dark", "light")
-            if export:
-                Cli.get(f"konsave -e $(konsave -l | grep {theme} | cut -f1)" for theme in ["light", "dark"])
-
-    @staticmethod
-    def after_push(path_name):
-        if path_name == "config":
-            from colortheme.thememanager import ThemeManager
-            if ThemeManager.get_theme() == "dark":
-                ThemeManager.change_config("light", "dark")
-
-    @staticmethod
     def after_pull(path_name):
         if path_name == "config":
-            from colortheme.thememanager import ThemeManager
-            # remove present themes
-            Cli.get(*(f"konsave -r $(konsave -l | grep {t} | cut -f1)" for t in ["light", "dark"]), check=False)
-            theme = ThemeManager.get_theme()
-            if not theme:
-                theme = "light"
-                FileManager.save("light", "settings")
-            Cli.get(
-                "konsave -i ~/light.knsv",
-                "konsave -i ~/dark.knsv",
-                f"konsave -a $(konsave -l | grep {theme} | cut -f1)"
-            )
-            ThemeManager.restartplasma()
+            ProfileManager.reload()
 
     @staticmethod
     def get_ignore_root_filters(path_name):

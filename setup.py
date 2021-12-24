@@ -24,8 +24,6 @@ setup(
             "drive = backup.starter:main",
             "drivesync = backup.syncer:main",
             "watcher = backup.watcher:main",
-            "light = backup.profilemanager:apply_light",
-            "dark = backup.profilemanager:apply_dark"
         ]
     },
 )

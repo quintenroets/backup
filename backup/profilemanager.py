@@ -59,11 +59,3 @@ class ProfileManager:
         ProfileManager.load(
             ProfileManager.get_active()
         )
-
-
-def apply_dark():
-    ProfileManager.apply("dark")
-
-
-def apply_light():
-    ProfileManager.apply("light")

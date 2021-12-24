@@ -1,9 +1,7 @@
-from pathlib import Path
+from libs.path import Path
 
-from libs.filemanager import FileManager as FileManagerLib
-
-class FileManager(FileManagerLib):
-    root = FileManagerLib.root / Path(__file__).parent.name
+class FileManager:
+    root = Path.assets / Path(__file__).parent.name
 
     @staticmethod
     def get_path_names():
@@ -13,4 +11,4 @@ class FileManager(FileManagerLib):
 
     @staticmethod
     def get_sync_paths():
-        return FileManager.load("paths", "syncs", "syncs")
+        return (FileManager.root / "paths" / "syncs" / "syncs").load()

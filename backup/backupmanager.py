@@ -9,6 +9,7 @@ from libs.tagmanager import TagManager
 
 from .backup import Backup
 from .filemanager import FileManager
+from . import parser
 
 args = sys.argv[1:]
 
@@ -61,35 +62,8 @@ class BackupManager:
     @staticmethod
     def get_paths(path_name):
         path_root = root_mapper[path_name]
-
-        struct_list = [{path_root: FileManager.load("paths", path_name)}]
-        finished = False
-
-        while not finished:
-            new_struct_list = []
-            finished = True
-
-            for struct in struct_list:
-                if not isinstance(struct, dict): # normal complete path
-                    new_struct_list.append(struct)
-                else:
-                    for root, items in struct.items():
-                        for item in items:
-                            if not isinstance(item, dict):
-                                new_item = os.path.join(root, item)
-                            else:
-                                finished = False
-                                new_item = {
-                                    os.path.join(root, subroot):
-                                        subitems for subroot, subitems in item.items()
-                                }
-                            new_struct_list.append(new_item)
-
-            struct_list = new_struct_list
-
-        paths = struct_list
-        subpaths = [p.replace(path_root + "/", "") for p in paths]
-        return paths, subpaths
+        paths = FileManager.load("paths", path_name)
+        return parser.parse_paths(root, paths)
 
     @staticmethod
     def get_items(paths):

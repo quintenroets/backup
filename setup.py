@@ -23,7 +23,9 @@ setup(
         "console_scripts": [
             "drive = backup.starter:main",
             "drivesync = backup.syncer:main",
-            "watcher = backup.watcher:main"
+            "watcher = backup.watcher:main",
+            "light = backup.profilemanager:apply_light",
+            "dark = backup.profilemanager:apply_dark"
         ]
     },
 )
@@ -32,9 +34,11 @@ from libs.cli import Cli
 from libs.path import Path
 from backup.backup import Backup
 
-# install newest version of rclone
-Cli.install("curl")
-Cli.run("curl https://rclone.org/install.sh | sudo bash")
+installed = Cli.get("which rclone", check=False)
+if not installed:
+    Cli.install("curl")
+    # install newest version of rclone this way
+    Cli.run("curl https://rclone.org/install.sh | sudo bash")
 
 filename = "rclone.conf"
 src = Path(__file__).parent / "assets" / filename

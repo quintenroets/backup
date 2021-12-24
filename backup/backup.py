@@ -1,6 +1,3 @@
-import os
-from datetime import datetime
-
 from libs.cli import Cli
 from .filemanager import FileManager
 
@@ -24,18 +21,18 @@ class Backup:
         return Backup.run(command, filters)
 
     @staticmethod
-    def sync(source, dest, filters=[], delete_missing=True):
+    def sync(source, dest, filters=[], delete_missing=True, quiet=False):
         command = "sync --create-empty-src-dirs" if delete_missing else "copy"
-        command = f"-P {command} \"{source}\" \"{dest}\""
+        flag = "q" if quiet else "P"
+        command = f"-{flag} {command} \"{source}\" \"{dest}\""
         Backup.run(command, filters)
 
     @staticmethod
     def run(command, filters=[]):
-        filters = "\n".join(filters + ["- *"])
-        filter_filename = FileManager.save(filters, f"filters_{datetime.now()}.txt") # allow parallel runs without filter file conflicts
-        command = f"rclone -L --skip-links --filter-from '{filter_filename}' {command}"
+        filters_path = FileManager.set_filters(filters + ["- **"])
+        command = f"rclone -L --skip-links --filter-from '{filters_path}' {command}"
         try:
             Cli.run(command, check=False) # rclone throws error if nothing changed
         finally:
             # catch interruptions
-            os.remove(filter_filename)
+            filters_path.unlink()

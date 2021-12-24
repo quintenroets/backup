@@ -1,55 +1,50 @@
-import sys
-import time
-from threading import Thread
+from libs.path import Path
 
-from libs.cli import Cli
-from libs.gui import Gui
-from libs.output_copy import Output
-
-from .backupmanager import BackupManager
+from .backup import Backup
 from .filemanager import FileManager
+from . import parser
 
-def main():
-    while True:
-        time.sleep(8 * 60 * 60)
-        Thread(target=check_changes).start()
 
-def check_changes():
-    interactive = sys.stdin.isatty()
-    if interactive:
-        title = "Drive"
-        print(title + "\n" + "=" * (len(title) + 2) )
-        
-    total_changes = {}
-    path_names = FileManager.get_path_names()
-    for path_name in path_names:
-        with Output() as out:
-            BackupManager.check("status", path_name)
-        output_list = str(out).split("\n")
-        output_list = [o for o in output_list if o]
-        total_changes[path_name] = output_list
+class ProfileManager:
+    @staticmethod
+    def get_filters():
+        paths = (FileManager.get_profiles_root() / "paths").load()
+        paths = parser.parse_paths(paths)
+        filters = parser.make_filters(paths)
+        return filters
 
-    check_ignores = FileManager.load("paths", "check_ignores", "config")
-    check_ignores = [f"* {ig}" for ig in check_ignores]
-    changes = [c for changes in total_changes.values() for c in changes if c not in check_ignores or interactive]
+    @staticmethod
+    def copy(source, dest):
+        filters = ProfileManager.get_filters()
+        # cannot use delete_missing because source and dest overlap partly
+        return Backup.sync(source, dest, filters=filters, delete_missing=False, quiet=False)
 
-    if changes:
-        title = "Push changes?"
-        question = "\n".join([
-            " " * 10 + title + " " * 10,
-            "=" * (len(title) + 10),
-            "",
-            *changes
-        ])
-        push_changes = Gui.ask_yn(question) if not interactive else input("\nPush? [Y/n]") == ""
-        if push_changes:
-            print("Pushing..")
-            Cli.run(
-                (f"drive push {path_name}" for path_name, filter_items in total_changes.items() if filter_items), 
-                console=not interactive and False
-            )
-    elif interactive:
-        input("\nEveryting clean.\nPress enter to exit")
+    @staticmethod
+    def save(name):
+        dest = FileManager.get_profiles_root() / name
+        ProfileManager.copy(Path.home(), dest)
 
-if __name__ == "__main__":
-    main()
+    @staticmethod
+    def load(name):
+        """
+        Load new profile without saving the previous and changing active profile name
+        """
+        source = FileManager.get_profiles_root() / name
+        if source.exists():
+            ProfileManager.copy(source, Path.home())
+
+    @staticmethod
+    def apply(name):
+        active_path = FileManager.get_profile_path()
+        active_name = active_path.load() or "light"
+        ProfileManager.save(active_name)
+        ProfileManager.load(name)
+        active_path.save(name)
+
+    @staticmethod
+    def apply_dark():
+        ProfileManager.apply("dark")
+
+    @staticmethod
+    def apply_light():
+        ProfileManager.apply("light")

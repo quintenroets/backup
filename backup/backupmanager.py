@@ -26,9 +26,6 @@ drive_mapper = {
 class BackupManager:
     @staticmethod
     def check(command, path_name):
-        if command in ["push", "status"]:
-            BackupManager.before_push(path_name, export=command=="push")
-
         paths, subpaths = BackupManager.get_paths(path_name)
 
         if command in ["status", "push"]:
@@ -46,11 +43,9 @@ class BackupManager:
 
             if command == "status":
                 result = Backup.compare(src, dst, filters=filters)
-                BackupManager.after_push(path_name)
             elif command == "push":
                 result = Backup.upload(src, dst, filters=filters)
                 FileManager.save(new_paths, "timestamps", path_name)
-                BackupManager.after_push(path_name)
             elif command =="pull":
                 result = Backup.download(src, dst, filters=filters, delete_missing=path_name=="docs")
                 items = BackupManager.get_items(paths)

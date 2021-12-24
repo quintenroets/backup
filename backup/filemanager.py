@@ -1,8 +1,9 @@
 from datetime import datetime
 
+from libs.filemanager import FileManager as FileManagerLib
 from libs.path import Path
 
-class FileManager:
+class FileManager(FileManagerLib):
     root = Path.assets / Path(__file__).parent.name
 
     @staticmethod

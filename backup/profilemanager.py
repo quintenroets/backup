@@ -35,8 +35,7 @@ class ProfileManager:
 
     @staticmethod
     def apply(name):
-        active = ProfileManager.get_active()
-        ProfileManager.save(active)
+        ProfileManager.save_active()
         ProfileManager.load(name)
         ProfileManager.set_active(name)
 
@@ -57,5 +56,14 @@ class ProfileManager:
         Reload config of active profile
         """
         ProfileManager.load(
+            ProfileManager.get_active()
+        )
+
+    @staticmethod
+    def save_active():
+        """
+        Save config files to active profile
+        """
+        ProfileManager.save(
             ProfileManager.get_active()
         )

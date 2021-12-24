@@ -29,12 +29,12 @@ class BackupManager:
         paths, subpaths = BackupManager.get_paths(path_name)
 
         if command in ["status", "push"]:
+            ProfileManager.save_active()
             items = BackupManager.get_items(paths)
             filters, new_paths = BackupManager.get_filters(path_name, items)
-            # todo: profilemanager.save_active doen
         else:
             if path_name == "config":
-                filters = ["+ *"]
+                filters = ["+ **"]
             else:
                 filters = BackupManager.get_pull_filters(paths, subpaths, path_name)
 

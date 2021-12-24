@@ -43,7 +43,7 @@ class ProfileManager:
     @staticmethod
     def get_active():
         path = FileManager.get_profile_path()
-        name = active_path.load() or "light"
+        name = path.load() or "light"
         return name
 
     @staticmethod

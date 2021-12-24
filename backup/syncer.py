@@ -45,8 +45,7 @@ def check_changes():
         if push_changes:
             print("Pushing..")
             Cli.run(
-                (f"drive push {path_name}" for path_name, filter_items in total_changes.items() if filter_items), 
-                console=not interactive and False
+                (f"drive push {path_name}" for path_name, filter_items in total_changes.items() if filter_items)
             )
     elif interactive:
         input("\nEveryting clean.\nPress enter to exit")

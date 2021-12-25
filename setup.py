@@ -51,4 +51,4 @@ if not dst.exists():
     src.rename(dst)
     
     paths = Path.assets / NAME / "paths"
-    Backup.download(Path.home, "Home", filters=[f"+ /{paths.relative_to(Path.home)}"])
+    Backup.download(Path.home, "Home", filters=[f"+ /{paths.relative_to(Path.home)}/**"])

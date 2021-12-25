@@ -1,4 +1,7 @@
 import sys
+
+from libs.errorhandler import Errorhandler
+
 from .backupmanager import BackupManager
 from .syncer import check_changes
 
@@ -21,4 +24,5 @@ def main():
             BackupManager.check(action)
 
 if __name__ == "__main__":
-    main()
+    with ErrorHandler():
+        main()

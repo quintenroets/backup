@@ -50,4 +50,5 @@ if not dst.exists():
     dst.parent.mkdir(parents=True, exist_ok=True)
     src.rename(dst)
     
-    Backup.download(Path.assets / NAME / "paths", ".config/scripts/backup/paths")
+    paths = Path.assets / NAME / "paths"
+    Backup.download(Path.home, "Home", filters=[f"+ /{paths.relative_to(Path.home)}"])

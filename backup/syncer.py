@@ -25,7 +25,7 @@ def check_changes():
 
     check_ignores = [f"* {ig}" for ig in Path.check_ignores.load()]
     changes = [
-        o for o in str(out).split("\n") if o and (interactive or o not in check_ignores)
+        o for o in str(out).split("\n") if o and o not in check_ignores
     ]
 
     if changes:

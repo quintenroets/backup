@@ -26,8 +26,9 @@ class ProfileManager:
         """
         Load new profile without saving the previous and changing active profile name
         """
+        source = Path.profiles / name
         if source.exists():
-            ProfileManager.copy(Path.profiles / name, Path.home)
+            ProfileManager.copy(source, Path.home)
 
     @staticmethod
     def apply(name):

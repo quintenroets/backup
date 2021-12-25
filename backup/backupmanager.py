@@ -4,6 +4,7 @@ import xattr
 
 from libs.cli import Cli
 from libs.climessage import CliMessage
+from libs.output_copy import Output
 from libs.tagmanager import TagManager
 
 from .backup import Backup
@@ -29,19 +30,22 @@ class BackupManager:
         ProfileManager.save_active()
         filters = BackupManager.get_filters(pull=command == "pull")
         if filters:
-            BackupManager.sync(command, filters, **kwargs)
+            return BackupManager.sync(command, filters, **kwargs)
 
     @staticmethod
     def sync(command, filters, src=Path.home, dst="Home"):
         kwargs = {"delete_missing": True} if command == "pull" else {}
         sync = Backup.get_function(command)
-        sync(src, dst, filters=filters, **kwargs)
-
-        if command != "status":
+        with Output() as out:
+            sync(src, dst, filters=filters, **kwargs)
+            
+        result = str(out)
+        if command != "status" or not result:
             BackupManager.save_timestamps()
         if command =="pull":
             ProfileManager.reload()
-
+        return result
+            
     @staticmethod
     def get_filters(pull=False):
         paths = BackupManager.get_paths(exclusions=pull)

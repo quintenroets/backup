@@ -4,7 +4,6 @@ from threading import Thread
 
 from libs.cli import Cli
 from libs.gui import Gui
-from libs.output_copy import Output
 
 from .backupmanager import BackupManager
 from .path import Path
@@ -20,18 +19,18 @@ def check_changes():
         title = "Drive"
         print(title + "\n" + "=" * (len(title) + 2) )
         
-    with Output() as out:
-        BackupManager.check("status")
+    out = BackupManager.check("status")
+    if out:
 
-    check_ignores = [f"* {ig}" for ig in Path.check_ignores.load()]
-    changes = [
-        o for o in str(out).split("\n") if o and o not in check_ignores
-    ]
+        check_ignores = [f"* {ig}" for ig in Path.check_ignores.load()]
+        changes = [
+            o for o in out.split("\n") if o and o not in check_ignores
+        ]
 
-    if changes:
-        process_changes(changes)
-    elif interactive:
-        input("\nEveryting clean.\nPress enter to exit")
+        if changes:
+            process_changes(changes)
+        elif interactive:
+            input("\nEveryting clean.\nPress enter to exit")
 
 
 def process_changes(changes):

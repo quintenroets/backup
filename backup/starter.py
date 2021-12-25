@@ -1,7 +1,6 @@
 import sys
 from .backupmanager import BackupManager
 from .syncer import check_changes
-from . import watch_syncer
 
 def main():
     args = sys.argv[1:]

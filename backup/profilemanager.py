@@ -37,11 +37,11 @@ class ProfileManager:
 
     @staticmethod
     def get_active():
-        return path.active_profile.load() or "light"
+        return Path.active_profile.load() or "light"
 
     @staticmethod
     def set_active(name):
-        return path.active_profile.save(name)
+        return Path.active_profile.save(name)
 
     @staticmethod
     def reload():

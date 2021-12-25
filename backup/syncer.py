@@ -7,6 +7,7 @@ from libs.gui import Gui
 from libs.output_copy import Output
 
 from .backupmanager import BackupManager
+from .path import Path
 
 def main():
     while True:

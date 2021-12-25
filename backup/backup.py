@@ -1,6 +1,8 @@
 from libs.cli import Cli
 from .path import Path
 
+from datetime import datetime
+
 class Backup:
     # remote root defined in .config/rclone/rclone.conf backup -> Google Drive: Autobackup
 
@@ -38,7 +40,7 @@ class Backup:
             filters_path.unlink()
 
     @staticmethod
-    def set_filters():
+    def set_filters(filters):
         folder = Path.root / "filters"
         folder.mkdir(parents=True, exist_ok=True)
 

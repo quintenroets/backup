@@ -1,13 +1,13 @@
 import os
 import sys
 import xattr
-from .path import Path
 
 from libs.cli import Cli
 from libs.climessage import CliMessage
 from libs.tagmanager import TagManager
 
 from .backup import Backup
+from .path import Path
 from .profilemanager import ProfileManager
 from . import parser
 
@@ -30,8 +30,6 @@ class BackupManager:
         filters = BackupManager.get_filters(pull=command == "pull")
         if filters:
             BackupManager.sync(command, filters, **kwargs)
-        else:
-            print("Everything clean")
 
     @staticmethod
     def sync(command, filters, src=Path.home, dst="Home"):

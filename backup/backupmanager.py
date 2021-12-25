@@ -15,8 +15,8 @@ from . import parser
 args = sys.argv[1:]
 
 root_mapper = {
-    "docs": os.environ["docs"],
-    "config": os.environ["HOME"],
+    "docs": Path.docs,
+    "config": Path.home(),
 }
 drive_mapper = {
     "docs": "Documents",
@@ -26,12 +26,13 @@ drive_mapper = {
 class BackupManager:
     @staticmethod
     def check(command, path_name):
-        paths, subpaths = BackupManager.get_paths(path_name)
+        paths = BackupManager.get_paths(path_name)
 
         if command in ["status", "push"]:
             ProfileManager.save_active()
             items = BackupManager.get_items(paths)
-            filters, new_paths = BackupManager.get_filters(path_name, items)
+            #filters, new_paths = BackupManager.get_filters(path_name, items)
+            return
         else:
             if path_name == "config":
                 filters = ["+ **"]
@@ -58,42 +59,31 @@ class BackupManager:
 
     @staticmethod
     def get_paths(path_name):
-        root = root_mapper[path_name]
-        paths = FileManager.load("paths", path_name)
-        return parser.parse_paths2(root, paths)
+        paths = (FileManager.root / "paths" / path_name).load()
+        paths = parser.parse_paths(paths)
+        return paths
 
     @staticmethod
     def get_items(paths):
         ignore_folders = FileManager.load("paths", "ignores", "patterns")
-        items = []
-        for path in paths:
-            if os.path.exists(path):
-                if not os.path.isdir(path):
-                    items.append(path)  # files are not visited in os walk
-
-                else:
-                    path_ignore_folders = ignore_folders + BackupManager.get_git_folders(path)
-                    git_folders = BackupManager.get_git_folders(path)
-                    for folder, subfolders, filenames in os.walk(path):
-                        if ".git" not in subfolders and not(
-                            any([ig in folder and ig not in path for ig in path_ignore_folders])
-                        ):
-                            for filename in filenames:
-                                file_full = os.path.join(folder, filename)
-                                if not BackupManager.ignore(file_full):
-                                    items.append(file_full)
-
-        return items
+        def exclude(path: Path):
+            return (
+                path.name in ignore_folders
+                or (path / ".git").exists()
+                or BackupManager.ignore(path)
+            )
+        return [p.find(exclude=exclude) for p in paths]
 
     @staticmethod
     def get_filters(path_name, paths):
-        old_paths = FileManager.load("timestamps", path_name)
+        old_paths = (FileManager.root / "timestamps" / path_name).load()
         root = root_mapper[path_name]
-        new_paths = {
-            path.replace(root + "/", ""):
-            os.path.getmtime(path) if os.path.exists(path) else 0
-            for path in paths
-        }
+        new_paths = {}
+        for p in paths:
+            absolute = root / p
+            if absolute.exists():
+                new_paths[p] = absolute.stat().st_mtime
+
         changed_paths = BackupManager.calculate_difference(new_paths, old_paths)
         filters = BackupManager.get_ignore_root_filters(path_name) + [f"+ /{p}" for p in changed_paths]
         return filters, new_paths

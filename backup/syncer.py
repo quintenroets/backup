@@ -19,18 +19,18 @@ def check_changes():
         title = "Drive"
         print(title + "\n" + "=" * (len(title) + 2) )
         
-    out = BackupManager.check("status")
-    if out:
-
+    changes = BackupManager.check("status")
+    
+    if changes:
         check_ignores = [f"* {ig}" for ig in Path.check_ignores.load()]
         changes = [
-            o for o in out.split("\n") if o and o not in check_ignores
+            o for o in changes.split("\n") if o and o not in check_ignores
         ]
 
-        if changes:
-            process_changes(changes)
-        elif interactive:
-            input("\nEveryting clean.\nPress enter to exit")
+    if changes:
+        process_changes(changes)
+    elif interactive:
+        input("\nEveryting clean.\nPress enter to exit")
 
 
 def process_changes(changes):

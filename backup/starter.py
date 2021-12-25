@@ -1,6 +1,6 @@
 import sys
 
-from libs.errorhandler import Errorhandler
+from libs.errorhandler import ErrorHandler
 
 from .backupmanager import BackupManager
 from .syncer import check_changes

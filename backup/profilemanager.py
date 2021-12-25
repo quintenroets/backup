@@ -1,14 +1,12 @@
-from libs.path import Path
-
 from .backup import Backup
-from .filemanager import FileManager
+from .path import Path
 from . import parser
 
 
 class ProfileManager:
     @staticmethod
     def get_filters():
-        paths = (FileManager.get_profiles_root() / "paths").load()
+        paths = Path.profile_paths.load()
         paths = parser.parse_paths(paths)
         filters = parser.make_filters(paths)
         return filters
@@ -21,17 +19,15 @@ class ProfileManager:
 
     @staticmethod
     def save(name):
-        dest = FileManager.get_profiles_root() / name
-        ProfileManager.copy(Path.home(), dest)
+        ProfileManager.copy(Path.home, Path.profiles / name)
 
     @staticmethod
     def load(name):
         """
         Load new profile without saving the previous and changing active profile name
         """
-        source = FileManager.get_profiles_root() / name
         if source.exists():
-            ProfileManager.copy(source, Path.home())
+            ProfileManager.copy(Path.profiles / name, Path.home)
 
     @staticmethod
     def apply(name):
@@ -41,14 +37,11 @@ class ProfileManager:
 
     @staticmethod
     def get_active():
-        path = FileManager.get_profile_path()
-        name = path.load() or "light"
-        return name
+        return path.active_profile.load() or "light"
 
     @staticmethod
     def set_active(name):
-        path = FileManager.get_profile_path()
-        return path.save(name)
+        return path.active_profile.save(name)
 
     @staticmethod
     def reload():

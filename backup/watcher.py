@@ -5,14 +5,12 @@ import json
 from libs.threading import Thread
 
 from .backupmanager import BackupManager
-from .filemanager import FileManager
-from . import watch_syncer
+from .path import Path
 
 class Watcher:
     def __init__(self, folder=None):
         self.threads = []
         self.max_threads = 1
-        self.ignore_filters = FileManager.load("paths", "ignores", "patterns")
         self.folder = folder if folder else os.getcwd()
 
 
@@ -20,12 +18,12 @@ class Watcher:
         path = event.pathname
 
         if not any([path.endswith(end) for end in [".kate-swp", ".part", ".py~"]]):
-            if not any([f in path for f in self.ignore_filters]):
+            if not any([f in path for f in BackupManager.ignore_names]):
                 filename = path.replace(self.folder, "")
                 print(filename)
                 filters = [f"+ {filename}"]
-                watch_syncer.main(custom_filters=filters, command="push")
-    
+                BackupManager.subcheck(custom_filters=filters, command="push")
+
     def watch(self, folder=None):
         mask = (
             pyinotify.IN_CLOSE_WRITE
@@ -46,6 +44,6 @@ class Watcher:
         notifier.loop()
 
 def main():
-    syncs = FileManager.get_sync_paths()
+    syncs = Path.syncs.load()
     for path in syncs:
         Watcher().watch(path)

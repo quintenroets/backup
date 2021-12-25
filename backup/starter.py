@@ -1,18 +1,15 @@
 import sys
 from .backupmanager import BackupManager
-from .filemanager import FileManager
 from .syncer import check_changes
 from . import watch_syncer
 
 def main():
     args = sys.argv[1:]
 
-    if "syncer" in args:
-        watch_syncer.main()
-
-    elif not args:
+    if not args:
         check_changes()
-
+    elif "syncer" in args:
+        BackupManager.subcheck()
     else:
         action = "status"
         for action_name in ["push", "pull"]:
@@ -22,11 +19,7 @@ def main():
         if "browser" in args:
             BackupManager.check_browser(action)
         else:
-            path_names = FileManager.get_path_names()
-            for path_name in path_names:
-                if path_name in args:
-                    BackupManager.check(action, path_name)
-
+            BackupManager.check(action)
 
 if __name__ == "__main__":
     main()

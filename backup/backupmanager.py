@@ -1,92 +1,91 @@
 import os
 import sys
 import xattr
-from pathlib import Path
+from .path import Path
 
 from libs.cli import Cli
 from libs.climessage import CliMessage
 from libs.tagmanager import TagManager
 
 from .backup import Backup
-from .filemanager import FileManager
 from .profilemanager import ProfileManager
 from . import parser
 
 args = sys.argv[1:]
 
-root_mapper = {
-    "docs": Path.docs,
-    "config": Path.home(),
-}
-drive_mapper = {
-    "docs": "Documents",
-    "config": "Config",
-}
 
 class BackupManager:
+    ignore_names = Path.ignore_names.load()
+    ignore_patterns = Path.ignore_patterns.load()
+    ignore_paths = {
+        path
+        for pattern in ignore_patterns
+        for path in Path.home.glob(pattern)
+    }
+    timestamps = None
+
     @staticmethod
-    def check(command, path_name):
-        paths = BackupManager.get_paths(path_name)
-
-        if command in ["status", "push"]:
-            ProfileManager.save_active()
-            items = BackupManager.get_items(paths)
-            #filters, new_paths = BackupManager.get_filters(path_name, items)
-            return
-        else:
-            if path_name == "config":
-                filters = ["+ **"]
-            else:
-                filters = BackupManager.get_pull_filters(paths, subpaths, path_name)
-
+    def check(command, **kwargs):
+        ProfileManager.save_active()
+        filters = BackupManager.get_filters(pull=command == "pull")
         if filters:
-            src = root_mapper[path_name]
-            dst = drive_mapper[path_name]
-
-            if command == "status":
-                result = Backup.compare(src, dst, filters=filters)
-            elif command == "push":
-                result = Backup.upload(src, dst, filters=filters)
-                FileManager.save(new_paths, "timestamps", path_name)
-            elif command =="pull":
-                result = Backup.download(src, dst, filters=filters, delete_missing=path_name=="docs")
-                items = BackupManager.get_items(paths)
-                filters, new_paths = BackupManager.get_filters(path_name, items)
-                FileManager.save(new_paths, "timestamps", path_name)
-                BackupManager.after_pull(path_name)
-
-            return result
+            BackupManager.sync(command, filters, **kwargs)
+        else:
+            print("Everything clean")
 
     @staticmethod
-    def get_paths(path_name):
-        paths = (FileManager.root / "paths" / path_name).load()
+    def sync(command, filters, src=Path.home, dst="Home"):
+        kwargs = {"delete_missing": True} if command == "pull" else {}
+        sync = Backup.get_function(command)
+        sync(src, dst, filters=filters, **kwargs)
+
+        if command != "status":
+            BackupManager.save_timestamps()
+        if command =="pull":
+            ProfileManager.reload()
+
+    @staticmethod
+    def get_filters(pull=False):
+        paths = BackupManager.get_paths(exclusions=pull)
+        if pull:
+            paths = [p.relative_to(Path.home) for p in paths] + BackupManager.ignore_patterns
+        else:
+            timestamps = Path.timestamps.load()
+            BackupManager.timestamps = {
+                str(p.relative_to(Path.home)): p.stat().st_mtime for p in paths if p.exists()
+            }
+            paths = BackupManager.calculate_difference(BackupManager.timestamps, timestamps)
+
+        filters = parser.make_filters(
+            includes=paths if not pull else [],
+            excludes=paths if pull else [],
+            recursive=False,
+            include_others=pull
+        )
+        return filters
+
+    @staticmethod
+    def get_paths(exclusions=False):
+        condition = BackupManager.exclude if exclusions else None
+        exclude = BackupManager.exclude if not exclusions else None
+
+        paths = Path.paths_include.load()
         paths = parser.parse_paths(paths)
+        paths = [
+            item for path in paths for item in (Path.home / path).find(condition=condition, exclude=exclude)
+        ]
         return paths
 
     @staticmethod
-    def get_items(paths):
-        ignore_folders = FileManager.load("paths", "ignores", "patterns")
-        def exclude(path: Path):
-            return (
-                path.name in ignore_folders
-                or (path / ".git").exists()
-                or BackupManager.ignore(path)
-            )
-        return [p.find(exclude=exclude) for p in paths]
-
-    @staticmethod
-    def get_filters(path_name, paths):
-        old_paths = (FileManager.root / "timestamps" / path_name).load()
-        root = root_mapper[path_name]
-        new_paths = {}
-        for p in paths:
-            absolute = root / p
-            if absolute.exists():
-                new_paths[p] = absolute.stat().st_mtime
-
-        changed_paths = BackupManager.calculate_difference(new_paths, old_paths)
-        filters = BackupManager.get_ignore_root_filters(path_name) + [f"+ /{p}" for p in changed_paths]
-        return filters, new_paths
+    def exclude(path: Path):
+        return (
+            path.name in BackupManager.ignore_names
+            or (path / ".git").exists()
+            or path.is_symlink()
+            or (path.is_file() and xattr.xattr(path).list())
+            or path.stat().st_size > 50 * 10 ** 6
+            or path in BackupManager.ignore_paths
+        )
 
     @staticmethod
     def calculate_difference(new, old):
@@ -103,73 +102,15 @@ class BackupManager:
         return paths
 
     @staticmethod
-    def get_pull_filters(paths, subpaths, path_name):
-        filters = BackupManager.get_ignore_root_filters(path_name)
-        ignore_patterns = FileManager.load("paths", "ignores", "patterns")
-        filters += [f"- {ignore}/**" for ignore in ignore_patterns]
-
-        for path, subpath in zip(paths, subpaths):
-            if not os.path.isdir(path) and os.path.exists(path):
-                filters.append(f"+ /{subpath}")
-            else:
-                filters += BackupManager.get_ignores(path, path_name)
-                filters.append(f"+ /{subpath}/**")
-        return filters
-
-    @staticmethod
-    def get_ignores(path, path_name):
-        ignores = []
-        root = root_mapper[path_name]
-
-        for folder, subfolders, files in os.walk(path, followlinks=True):
-            if os.path.islink(folder):
-                ignores.append(f"- {folder.replace(root, '')}/**")
-            else:
-                for filename in files:
-                    file_full = os.path.join(folder, filename)
-                    if BackupManager.ignore(file_full):
-                        subpath = file_full.replace(root, "")
-                        filter = f"- {subpath}"
-                        ignores.append(filter)
-
-        ignores += [
-            f"- {f.replace(root, '')}/**"  for f in BackupManager.get_git_folders(path)
-        ]
-        return ignores
-
-    @staticmethod
-    def get_git_folders(path):
-        folders = Cli.get(
-            f"find {path} -type d -execdir test -d" + " {}/.git \; -print -prune"
-            ).split("\n") if os.path.exists(path) else []
-        folders = [f for f in folders if f]
-        return folders
-
-    @staticmethod
-    def after_pull(path_name):
-        if path_name == "config":
-            ProfileManager.reload()
-
-    @staticmethod
-    def get_ignore_root_filters(path_name):
-        ignore_roots = FileManager.load("paths", "ignores", path_name)
-        ignore_roots = [ig + "**" if ig.endswith("/") else ig for ig in ignore_roots]
-        filters = [f"- /{ig}" for ig in ignore_roots]
-        return filters
-
-    @staticmethod
-    def ignore(path):
-        return (
-            os.path.islink(path)
-            or xattr.xattr(path).list()
-            or os.path.getsize(path) > 50 * 10 ** 6
-            or str(Path(path).resolve()) != path
-        )
+    def save_timestamps():
+        if BackupManager.timestamps is None:
+            BackupManager.get_paths()
+        Path.timestamps.save(BackupManager.timestamps)
 
     @staticmethod
     def check_browser(command):
-        config_folder = Path.home() / "snap" / "chromium" / "common" / "chromium" / "Default"
-        local = Path.home() / ".config" / "browser"
+        config_folder = Path.home / "snap" / "chromium" / "common" / "chromium" / "Default"
+        local = Path.home / ".config" / "browser"
         config_file = local / "config.zip"
 
         remote = "Browser"
@@ -195,3 +136,18 @@ class BackupManager:
             Cli.get(f"unzip -o '{config_file}' -d '{config_folder.parent}'")
         else:
             print("Choose pull or push")
+
+    @staticmethod
+    def subcheck(custom_filters=[], command=None):
+        syncs = Path.syncs.load()
+
+        for local, remote_info in syncs.items():
+            for remote, ignore_patterns in remote_info.items():
+                filters = parser.make_filters(
+                    excludes=ignore_patterns, recursive=True, include_others=not custom_filters
+                )
+                if custom_filters:
+                    filters += custom_filters
+
+                function = Backup.get_function(command)
+                function(local, remote, filters=filters)

@@ -107,31 +107,33 @@ class BackupManager:
 
     @staticmethod
     def check_browser(command):
-        config_folder = Path.home / "snap" / "chromium" / "common" / "chromium" / "Default"
-        local = Path.home / ".config" / "browser"
-        config_file = local / "config.zip"
+        local = Path.home
+        remote = "Home"
 
-        remote = "Browser"
-        filters = ["+ /config.zip"]
+        config_folder = local / "snap" / "chromium" / "common" / "chromium" / "Default"
+        config_save_file = local / ".config" / "browser" / "config.zip"
+        filters = parser.make_filters(includes=[config_save_file.relative_to(local)])
 
         if command == "push":
             ignores = ["Cache", "Code Cache", "Application Cache", "CacheStorage", "ScriptCache", "GPUCache"]
             flags = "".join([
                 f"-x '*/{i}/*' " for i in ignores
             ])
-            if config_file.exists():
+            if config_save_file.exists():
                 flags += " -f" # only add changes to zip
 
             with CliMessage("Compressing.."):
                 # make sure that all zipped files have the same root
-                Cli.run(f"zip -r -q {flags} '{config_file}' '{config_folder.name}'", pwd=config_folder.parent)
+                Cli.run(
+                    f"zip -r -q {flags} '{config_save_file}' '{config_folder.name}'", pwd=config_save_file.parent
+                )
             with CliMessage("Uploading.."):
                 Backup.upload(local, remote, filters=filters)
 
         elif command == "pull":
             Backup.download(local, remote, filters=filters)
             config_folder.mkdir(parents=True, exist_ok=True)
-            Cli.get(f"unzip -o '{config_file}' -d '{config_folder.parent}'")
+            Cli.get(f"unzip -o '{config_save_file}' -d '{config_folder.parent}'")
         else:
             print("Choose pull or push")
 

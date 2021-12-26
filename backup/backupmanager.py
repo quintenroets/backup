@@ -36,8 +36,12 @@ class BackupManager:
     def sync(command, filters, src=Path.home, dst="Home"):
         kwargs = {"delete_missing": True} if command == "pull" else {}
         sync = Backup.get_function(command)
-        with Output() as out:
+        if command == "status":
+            with Output() as out:
+                sync(src, dst, filters=filters, **kwargs)
+        else:
             sync(src, dst, filters=filters, **kwargs)
+            out = ""
             
         result = str(out)
         if command != "status" or not result:

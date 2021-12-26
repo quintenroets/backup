@@ -4,6 +4,7 @@ from threading import Thread
 
 from libs.cli import Cli
 from libs.gui import Gui
+from libs.climessage import ask
 
 from .backupmanager import BackupManager
 from .path import Path
@@ -42,7 +43,7 @@ def process_changes(changes):
         "",
         *changes
     ])
-    push_changes = Gui.ask_yn(question) if not interactive else input("\nPush? [Y/n]") == ""
+    push_changes = Gui.ask_yn(question) if not interactive else ask("\nPush?")
     if push_changes:
         print("Pushing..")
         Cli.run("drive push")

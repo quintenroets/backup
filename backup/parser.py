@@ -1,7 +1,8 @@
 from .path import Path
 
 def parse_paths(structure):
-    return parse_paths_comb(structure, {}, root=Path(""))
+    tuples = parse_paths_comb(structure, {}, root=Path(""))
+    return [t[0] for t in tuples]
 
 
 def make_filters(includes=[], excludes=[], recursive=True, include_others=False):

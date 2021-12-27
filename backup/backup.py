@@ -3,22 +3,25 @@ from .path import Path
 
 from datetime import datetime
 
+remote_root = "/home/autobackup/"
+remote_root = "backup:"
+
 class Backup:
     # remote root defined in .config/rclone/rclone.conf backup -> Google Drive: Autobackup
 
     @staticmethod
     def upload(folder, remote, filters=[]):
-        remote = f"backup:{remote}"
+        remote = f"{remote_root}{remote}"
         Backup.sync(folder, remote, filters)
 
     @staticmethod
     def download(folder, remote, filters=[], delete_missing=False):
-        remote = f"backup:{remote}"
+        remote = f"{remote_root}{remote}"
         Backup.sync(remote, folder, filters, delete_missing)
 
     @staticmethod
     def compare(folder, remote, filters=[]):
-        remote = f"backup:{remote}"
+        remote = f"{remote_root}{remote}"
         command = f"check --combined - --log-file /dev/null \"{folder}\" \"{remote}\" | grep --color=never '^*\|^-\|^+'"
         return Backup.run(command, filters)
 

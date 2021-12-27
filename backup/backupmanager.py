@@ -1,5 +1,3 @@
-import os
-import sys
 import xattr
 
 from libs.cli import Cli
@@ -11,9 +9,6 @@ from .backup import Backup
 from .path import Path
 from .profilemanager import ProfileManager
 from . import parser
-
-args = sys.argv[1:]
-
 
 class BackupManager:
     ignore_names = Path.ignore_names.load()
@@ -28,8 +23,13 @@ class BackupManager:
     @staticmethod
     def check(command, **kwargs):
         ProfileManager.save_active()
-        filters = BackupManager.get_filters(pull=command == "pull")
+        filters = BackupManager.get_pull_filters() if command == "pull" else BackupManager.get_filters()
         if filters:
+            if command == "status":
+                print("Checking..")
+                show_filters = sorted([f.replace("+ /", "") for f in filters[:10]])
+                for f in show_filters:
+                    print(f)
             return BackupManager.sync(command, filters, **kwargs)
 
     @staticmethod
@@ -49,68 +49,69 @@ class BackupManager:
         if command =="pull":
             ProfileManager.reload()
         return result
-            
-    @staticmethod
-    def get_filters(pull=False):
-        paths = BackupManager.get_paths(exclusions=pull)
-        if pull:
-            paths = [p.relative_to(Path.home) for p in paths] + BackupManager.ignore_patterns
-        else:
-            timestamps = Path.timestamps.load()
-            BackupManager.timestamps = {
-                str(p.relative_to(Path.home)): p.stat().st_mtime for p in paths if p.exists()
-            }
-            paths = BackupManager.calculate_difference(BackupManager.timestamps, timestamps)
 
-        filters = parser.make_filters(
-            includes=paths if not pull else [],
-            excludes=paths if pull else [],
-            recursive=False,
-            include_others=pull
-        )
+    @staticmethod
+    def get_filters():
+        new_timestamps = BackupManager.calculate_timestamps()
+        timestamps = Path.timestamps.load()
+        paths = parser.calculate_difference(new_timestamps, timestamps)
+        filters = parser.make_filters(includes=paths, recursive=False)
         return filters
 
     @staticmethod
-    def get_paths(exclusions=False):
-        condition = BackupManager.exclude if exclusions else None
-        exclude = BackupManager.exclude if not exclusions else None
+    def calculate_timestamps():
+        paths = BackupManager.load_path_config()
+        items = []
+        for (path, include) in paths:
+            path = Path.home / path
+            if include:
+                for item in path.find(condition=None, exclude=BackupManager.exclude):
+                    items.append(item)
+            BackupManager.ignore_paths.add(path)
 
-        paths = Path.paths_include.load()
-        paths = parser.parse_paths(paths)
-        paths = [
-            item for path in paths for item in (Path.home / path).find(condition=condition, exclude=exclude)
-        ]
-        return paths
+        BackupManager.timestamps = { # cache because needed later
+            str(p.relative_to(Path.home)): int(p.stat().st_mtime) for p in items if p.exists()
+        }
+        return BackupManager.timestamps
+
+    @staticmethod
+    def get_pull_filters():
+        paths = BackupManager.load_path_config()
+        filters = []
+        for (path, include) in paths:
+            if include:
+                for item in (Path.home / path).find(condition=BackupManager.exclude):
+                    filters += parser.make_filters(excludes=[item.relative_to(Path.home)], recursive=True)
+                filters += parser.make_filters(includes=[path, f"{path}/**"], recursive=False)
+            else:
+                BackupManager.ignore_paths.add(Path.home / path)
+                filters += parser.make_filters(excludes=[path, f"{path}/**"], recursive=False)
+
+        filters += parser.make_filters(excludes=BackupManager.ignore_patterns, recursive=False)
+        return filters
+
+    @staticmethod
+    def load_path_config():
+        return parser.parse_paths_comb(
+            Path.paths_include.load(),
+            Path.paths_exclude.load()
+        )
 
     @staticmethod
     def exclude(path: Path):
         return (
-            path.name in BackupManager.ignore_names
+            path in BackupManager.ignore_paths
+            or path.name in BackupManager.ignore_names
             or (path / ".git").exists()
             or path.is_symlink()
             or (path.is_file() and xattr.xattr(path).list())
             or path.stat().st_size > 50 * 10 ** 6
-            or path in BackupManager.ignore_paths
         )
-
-    @staticmethod
-    def calculate_difference(new, old):
-        new_copy = {k: v for k, v in new.items()}
-        old_copy = {k: v for k, v in old.items()}
-
-        if "all" not in args:
-            for path in old:
-                if path in new and new[path] == old[path]:
-                    old_copy.pop(path)
-                    new_copy.pop(path)
-
-        paths = set(list(old_copy) + list(new_copy))
-        return paths
 
     @staticmethod
     def save_timestamps():
         if BackupManager.timestamps is None:
-            BackupManager.get_paths()
+            BackupManager.get_filters()
         Path.timestamps.save(BackupManager.timestamps)
 
     @staticmethod

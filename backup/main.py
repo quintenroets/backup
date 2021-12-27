@@ -11,7 +11,7 @@ def main():
         _main()
 
 
-def _main()
+def _main():
     parser = argparse.ArgumentParser(description='Automate common git workflows')
     parser.add_argument('action', nargs='?', help='The action to do [status, push, pull, sync, check]', default="check")
     parser.add_argument('option', nargs='?', help='Check browser or not', default="")

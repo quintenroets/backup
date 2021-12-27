@@ -1,7 +1,6 @@
 import xattr
 
 from libs.cli import Cli
-from libs.climessage import CliMessage
 from libs.output_copy import Output
 from libs.tagmanager import TagManager
 
@@ -126,18 +125,16 @@ class BackupManager:
         if command == "push":
             ignores = ["Cache", "Code Cache", "Application Cache", "CacheStorage", "ScriptCache", "GPUCache"]
             flags = "".join([
-                f"-x '*/{i}/*' " for i in ignores
+                f"-x'*/{i}/*' " for i in ignores
             ])
-            if config_save_file.exists():
-                flags += " -f" # only add changes to zip
-
-            with CliMessage("Compressing.."):
-                # make sure that all zipped files have the same root
-                Cli.run(
-                    f"zip -r -q {flags} '{config_save_file}' '{config_folder.name}'", pwd=config_save_file.parent
+            command = (
+                f"zip -r -q -f '{config_save_file}' {flags} '{config_folder.name}'" # only compress changes
+                if config_save_file.exists()
+                else f"zip -r -q - {flags} '{config_folder.name}' | tqdm --bytes --desc='Compressing' > '{config_save_file}'"
                 )
-            with CliMessage("Uploading.."):
-                Backup.upload(local, remote, filters=filters)
+            # make sure that all zipped files have the same root
+            Cli.run(command, pwd=config_folder.parent)
+            Backup.upload(local, remote, filters=filters)
 
         elif command == "pull":
             Backup.download(local, remote, filters=filters)

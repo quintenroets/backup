@@ -26,10 +26,10 @@ class BackupManager:
         filters = BackupManager.get_pull_filters() if command == "pull" else BackupManager.get_filters()
         if filters:
             if command == "status":
-                print("Checking..")
-                show_filters = sorted([f.replace("+ /", "") for f in filters[:10]])
-                for f in show_filters:
-                    print(f)
+                show_filters = sorted(["  " + f.replace("+ /", "") for f in filters[:10]])
+                message = "\n".join(["Checking..", *show_filters, ""])
+                print(message)
+
             return BackupManager.sync(command, filters, **kwargs)
 
     @staticmethod

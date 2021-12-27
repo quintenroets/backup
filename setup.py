@@ -21,7 +21,7 @@ setup(
     install_requires=read("requirements.txt"),
     entry_points={
         "console_scripts": [
-            "drive = backup.starter:main",
+            "drive = backup.main:main",
             "drivesync = backup.syncer:main",
             "watcher = backup.watcher:main",
         ]

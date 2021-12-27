@@ -11,7 +11,8 @@ from .path import Path
 
 def main():
     while True:
-        time.sleep(8 * 60 * 60)
+        #time.sleep(8 * 60 * 60)
+        time.sleep(10 * 60)
         Thread(target=check_changes).start()
 
 def check_changes():
@@ -43,7 +44,8 @@ def process_changes(changes):
         "",
         *changes
     ])
-    push_changes = Gui.ask_yn(question) if not interactive else ask("\nPush?")
+    push_changes = not interactive or ask("\nPush?")
+    #push_changes = Gui.ask_yn(question) if not interactive else ask("\nPush?")
     if push_changes:
         print("Pushing..")
         Cli.run("drive push")

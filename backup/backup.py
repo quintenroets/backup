@@ -23,7 +23,7 @@ class Backup:
     @staticmethod
     def compare(folder, remote, filters=[]):
         total_option = ""
-        # amount of checks knows if only include filters
+        # amount of checks known if only include filters
         if all([f.startswith("+") for f in filters]):
             folder = Path(folder)            
             files = [f for f in filters if (folder / f[3:]).is_file()]
@@ -35,8 +35,8 @@ class Backup:
             "check --combined -"                        # for every file: report +/-/*/=
              " --log-file /dev/null"                    # command throws errors if not match: discard error messages
              f" \"{folder}\" \"{remote}\""              # compare folder with remote
-             f" | tqdm  --desc={title} {total_option}"   # pipe all output to tqdm that displays number of checks
-             #" | grep --color=never '^*\|^-\|^+'"       # only show changed items in stdout
+             f" | tqdm  --desc={title} {total_option}"  # pipe all output to tqdm that displays number of checks
+             #" | grep --color=never '^*\|^-\|^+'"      # only show changed items in stdout
              " || :"                                    # command throws errors if not match: catch error code
              )
         
@@ -55,7 +55,15 @@ class Backup:
     @staticmethod
     def run(command, filters=[]):
         filters_path = Backup.set_filters(filters + ["- **"])
-        command = f"rclone -L --skip-links --filter-from '{filters_path}' {command}"
+        options = {
+            "retries-sleep": "30s",
+            "retries": "5",
+            "log-file": "~/.config/scripts/backup/filters/log.out",
+            "skip-links": "",
+            "filter-from": f"'{filters_path}'"
+            }
+        options_string = " ".join([f"--{k} {v}" for k, v in options.items()])
+        command = f"rclone -L {options_string} {command}"
         try:
             Cli.run(command)
         finally:

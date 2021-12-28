@@ -1,4 +1,5 @@
 import xattr
+import time
 
 from libs.cli import Cli
 from libs.output_copy import Output
@@ -9,6 +10,7 @@ from .path import Path
 from .profilemanager import ProfileManager
 from . import parser
 
+
 class BackupManager:
     ignore_names = Path.ignore_names.load()
     ignore_patterns = Path.ignore_patterns.load()
@@ -17,10 +19,22 @@ class BackupManager:
         for pattern in ignore_patterns
         for path in Path.home.glob(pattern)
     }
+    visited = set({})
     timestamps = None
 
     @staticmethod
     def check(command, **kwargs):
+        succes = False
+        while not succes:
+            try:
+                BackupManager._check(command, **kwargs)
+            except Cli.Error:
+                time.sleep(5)
+            else:
+                succes = True
+
+    @staticmethod
+    def _check(command, **kwargs):
         ProfileManager.save_active()
         filters = BackupManager.get_pull_filters() if command == "pull" else BackupManager.get_filters()
         if filters:
@@ -48,6 +62,7 @@ class BackupManager:
 
     @staticmethod
     def calculate_timestamps():
+        BackupManager.visited = set({})
         paths = BackupManager.load_path_config()
         items = []
         for (path, include) in paths:
@@ -55,7 +70,7 @@ class BackupManager:
             if include:
                 for item in path.find(condition=None, exclude=BackupManager.exclude):
                     items.append(item)
-            BackupManager.ignore_paths.add(path)
+            BackupManager.visited.add(path)
 
         BackupManager.timestamps = { # cache because needed later
             str(p.relative_to(Path.home)): int(p.stat().st_mtime) for p in items if p.exists()
@@ -64,6 +79,7 @@ class BackupManager:
 
     @staticmethod
     def get_pull_filters():
+        BackupManager.visited = set({})
         paths = BackupManager.load_path_config()
         filters = []
         for (path, include) in paths:
@@ -72,7 +88,7 @@ class BackupManager:
                     filters += parser.make_filters(excludes=[item.relative_to(Path.home)], recursive=True)
                 filters += parser.make_filters(includes=[path, f"{path}/**"], recursive=False)
             else:
-                BackupManager.ignore_paths.add(Path.home / path)
+                BackupManager.visited.add(Path.home / path)
                 filters += parser.make_filters(excludes=[path, f"{path}/**"], recursive=False)
 
         filters += parser.make_filters(excludes=BackupManager.ignore_patterns, recursive=False)
@@ -89,6 +105,7 @@ class BackupManager:
     def exclude(path: Path):
         return (
             path in BackupManager.ignore_paths
+            or path in BackupManager.visited
             or path.name in BackupManager.ignore_names
             or (path / ".git").exists()
             or path.is_symlink()

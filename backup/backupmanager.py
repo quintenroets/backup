@@ -24,14 +24,11 @@ class BackupManager:
 
     @staticmethod
     def check(command, **kwargs):
-        succes = False
-        while not succes:
+        while True:
             try:
-                BackupManager._check(command, **kwargs)
+                return BackupManager._check(command, **kwargs)
             except Cli.Error:
                 time.sleep(5)
-            else:
-                succes = True
 
     @staticmethod
     def _check(command, **kwargs):

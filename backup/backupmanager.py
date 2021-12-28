@@ -31,9 +31,10 @@ class BackupManager:
                 time.sleep(5)
 
     @staticmethod
-    def _check(command, **kwargs):
+    def _check(command, filters=None, **kwargs):
         ProfileManager.save_active()
-        filters = BackupManager.get_pull_filters() if command == "pull" else BackupManager.get_filters()
+        if filters is None:
+            filters = BackupManager.get_pull_filters() if command == "pull" else BackupManager.get_filters()
         if filters:
             return BackupManager.sync(command, filters, **kwargs)
 

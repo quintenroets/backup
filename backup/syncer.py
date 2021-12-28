@@ -44,8 +44,8 @@ def process_changes(changes):
     push_changes = not interactive or ask("\nPush?")
     #push_changes = Gui.ask_yn(question) if not interactive else ask("\nPush?")
     if push_changes:
-        print("Pushing..")
-        Cli.run("drive push")
+        filters = [f"+ {c[2:]}" for c in changes]
+        BackupManager.check("push", filters=filters)
 
 if __name__ == "__main__":
     main()

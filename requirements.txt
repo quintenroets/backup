@@ -1,5 +1,4 @@
 pyinotify
-konsave
 xattr
 tqdm
 libs @ git+https://@github.com/quintenroets/libs

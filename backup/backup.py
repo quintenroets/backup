@@ -1,4 +1,5 @@
 from libs.cli import Cli
+from libs.output_copy import Output
 from .path import Path
 
 from datetime import datetime
@@ -21,9 +22,28 @@ class Backup:
 
     @staticmethod
     def compare(folder, remote, filters=[]):
+        total_option = ""
+        # amount of checks knows if only include filters
+        if all([f.startswith("+") for f in filters]):
+            folder = Path(folder)            
+            files = [f for f in filters if (folder / f[3:]).is_file()]
+            total_option = f"--total={len(files)}"
+            
         remote = f"{remote_root}{remote}"
-        command = f"check --combined - --log-file /dev/null \"{folder}\" \"{remote}\" | grep --color=never '^*\|^-\|^+'"
-        return Backup.run(command, filters)
+        title = "Checks"
+        command = (
+            "check --combined -"                        # for every file: report +/-/*/=
+             " --log-file /dev/null"                    # command throws errors if not match: discard error messages
+             f" \"{folder}\" \"{remote}\""              # compare folder with remote
+             f" | tqdm  --desc={title} {total_option}"   # pipe all output to tqdm that displays number of checks
+             " | grep --color=never '^*\|^-\|^+'"       # only show changed items in stdout
+             " || :"                                    # command throws errors if not match: catch error code
+             )
+        
+        with Output() as out:
+            Backup.run(command, filters)
+        result = [line for line in str(out).split("\n") if line and f"{title}:" not in line] # filter tqdm output
+        return result
 
     @staticmethod
     def sync(source, dest, filters=[], delete_missing=True, quiet=False):
@@ -37,7 +57,7 @@ class Backup:
         filters_path = Backup.set_filters(filters + ["- **"])
         command = f"rclone -L --skip-links --filter-from '{filters_path}' {command}"
         try:
-            Cli.run(command, check=False) # rclone throws error if nothing changed
+            Cli.run(command)
         finally:
             # catch interruptions
             filters_path.unlink()

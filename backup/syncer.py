@@ -24,9 +24,7 @@ def check_changes():
     
     if changes:
         check_ignores = [f"* {ig}" for ig in Path.check_ignores.load()]
-        changes = [
-            o for o in changes.split("\n") if o and o not in check_ignores
-        ]
+        changes = [c for c in changes if c not in check_ignores]
 
     if changes:
         process_changes(changes)

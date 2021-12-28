@@ -24,30 +24,19 @@ class BackupManager:
         ProfileManager.save_active()
         filters = BackupManager.get_pull_filters() if command == "pull" else BackupManager.get_filters()
         if filters:
-            if command == "status":
-                show_filters = sorted(["  " + f.replace("+ /", "") for f in filters[:10]])
-                message = "\n".join(["Checking..", *show_filters, ""])
-                print(message)
-
             return BackupManager.sync(command, filters, **kwargs)
 
     @staticmethod
     def sync(command, filters, src=Path.home, dst="Home"):
         kwargs = {"delete_missing": True} if command == "pull" else {}
         sync = Backup.get_function(command)
-        if command == "status":
-            with Output() as out:
-                sync(src, dst, filters=filters, **kwargs)
-        else:
-            sync(src, dst, filters=filters, **kwargs)
-            out = ""
-            
-        result = str(out)
-        if command != "status" or not result:
+        res = sync(src, dst, filters=filters, **kwargs)
+        
+        if command != "status" or not res:
             BackupManager.save_timestamps()
         if command =="pull":
             ProfileManager.reload()
-        return result
+        return res
 
     @staticmethod
     def get_filters():

@@ -110,7 +110,7 @@ class BackupManager:
     @staticmethod
     def save_timestamps():
         if BackupManager.timestamps is None:
-            BackupManager.get_filters()
+            BackupManager.calculate_timestamps()
         Path.timestamps.save(BackupManager.timestamps)
 
     @staticmethod

@@ -36,7 +36,7 @@ class Backup:
              " --log-file /dev/null"                    # command throws errors if not match: discard error messages
              f" \"{folder}\" \"{remote}\""              # compare folder with remote
              f" | tqdm  --desc={title} {total_option}"   # pipe all output to tqdm that displays number of checks
-             " | grep --color=never '^*\|^-\|^+'"       # only show changed items in stdout
+             #" | grep --color=never '^*\|^-\|^+'"       # only show changed items in stdout
              " || :"                                    # command throws errors if not match: catch error code
              )
         

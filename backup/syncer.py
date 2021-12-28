@@ -1,6 +1,5 @@
 import sys
 import time
-from threading import Thread
 
 from libs.cli import Cli
 from libs.gui import Gui
@@ -13,7 +12,7 @@ def main():
     while True:
         #time.sleep(8 * 60 * 60)
         time.sleep(10 * 60)
-        Thread(target=check_changes).start()
+        check_changes()
 
 def check_changes():
     interactive = sys.stdin.isatty()

@@ -66,7 +66,7 @@ class BackupManager:
         for (path, include) in paths:
             path = Path.home / path
             if include:
-                for item in path.find(condition=None, exclude=BackupManager.exclude):
+                for item in path.find(exclude=BackupManager.exclude):
                     items.append(item)
             BackupManager.visited.add(path)
 

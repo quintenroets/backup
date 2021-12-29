@@ -40,7 +40,7 @@ if not installed:
 
 filename = "rclone.conf"
 src = Path(__file__).parent / "assets" / filename
-dst = Path.home / ".config" / "rclone" / filename
+dst = Path.HOME / ".config" / "rclone" / filename
 
 
 if not dst.exists():
@@ -51,4 +51,4 @@ if not dst.exists():
     src.rename(dst)
     
     paths = Path.assets / NAME / "paths"
-    Backup.download(Path.home, "Home", filters=[f"+ /{paths.relative_to(Path.home)}/**"])
+    Backup.download(Path.HOME, "Home", filters=[f"+ /{paths.relative_to(Path.HOME)}/**"])

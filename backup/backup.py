@@ -56,16 +56,16 @@ class Backup:
     def run(command, filters=[]):
         filters_path = Backup.set_filters(filters + ["- **"])
         options = {
+            "copy-links": "",
             "retries-sleep": "30s",
             "retries": "5",
             "log-file": "~/.config/scripts/backup/filters/log.out",
             "skip-links": "",
             "filter-from": f"'{filters_path}'"
             }
-        options_string = " ".join([f"--{k} {v}" for k, v in options.items()])
-        command = f"rclone -L {options_string} {command}"
+        options= " ".join([f"--{k} {v}" for k, v in options.items()])
         try:
-            Cli.run(command)
+            Cli.run(f"rclone {options} {command}")
         finally:
             # catch interruptions
             filters_path.unlink()

@@ -19,7 +19,7 @@ class ProfileManager:
 
     @staticmethod
     def save(name):
-        ProfileManager.copy(Path.home, Path.profiles / name)
+        ProfileManager.copy(Path.HOME, Path.profiles / name)
 
     @staticmethod
     def load(name):
@@ -28,7 +28,7 @@ class ProfileManager:
         """
         source = Path.profiles / name
         if source.exists():
-            ProfileManager.copy(source, Path.home)
+            ProfileManager.copy(source, Path.HOME)
 
     @staticmethod
     def apply(name):

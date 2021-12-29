@@ -5,7 +5,6 @@ from libs.path import Path
 
 from .backupmanager import BackupManager
 from .syncer import check_changes
-from .parser import make_filters
 
 
 def main():
@@ -27,8 +26,10 @@ def _main():
         BackupManager.check_browser(args.action)
     else:
         if "." in args.option:
-            rec = args.option == ".."
-            filters = make_filters(includes=[f"{Path.cwd().relative_to(Path.home)}/*"], recursive = rec)
+            pattern = str(Path.cwd().relative_to(Path.Home)) + "/*"
+            if args.option == "..":
+                pattern += "*"
+            filters = [f"+ /{pattern}"]
         else:
             filters = None
         BackupManager.check(args.action, filters=filters)

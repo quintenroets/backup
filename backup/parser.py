@@ -6,7 +6,7 @@ def parse_paths(structure):
 
 
 def make_filters(includes=[], excludes=[], recursive=True, include_others=False):
-    addition = "**" if recursive else ""
+    addition = "/**" if recursive else ""
     mapping = {"+": includes, "-": excludes}
     filters = []
     for symbol, paths in mapping.items():

@@ -17,7 +17,7 @@ class BackupManager:
     ignore_paths = {
         path
         for pattern in ignore_patterns
-        for path in Path.home.glob(pattern)
+        for path in Path.HOME.glob(pattern)
     }
     visited = set({})
     timestamps = None
@@ -39,12 +39,12 @@ class BackupManager:
             return BackupManager.sync(command, filters, **kwargs)
 
     @staticmethod
-    def sync(command, filters, src=Path.home, dst="Home"):
+    def sync(command, filters, src=Path.HOME, dst="Home"):
         kwargs = {"delete_missing": True} if command == "pull" else {}
         sync = Backup.get_function(command)
         res = sync(src, dst, filters=filters, **kwargs)
         
-        if command != "status" or not res:
+        if command != "status" or not any([r for r in res if "=" not in r]):
             BackupManager.save_timestamps()
         if command =="pull":
             ProfileManager.reload()
@@ -64,29 +64,31 @@ class BackupManager:
         paths = BackupManager.load_path_config()
         items = []
         for (path, include) in paths:
-            path = Path.home / path
+            path = Path.HOME / path
             if include:
                 for item in path.find(exclude=BackupManager.exclude):
                     items.append(item)
             BackupManager.visited.add(path)
-
         BackupManager.timestamps = { # cache because needed later
-            str(p.relative_to(Path.home)): int(p.stat().st_mtime) for p in items if p.exists()
+            str(p.relative_to(Path.HOME)): int(p.stat().st_mtime) for p in items if p.exists()
         }
         return BackupManager.timestamps
 
     @staticmethod
     def get_pull_filters():
         BackupManager.visited = set({})
-        paths = BackupManager.load_path_config()
+        paths = parser.parse_paths_comb(
+            Path.paths_include_pull.load(),
+            Path.paths_exclude.load()
+        )
         filters = []
         for (path, include) in paths:
             if include:
-                for item in (Path.home / path).find(condition=BackupManager.exclude):
-                    filters += parser.make_filters(excludes=[item.relative_to(Path.home)], recursive=True)
-                filters += parser.make_filters(includes=[path, f"{path}/**"], recursive=False)
+                for item in (Path.HOME / path).find(condition=BackupManager.exclude):
+                    filters += parser.make_filters(excludes=[item.relative_to(Path.HOME)])
+                filters += parser.make_filters(includes=[path], recursive=(Path.HOME / path).is_dir())
             else:
-                BackupManager.visited.add(Path.home / path)
+                BackupManager.visited.add(Path.HOME / path)
                 filters += parser.make_filters(excludes=[path, f"{path}/**"], recursive=False)
 
         filters += parser.make_filters(excludes=BackupManager.ignore_patterns, recursive=False)

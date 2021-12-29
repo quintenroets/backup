@@ -7,6 +7,7 @@ Path.ignore_names = Path.paths / "ignore_names"
 Path.ignore_patterns = Path.paths / "ignore_patterns"
 Path.check_ignores = Path.paths / "check_ignores"
 Path.paths_include = Path.paths / "include"
+Path.paths_include_pull = Path.paths / "pull_include"
 Path.paths_exclude = Path.paths / "exclude"
 
 Path.timestamps = Path.root / "timestamps" / "timestamps"

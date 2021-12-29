@@ -13,7 +13,8 @@ class Backup:
     @staticmethod
     def upload(folder, remote, filters=[]):
         remote = f"{remote_root}{remote}"
-        Backup.sync(folder, remote, filters)
+        options = {"update": ""} # don't overwrite files that are newer on dest
+        Backup.sync(folder, remote, filters, options=options)
 
     @staticmethod
     def download(folder, remote, filters=[], delete_missing=False):
@@ -46,11 +47,15 @@ class Backup:
         return result
 
     @staticmethod
-    def sync(source, dest, filters=[], delete_missing=True, quiet=False):
+    def sync(source, dest, filters=[], delete_missing=True, quiet=False, options=None):
+        if options is None:
+            options = {}
+        
         verbosity = "quiet" if quiet else "progress"
-        options = {verbosity : ""}
-        command = "sync --create-empty-src-dirs" if delete_missing else "copy"
-        command = f"{command} \"{source}\" \"{dest}\""
+        options[verbosity] = ""
+        
+        action = "sync --create-empty-src-dirs" if delete_missing else "copy"
+        command = f"{action} \"{source}\" \"{dest}\""
         Backup.run(command, filters, options)
 
     @staticmethod

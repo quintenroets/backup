@@ -108,7 +108,7 @@ class BackupManager:
             or (path / ".git").exists()
             or path.is_symlink()
             or (path.is_file() and xattr.xattr(path).list())
-            or path.stat().st_size > 50 * 10 ** 6
+            or (path.stat().st_size > 50 * 10 ** 6 and path.suffix != ".zip")
         )
 
     @staticmethod

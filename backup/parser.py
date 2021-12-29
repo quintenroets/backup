@@ -1,16 +1,17 @@
 from .path import Path
 
+
 def parse_paths(structure):
     tuples = parse_paths_comb(structure, {}, root=Path(""))
     return [t[0] for t in tuples]
 
 
-def make_filters(includes=[], excludes=[], recursive=True, include_others=False):
-    addition = "/**" if recursive else ""
+def make_filters(includes=[], excludes=[], recursive=True, include_others=False, root=Path.HOME):
     mapping = {"+": includes, "-": excludes}
     filters = []
     for symbol, paths in mapping.items():
         for path in paths:
+            addition = "/**" if recursive and (root / path).is_dir() else ""
             filter = f'{symbol} /{path}{addition}'
             filters.append(filter)
 

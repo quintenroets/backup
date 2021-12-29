@@ -47,10 +47,12 @@ class Backup:
         return result
 
     @staticmethod
-    def sync(source, dest, filters=[], delete_missing=True, quiet=False, options=None):
+    def sync(source, dest, filters=[], delete_missing=True, quiet=False, options=None, overwrite_newer=False):
         if options is None:
             options = {}
-            options = {"update": ""} # don't overwrite files that are newer on dest
+            
+        if not overwrite_newer:
+            options["update"] = "" # don't overwrite files that are newer on dest
         
         verbosity = "quiet" if quiet else "progress"
         options[verbosity] = ""
@@ -69,7 +71,6 @@ class Backup:
             "retries": "5",
             "retries-sleep": "30s",
             
-            "log-file": "~/.config/scripts/backup/filters/log.out",
             "order-by": "size,desc", # send largest files first
             # "fast-list": "", bad option: makes super slow
             

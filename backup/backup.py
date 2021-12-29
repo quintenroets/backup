@@ -50,6 +50,7 @@ class Backup:
     def sync(source, dest, filters=[], delete_missing=True, quiet=False, options=None):
         if options is None:
             options = {}
+            options = {"update": ""} # don't overwrite files that are newer on dest
         
         verbosity = "quiet" if quiet else "progress"
         options[verbosity] = ""
@@ -70,6 +71,7 @@ class Backup:
             
             "log-file": "~/.config/scripts/backup/filters/log.out",
             "order-by": "size,desc", # send largest files first
+            # "fast-list": "", bad option: makes super slow
             
             "exclude-if-present": ".gitignore",
             "filter-from": f"'{filters_path}'",

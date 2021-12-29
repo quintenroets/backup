@@ -1,9 +1,11 @@
 import argparse
 
 from libs.errorhandler import ErrorHandler
+from libs.path import Path
 
 from .backupmanager import BackupManager
 from .syncer import check_changes
+from .parser import make_filters
 
 
 def main():
@@ -24,7 +26,12 @@ def _main():
     elif args.option == "browser":
         BackupManager.check_browser(args.action)
     else:
-        BackupManager.check(args.action)
+        if "." in args.option:
+            rec = args.option == ".."
+            filters = make_filters(includes=[f"{Path.cwd().relative_to(Path.home)}/*"], recursive = rec)
+        else:
+            filters = None
+        BackupManager.check(args.action, filters=filters)
 
 
 if __name__ == "__main__":

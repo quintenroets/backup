@@ -44,7 +44,7 @@ class BackupManager:
         sync = Backup.get_function(command)
         res = sync(src, dst, filters=filters, **kwargs)
         
-        if command != "status" or not any([r for r in res if "=" not in r]):
+        if command == "push" or (command == "status" and not any([r for r in res if "=" not in r])):
             BackupManager.save_timestamps()
         if command =="pull":
             ProfileManager.reload()
@@ -77,10 +77,7 @@ class BackupManager:
     @staticmethod
     def get_pull_filters():
         BackupManager.visited = set({})
-        paths = parser.parse_paths_comb(
-            Path.paths_include_pull.load(),
-            Path.paths_exclude.load()
-        )
+        paths = BackupManager.load_path_config()
         filters = []
         for (path, include) in paths:
             if include:

@@ -25,10 +25,14 @@ def _main():
     elif args.option == "browser":
         BackupManager.check_browser(args.action)
     else:
-        if "." in args.option:
-            pattern = str(Path.cwd().relative_to(Path.Home)) + "/*"
-            if args.option == "..":
-                pattern += "*"
+        if args.option:
+            if "." in args.option:
+                pattern = str(Path.cwd().relative_to(Path.Home)) + "/*"
+                if args.option == "..":
+                    pattern += "*"
+            else:
+                mapper = {"school": "Documents/School/**"}
+                pattern = mapper.get(args.option, args.option)
             filters = [f"+ /{pattern}"]
         else:
             filters = None

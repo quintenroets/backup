@@ -47,22 +47,30 @@ class Backup:
 
     @staticmethod
     def sync(source, dest, filters=[], delete_missing=True, quiet=False):
+        verbosity = "quiet" if quiet else "progress"
+        options = {verbosity : ""}
         command = "sync --create-empty-src-dirs" if delete_missing else "copy"
-        flag = "q" if quiet else "P"
-        command = f"-{flag} {command} \"{source}\" \"{dest}\""
-        Backup.run(command, filters)
+        command = f"{command} \"{source}\" \"{dest}\""
+        Backup.run(command, filters, options)
 
     @staticmethod
-    def run(command, filters=[]):
+    def run(command, filters=[], extra_options=None):
         filters_path = Backup.set_filters(filters + ["- **"])
         options = {
-            "copy-links": "",
-            "retries-sleep": "30s",
-            "retries": "5",
-            "log-file": "~/.config/scripts/backup/filters/log.out",
             "skip-links": "",
-            "filter-from": f"'{filters_path}'"
+            "copy-links": "",
+            
+            "retries": "5",
+            "retries-sleep": "30s",
+            
+            "log-file": "~/.config/scripts/backup/filters/log.out",
+            "order-by": "size,desc", # send largest files first
+            
+            "exclude-if-present": ".gitignore",
+            "filter-from": f"'{filters_path}'",
             }
+        if extra_options is not None:
+            options.update(extra_options)
         options= " ".join([f"--{k} {v}" for k, v in options.items()])
         try:
             Cli.run(f"rclone {options} {command}")

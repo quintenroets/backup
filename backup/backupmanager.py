@@ -25,11 +25,14 @@ class BackupManager:
     visited = set({})
     
     @staticmethod
-    def status():
+    def status(reverse=False):
         if not Path.backup_cache.exists():
             Cli.run(f"sudo mkdir {Path.backup_cache}", f"sudo chmod -R $(whoami):$(whoami) {Path.backup_cache}")
         filters = BackupManager.get_filters()
-        return Backup.compare(Path.HOME, Path.backup_cache, filters=filters)
+        src, dst = Path.HOME, Path.backup_cache
+        if reverse:
+            src, dst = dst, src
+        return Backup.compare(src, dst, filters=filters)
     
     @staticmethod
     def push():
@@ -67,29 +70,33 @@ class BackupManager:
     def direct_pull(option):
         if option == ".":
             option = Path.cwd().relative_to(Path.HOME) if Path.cwd() != Path.HOME else ""
+        option = ""
         
         lines = Cli.get(f"rclone lsl {Path.remote}/{option}").split("\n")
         changes = []
-        remotes = set({})
+        present = set({})
+        
+        # set cache to remote mod time
         for line in lines:
             size, date, time, *names = line.strip().split(" ")
             path = Path.HOME / option / " ".join(names)
-            mtime = datetime.strptime(f"{date} {time[:-3]}", '%Y-%m-%d %H:%M:%S.%f').timestamp()
-            if not path.exists() or mtime > path.stat().st_mtime:
-                changes.append(f"+ {path.relative_to(Path.HOME)}")
-            else:
-                remotes.add(path)
-        """
-        BackupManager.get_filters() # activate excludes
-        for path in (Path.HOME / option).find(exclude=BackupManager.exclude):
-            if path not in remotes and path.is_file():
-                changes.append(f"- {path.relative_to(Path.HOME)}")""" # dont check remote deletes
-                
+            mtime = int(datetime.strptime(f"{date} {time[:-3]}", '%Y-%m-%d %H:%M:%S.%f').timestamp())
+            cache_path = Path.backup_cache / option / ' '.join(names)
+            if not cache_path.exists() or mtime != cache_path.mtime():
+                Cli.run(f'touch "{cache_path}" -d @{mtime}')
+            present.add(cache_path)
         
-        filters = [f"+ /{c[2:]}" for c in changes]
-        if filters:
-            print("\n".join(changes))
+        # delete cache items not in remote
+        def is_deleted(p):
+            return p.is_file() and p not in present
+            
+        for deleted in (Path.backup_cache / option).find(is_deleted, recurse_on_match=True):
+            deleted.unlink()
+            
+        changes = BackupManager.status(reverse=True)
+        if changes:
             if climessage.ask("\nPull?"):
+                filters = [f"+ /{c[2:]}" for c in changes]
                 Backup().download(*filters, quiet=False, delete_missing=True)
                 Backup.copy(Path.HOME, Path.backup_cache, filters=filters, delete_missing=True)
         
@@ -105,7 +112,7 @@ class BackupManager:
                     if item.is_file():
                         pattern = item.relative_to(Path.HOME)
                         mirror = Path.backup_cache / pattern
-                        if not mirror.exists() or item.stat().st_mtime != mirror.stat().st_mtime:
+                        if not mirror.exists() or int(item.stat().st_mtime) != int(mirror.stat().st_mtime):
                             if not xattr.xattr(item).list():
                                 items.add(pattern)
             BackupManager.visited.add(path)
@@ -114,7 +121,7 @@ class BackupManager:
             if p.is_file():
                 mirror = Path.HOME / p.relative_to(Path.backup_cache)
                 try:
-                    match = p.stat().st_mtime != mirror.stat().st_mtime
+                    match = p.mtime() != mirror.mtime()
                 except FileNotFoundError:
                     match = True
                 return match
@@ -157,7 +164,7 @@ class BackupManager:
             ])
             command = (
                 f"zip -r -q -u '{config_save_file}' {flags} '{config_folder.name}'" # only compress changes
-                if config_save_file.exists()
+                if config_save_file.exists() and False # zip update is not a good idea
                 else f"zip -r -q - {flags} '{config_folder.name}' | tqdm --bytes --desc='Compressing' > '{config_save_file}'"
                 )
             # make sure that all zipped files have the same root

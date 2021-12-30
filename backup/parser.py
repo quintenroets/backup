@@ -32,21 +32,8 @@ def parse_paths_comb(include, exclude, root=None):
             tuple(s.structures.get(subroot, Structure([])) for s in (include, exclude))
             for subroot in (include.structures | exclude.structures)
         ]
-
+        
     return paths[::-1]
-
-
-def calculate_difference(new, old):
-    new_copy = {k: v for k, v in new.items()}
-    old_copy = {k: v for k, v in old.items()}
-
-    for path in old:
-        if path in new and new[path] == old[path]:
-            old_copy.pop(path)
-            new_copy.pop(path)
-
-    paths = set(list(old_copy) + list(new_copy))
-    return paths
 
 
 class Structure:
@@ -58,12 +45,15 @@ class Structure:
         self.structures = {}
 
         for item in items:
-            if isinstance(item, dict):
-                subroot, subitems = next(iter(item.items()))
-                subroot, *parts = subroot.split("/")
-                if parts: # properly set path after / to sublevel
-                    subitems = [{"/".join(parts): subitems}]
-                item = Structure(subitems, root / subroot)
-                self.structures[subroot] = item
+            if not isinstance(item, dict):
+                item = {item: []}
+            
+            name, subitems = next(iter(item.items()))
+            name, *parts = name.split("/")
+            subroot = root / name
+            if parts: # properly set path after / to sublevel
+                subitems = [{"/".join(parts): subitems}]
+            if subitems:
+                self.structures[name] = Structure(subitems, subroot)
             else:
-                self.items.append(root / item)
+                self.items.append(subroot)

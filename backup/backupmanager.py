@@ -1,9 +1,10 @@
 import xattr
-import time
-
+import sys
 from libs.cli import Cli
+from libs import climessage
 from libs.output_copy import Output
 from libs.tagmanager import TagManager
+from libs.threading import Thread
 
 from .backup import Backup
 from .path import Path
@@ -20,76 +21,76 @@ class BackupManager:
         for path in Path.HOME.glob(pattern)
     }
     visited = set({})
-    timestamps = None
-
+    
     @staticmethod
-    def check(command, **kwargs):
-        while True:
-            try:
-                return BackupManager._check(command, **kwargs)
-            except Cli.Error:
-                time.sleep(5)
-
+    def status():
+        if not Path.backup_cache.exists():
+            Cli.run(f"sudo mkdir {Path.backup_cache}", f"sudo chmod -R $(whoami):$(whoami) {Path.backup_cache}")
+        filters = BackupManager.get_filters()
+        return Backup.compare(Path.HOME, Path.backup_cache, filters=filters)
+    
     @staticmethod
-    def _check(command, filters=None, **kwargs):
-        ProfileManager.save_active()
-        if filters is None:
-            filters = BackupManager.get_pull_filters() if command == "pull" else BackupManager.get_filters()
-        if filters:
-            return BackupManager.sync(command, filters, **kwargs)
-
+    def push():
+        title = "Drive"
+        print(title + "\n" + "=" * (len(title) + 2))
+        changes = BackupManager.status()
+        if changes:
+            BackupManager.process_changes(changes)
+        elif sys.stdin.isatty():
+            input("\nEveryting clean.\nPress enter to exit")
+            
     @staticmethod
-    def sync(command, filters, src=Path.HOME, dst="Home"):
-        kwargs = {"delete_missing": True} if command == "pull" else {}
-        sync = Backup.get_function(command)
-        res = sync(src, dst, filters=filters, **kwargs)
+    def process_changes(changes):
+        interactive = sys.stdin.isatty()
+        do_push = not interactive or climessage.ask("\nPush?")
+        if do_push:
+            Thread(BackupManager.start_push, changes).start()
+            
+    @staticmethod
+    def start_push(changes):
+        filters = [f"+ /{c[2:]}" for c in changes]
+        Backup.copy(Path.HOME, Path.remote, filters=filters, quiet=False, delete_missing=True)
+        Backup.copy(Path.HOME, Path.backup_cache, filters=filters, delete_missing=True)
         
-        if command == "push" or (command == "status" and not any([r for r in res if "=" not in r])):
-            BackupManager.save_timestamps()
-        if command =="pull":
-            ProfileManager.reload()
-        return res
-
+    @staticmethod
+    def pull():
+        first_time = not Path.backup_cache.exists()
+        filters = BackupManager.get_filters() if not first_time else "+ **"
+        Backup.copy(Path.backup_cache, Path.HOME, filters=filters, overwrite_newer=True, delete_missing=not first_time)
+        if first_time:
+            Backup.copy(Path.HOME, Path.backup_cache, filters=BackupManager.get_filters(), delete_missing=True)
+        ProfileManager.reload()
+        
     @staticmethod
     def get_filters():
-        new_timestamps = BackupManager.calculate_timestamps()
-        timestamps = Path.timestamps.load()
-        paths = parser.calculate_difference(new_timestamps, timestamps)
-        filters = parser.make_filters(includes=paths, recursive=False)
-        return filters
-
-    @staticmethod
-    def calculate_timestamps():
         BackupManager.visited = set({})
         paths = BackupManager.load_path_config()
-        items = []
+        items = set({})
         for (path, include) in paths:
             path = Path.HOME / path
             if include:
                 for item in path.find(exclude=BackupManager.exclude):
-                    items.append(item)
+                    if item.is_file():
+                        pattern = item.relative_to(Path.HOME)
+                        mirror = Path.backup_cache / pattern
+                        if not mirror.exists() or item.stat().st_mtime != mirror.stat().st_mtime:
+                            if not xattr.xattr(item).list():
+                                items.add(pattern)
             BackupManager.visited.add(path)
-        BackupManager.timestamps = { # cache because needed later
-            str(p.relative_to(Path.HOME)): int(p.stat().st_mtime) for p in items if p.exists()
-        }
-        return BackupManager.timestamps
-
-    @staticmethod
-    def get_pull_filters():
-        BackupManager.visited = set({})
-        paths = BackupManager.load_path_config()
-        filters = []
-        for (path, include) in paths:
-            if include:
-                for item in (Path.HOME / path).find(condition=BackupManager.exclude):
-                    filters += parser.make_filters(excludes=[item.relative_to(Path.HOME)])
-                filters += parser.make_filters(includes=[path], recursive=(Path.HOME / path).is_dir())
-            else:
-                BackupManager.visited.add(Path.HOME / path)
-                filters += parser.make_filters(excludes=[path, f"{path}/**"], recursive=False)
-
-        filters += parser.make_filters(excludes=BackupManager.ignore_patterns, recursive=False)
-        return filters
+        
+        def match(p):
+            if p.is_file():
+                mirror = Path.HOME / p.relative_to(Path.backup_cache)
+                try:
+                    match = p.stat().st_mtime != mirror.stat().st_mtime
+                except FileNotFoundError:
+                    match = True
+                return match
+            
+        new_items = list(Path.backup_cache.find(match, recurse_on_match=True))
+        for it in new_items:
+            items.add(it.relative_to(Path.backup_cache))
+        return parser.make_filters(includes=items)
 
     @staticmethod
     def load_path_config():
@@ -106,20 +107,12 @@ class BackupManager:
             or path.name in BackupManager.ignore_names
             or (path / ".git").exists()
             or path.is_symlink()
-            or (path.is_file() and xattr.xattr(path).list())
             or (path.stat().st_size > 50 * 10 ** 6 and path.suffix != ".zip")
         )
 
     @staticmethod
-    def save_timestamps():
-        if BackupManager.timestamps is None:
-            BackupManager.calculate_timestamps()
-        Path.timestamps.save(BackupManager.timestamps)
-
-    @staticmethod
     def check_browser(command):
-        local = Path.home
-        remote = "Home"
+        local = Path.HOME
 
         config_folder = local / "snap" / "chromium" / "common" / "chromium" / "Default"
         config_save_file = local / ".config" / "browser" / "config.zip"
@@ -131,16 +124,16 @@ class BackupManager:
                 f"-x'*/{i}/*' " for i in ignores
             ])
             command = (
-                f"zip -r -q -f '{config_save_file}' {flags} '{config_folder.name}'" # only compress changes
+                f"zip -r -q -u '{config_save_file}' {flags} '{config_folder.name}'" # only compress changes
                 if config_save_file.exists()
                 else f"zip -r -q - {flags} '{config_folder.name}' | tqdm --bytes --desc='Compressing' > '{config_save_file}'"
                 )
             # make sure that all zipped files have the same root
             Cli.run(command, pwd=config_folder.parent)
-            Backup.upload(local, remote, filters=filters)
+            Backup().upload(filters)
 
         elif command == "pull":
-            Backup.download(local, remote, filters=filters)
+            Backup().download(filters)
             config_folder.mkdir(parents=True, exist_ok=True)
             Cli.get(f"unzip -o '{config_save_file}' -d '{config_folder.parent}'")
         else:

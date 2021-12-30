@@ -15,7 +15,7 @@ class ProfileManager:
     def copy(source, dest):
         filters = ProfileManager.get_filters()
         # cannot use delete_missing because source and dest overlap partly
-        return Backup.sync(source, dest, filters=filters, delete_missing=False, quiet=True, overwrite_newer=True)
+        return Backup.copy(source, dest, filters=filters, delete_missing=False, quiet=True, overwrite_newer=True)
 
     @staticmethod
     def save(name):

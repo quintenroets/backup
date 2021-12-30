@@ -1,69 +1,50 @@
-from libs.cli import Cli
-from libs.output_copy import Output
-from .path import Path
-
 from datetime import datetime
 
-remote_root = "/home/autobackup/"
-remote_root = "backup:"
+from libs.cli import Cli
+from libs.output_copy import Output
+
+from .path import Path
+
+
 
 class Backup:
-    # remote root defined in .config/rclone/rclone.conf backup -> Google Drive: Autobackup
+    def __init__(local=None, remote=None):
+        self.local = local or Path.HOME
+        self.remote = remote or Path.remote
+        # remote mappings defined in .config/rclone/rclone.conf
+        
+    def upload(self, *filters, **kwargs):
+        return Backup.copy(self.local, self.remote, filters=filters, **kwargs)
+        
+    def download(self, *filters, **kwargs):
+        return Backup.copy(self.remote, self.local, filters=filters, **kwargs)
+    
+    @staticmethod
+    def copy(source, dest, filters=[], overwrite_newer=True, delete_missing=False, quiet=True):
+        action = "sync --create-empty-src-dirs" if delete_missing else "copy"
+        command = f'{action} "{source}" "{dest}"'
+        return Backup.run(
+            command, filters, update=not overwrite_newer, quiet=quiet, progress=not quiet
+            )
 
     @staticmethod
-    def upload(folder, remote, filters=[]):
-        remote = f"{remote_root}{remote}"
-        options = {"update": ""} # don't overwrite files that are newer on dest
-        Backup.sync(folder, remote, filters, options=options)
-
-    @staticmethod
-    def download(folder, remote, filters=[], delete_missing=False):
-        remote = f"{remote_root}{remote}"
-        Backup.sync(remote, folder, filters, delete_missing)
-
-    @staticmethod
-    def compare(folder, remote, filters=[]):
-        total_option = ""
-        # amount of checks known if only include filters
-        if all([f.startswith("+") for f in filters]):
-            folder = Path(folder)            
-            files = [f for f in filters if (folder / f[3:]).is_file()]
-            total_option = f"--total={len(files)}"
-            
-        remote = f"{remote_root}{remote}"
-        title = "Checks"
+    def compare(local, remote, filters=["+ **"]):
         command = (
-            "check --combined -"                        # for every file: report +/-/*/=
-             " --log-file /dev/null"                    # command throws errors if not match: discard error messages
-             f" \"{folder}\" \"{remote}\""              # compare folder with remote
-             f" | tqdm  --desc={title} {total_option}"  # pipe all output to tqdm that displays number of checks
-             #" | grep --color=never '^*\|^-\|^+'"      # only show changed items in stdout
-             " || :"                                    # command throws errors if not match: catch error code
+            "check --combined -"                    # for every file: report +/-/*/=
+             " --log-file /dev/null"                # command throws errors if not match: discard error messages
+             f" \"{local}\" \"{remote}\""           # compare folder with remote
+             " | grep --color=never '^*\|^-\|^+'"   # only show changed items in stdout
+             " || :"                                # command throws errors if not match: catch error code
              )
         
-        with Output() as out:
+        with Output() as o:
             Backup.run(command, filters)
-        result = [line for line in str(out).split("\n") if line and f"{title}:" not in line] # filter tqdm output
-        return result
-
+        changes = [line for line in str(o).split("\n") if line]
+        return changes
+    
     @staticmethod
-    def sync(source, dest, filters=[], delete_missing=True, quiet=False, options=None, overwrite_newer=False):
-        if options is None:
-            options = {}
-            
-        if not overwrite_newer:
-            options["update"] = "" # don't overwrite files that are newer on dest
-        
-        verbosity = "quiet" if quiet else "progress"
-        options[verbosity] = ""
-        
-        action = "sync --create-empty-src-dirs" if delete_missing else "copy"
-        command = f"{action} \"{source}\" \"{dest}\""
-        Backup.run(command, filters, options)
-
-    @staticmethod
-    def run(command, filters=[], extra_options=None):
-        filters_path = Backup.set_filters(filters + ["- **"])
+    def run(command, filters, **kwargs):
+        filters_path = Backup.set_filters(filters)
         options = {
             "skip-links": "",
             "copy-links": "",
@@ -77,32 +58,33 @@ class Backup:
             "exclude-if-present": ".gitignore",
             "filter-from": f"'{filters_path}'",
             }
-        if extra_options is not None:
-            options.update(extra_options)
-        options= " ".join([f"--{k} {v}" for k, v in options.items()])
+        
+        for k, v in kwargs.items():
+            if v != False:
+                options[k] = v if v != True else ""
+                
+        command_options= " ".join([f"--{k} {v}" for k, v in options.items()])
         try:
-            Cli.run(f"rclone {options} {command}")
+            Cli.run(f"rclone {command_options} {command}")
         finally:
             # catch interruptions
             filters_path.unlink()
 
     @staticmethod
     def set_filters(filters):
-        folder = Path.root / "filters"
-        folder.mkdir(parents=True, exist_ok=True)
-
-        # allow parallel runs without filter file conflicts
-        path = (folder / str(datetime.now())).with_suffix(".txt")
-        path.write_text(
-            "\n".join(filters)
-        )
+        filename = str(datetime.now()) # allow parallel runs without filter file conflicts
+        Path.filters.mkdir(parents=True, exist_ok=True)
+        path = (Path.filters / filename).with_suffix(".txt")
+        
+        filters = Backup.parse_filters(filters)
+        path.write_text(filters)
         return path
-
+        
     @staticmethod
-    def get_function(command):
-        functions_mapper = {
-            "push": Backup.upload,
-            "pull": Backup.download
-        }
-        function = functions_mapper.get(command, Backup.compare)
-        return function
+    def parse_filters(*filters):
+        if isinstance(filters[0], list):
+            filters = filters[0]
+            
+        filters = [f if f[0] in "+-" else f"+ {f}" for f in filters] + ["- **"]
+        filters = "\n".join(filters)
+        return filters

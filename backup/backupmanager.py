@@ -109,7 +109,7 @@ class BackupManager:
                 changes = []
         else:
             if interactive:
-                input("\nEveryting clean.\nPress enter to exit")
+                input("Everyting clean.\nPress enter to exit")
                 
         filters = [f"+ /{c[2:]}" for c in changes]
         return filters

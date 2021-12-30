@@ -109,7 +109,7 @@ class BackupManager:
                 changes = []
         else:
             if interactive:
-                print("Backup: everyting clean.")
+                print("Backup: clean")
                 
         filters = [f"+ /{c[2:]}" for c in changes]
         return filters

@@ -1,5 +1,7 @@
 import xattr
 import sys
+from datetime import datetime
+
 from libs.cli import Cli
 from libs import climessage
 from libs.output_copy import Output
@@ -60,6 +62,35 @@ class BackupManager:
         if first_time:
             Backup.copy(Path.HOME, Path.backup_cache, filters=BackupManager.get_filters(), delete_missing=True)
         ProfileManager.reload()
+        
+    @staticmethod
+    def direct_pull(option):
+        if option == ".":
+            option = Path.cwd().relative_to(Path.HOME)
+        
+        lines = Cli.get(f"rclone lsl {Path.remote}/{option}").split("\n")
+        changes = []
+        remotes = set({})
+        for line in lines:
+            size, date, time, *names = line.strip().split(" ")
+            path = Path.HOME / option / " ".join(names)
+            mtime = datetime.strptime(f"{date} {time[:-3]}", '%Y-%m-%d %H:%M:%S.%f').timestamp()
+            if not path.exists() or mtime > path.stat().st_mtime:
+                changes.append(f"+ {path.relative_to(Path.HOME)}")
+            else:
+                remotes.add(path)
+                
+        for path in (Path.HOME / option).rglob("*"):
+            if path not in remotes and path.is_file():
+                changes.append(f"- {path.relative_to(Path.HOME)}")
+                
+        
+        filters = [f"+ /{c[2:]}" for c in changes]
+        if filters:
+            print("\n".join(changes))
+            if climessage.ask("\nPull?"):
+                Backup().download(*filters, quiet=False, delete_missing=True)
+                Backup.copy(Path.HOME, Path.backup_cache, filters=filters, delete_missing=True)
         
     @staticmethod
     def get_filters():

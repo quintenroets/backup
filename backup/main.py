@@ -4,8 +4,8 @@ import argparse
 from libs.errorhandler import ErrorHandler
 from libs.path import Path
 
+from .backup import Backup
 from .backupmanager import BackupManager
-from . import syncer
 
 
 def main():
@@ -19,27 +19,17 @@ def _main():
     parser.add_argument('option', nargs='?', help='Check browser or not', default="")
     args = parser.parse_args()
     
-    if parser.option == "browser":
+    if args.option == "browser":
         BackupManager.check_browser(args.action)
     elif args.action == "status":
         BackupManager.status()
     elif args.action == "push":
         BackupManager.push()
     elif args.action == "pull":
-        BackupManager.pull()
-    return
-    if args.option:
-        if "." in args.option:
-            pattern = str(Path.cwd().relative_to(Path.Home)) + "/*"
-            if args.option == "..":
-                pattern += "*"
+        if args.option:
+            BackupManager.direct_pull(args.option)
         else:
-            mapper = {"school": "Documents/School/**"}
-            pattern = mapper.get(args.option, args.option)
-        filters = [f"+ /{pattern}"]
-    else:
-        filters = syncer.get_filters()
-    BackupManager.check(args.action, filters=filters)
+            BackupManager.pull(args.option)
 
 
 if __name__ == "__main__":

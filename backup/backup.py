@@ -8,7 +8,7 @@ from .path import Path
 
 
 class Backup:
-    def __init__(local=None, remote=None):
+    def __init__(self, local=None, remote=None):
         self.local = local or Path.HOME
         self.remote = remote or Path.remote
         # remote mappings defined in .config/rclone/rclone.conf
@@ -82,9 +82,8 @@ class Backup:
         
     @staticmethod
     def parse_filters(*filters):
-        if isinstance(filters[0], list):
+        if isinstance(filters[0], list) or isinstance(filters[0], tuple):
             filters = filters[0]
-            
         filters = [f if f[0] in "+-" else f"+ {f}" for f in filters] + ["- **"]
         filters = "\n".join(filters)
         return filters

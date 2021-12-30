@@ -89,7 +89,7 @@ class BackupManager:
         
         changed = False
         for item in root.find():
-            if item.is_file() and item.mtime() > mtime:
+            if item.is_file() and item.mtime() > mtime and not BackupManager.ignore(item):
                 changed = True
                 print(f"{'*' if mtime else '+'} {item}")
         

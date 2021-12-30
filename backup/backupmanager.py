@@ -15,6 +15,7 @@ from . import parser
 
 
 class BackupManager:
+    updated = False
     ignore_names = Path.ignore_names.load()
     ignore_patterns = Path.ignore_patterns.load()
     ignore_paths = {
@@ -105,6 +106,7 @@ class BackupManager:
             interactive = sys.stdin.isatty()
             if interactive:
                 message = "\n".join(["", "Drive", "=" * 80, *changes, "", "Pull?" if reverse else "Push?"])
+                BackupManager.updated = True
                 if not climessage.ask(message):
                     changes = []
                 

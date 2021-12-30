@@ -1,4 +1,4 @@
-from datetime import datetime
+import time
 
 from libs.cli import Cli
 from libs.output_copy import Output
@@ -19,11 +19,11 @@ class Backup:
         return Backup.copy(self.remote, self.local, filters=filters, **kwargs)
     
     @staticmethod
-    def copy(source, dest, filters=[], overwrite_newer=True, delete_missing=False, quiet=True):
+    def copy(source, dest, filters=[], overwrite_newer=True, delete_missing=False, quiet=True, **kwargs):
         action = "sync --create-empty-src-dirs" if delete_missing else "copy"
         command = f'{action} "{source}" "{dest}"'
         return Backup.run(
-            command, filters, update=not overwrite_newer, quiet=quiet, progress=not quiet
+            command, filters, overwrite_newer=overwrite_newer, quiet=quiet, progress=not quiet, **kwargs
             )
 
     @staticmethod
@@ -41,7 +41,7 @@ class Backup:
         return changes
     
     @staticmethod
-    def run(command, filters, show=True, **kwargs):
+    def run(command, filters, show=True, overwrite_newer=False, **kwargs):
         filters_path = Backup.set_filters(filters)
         options = {
             "skip-links": "",
@@ -57,7 +57,7 @@ class Backup:
             "filter-from": f"'{filters_path}'",
             }
         
-        if kwargs.get("overwrite_newer", False) == False:
+        if not overwrite_newer:
             options["update"] = "" # dont overwrite newer files
         
         for k, v in kwargs.items():
@@ -65,18 +65,14 @@ class Backup:
                 options[k] = v if v != True else ""
                 
         command_options= " ".join([f"--{k} {v}" for k, v in options.items()])
-        command = f"rclone {command_options} {command}"
-        try:
-            return Cli.run(command) if show else Cli.get(command)
-        finally:
-            # catch interruptions
-            filters_path.unlink()
+        command = f"rclone {command_options} {command}; rm {filters_path}"
+        return Cli.run(command) if show else Cli.get(command)
 
     @staticmethod
     def set_filters(filters):
-        filename = str(datetime.now()) # allow parallel runs without filter file conflicts
+        filename = f"{time.time()}.txt" # allow parallel runs without filter file conflicts
         Path.filters.mkdir(parents=True, exist_ok=True)
-        path = (Path.filters / filename).with_suffix(".txt")
+        path = (Path.filters / filename)
         
         filters = Backup.parse_filters(filters)
         path.write_text(filters)

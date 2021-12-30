@@ -101,8 +101,8 @@ class BackupManager:
     @staticmethod
     def get_compared_filters(reverse=False):
         message = "\nPull?" if reverse else "\nPush?"
-        title_message = "\n".join(["", "Drive", "=" * 80])
-        changes = BackupManager.status(reverse=reverse) + title_message
+        title_message = "\n".join(["", "Drive", "=" * 80]) + message
+        changes = BackupManager.status(reverse=reverse)
         
         interactive = sys.stdin.isatty()
         if changes:

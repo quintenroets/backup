@@ -58,6 +58,9 @@ class Backup:
             "filter-from": f"'{filters_path}'",
             }
         
+        if kwargs.get("overwrite_newer", False) == False:
+            options["update"] = "" # dont overwrite newer files
+        
         for k, v in kwargs.items():
             if v != False:
                 options[k] = v if v != True else ""

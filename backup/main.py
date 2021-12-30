@@ -1,6 +1,7 @@
 import time
 import argparse
 
+from libs.cli import Cli
 from libs.errorhandler import ErrorHandler
 from libs.path import Path
 
@@ -19,8 +20,7 @@ def _main():
     parser.add_argument('option', nargs='?', help='Check browser or not', default="")
     args = parser.parse_args()
     
-    title = "Drive"
-    print(title + "\n" + "=" * (len(title) + 2))
+    Cli.set_title("Drive")
     
     if args.option == "browser":
         BackupManager.check_browser(args.action)

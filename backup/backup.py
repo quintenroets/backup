@@ -6,7 +6,6 @@ from libs.output_copy import Output
 from .path import Path
 
 
-
 class Backup:
     def __init__(self, local=None, remote=None):
         self.local = local or Path.HOME
@@ -81,8 +80,8 @@ class Backup:
         return path
         
     @staticmethod
-    def parse_filters(*filters):
-        if isinstance(filters[0], list) or isinstance(filters[0], tuple):
+    def parse_filters(filters):
+        if filters and (isinstance(filters[0], list) or isinstance(filters[0], tuple)):
             filters = filters[0]
         filters = [f if f[0] in "+-" else f"+ {f}" for f in filters] + ["- **"]
         filters = "\n".join(filters)

@@ -19,6 +19,9 @@ def _main():
     parser.add_argument('option', nargs='?', help='Check browser or not', default="")
     args = parser.parse_args()
     
+    title = "Drive"
+    print(title + "\n" + "=" * (len(title) + 2))
+    
     if args.option == "browser":
         BackupManager.check_browser(args.action)
     elif args.action == "status":
@@ -26,10 +29,7 @@ def _main():
     elif args.action == "push":
         BackupManager.push()
     elif args.action == "pull":
-        if args.option:
-            BackupManager.direct_pull(args.option)
-        else:
-            BackupManager.pull(args.option)
+        BackupManager.pull(args.option)
 
 
 if __name__ == "__main__":

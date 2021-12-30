@@ -16,6 +16,8 @@ Path.filters = assets / "filters"
 Path.active_profile = Path.profiles / "active"
 Path.profile_paths = Path.profiles / "paths"
 
+Path.exports = assets / "exports"
+
 Path.backup_cache = Path.HOME.parent / "backup"
 
 Path.remote = "backup:Home"

@@ -25,52 +25,38 @@ class BackupManager:
     visited = set({})
     
     @staticmethod
-    def status(reverse=False):
-        if not Path.backup_cache.exists():
-            Cli.run(f"sudo mkdir {Path.backup_cache}", f"sudo chmod -R $(whoami):$(whoami) {Path.backup_cache}")
-        filters = BackupManager.get_filters()
-        src, dst = Path.HOME, Path.backup_cache
-        if reverse:
-            src, dst = dst, src
-        return Backup.compare(src, dst, filters=filters)
-    
-    @staticmethod
     def push():
-        title = "Drive"
-        print(title + "\n" + "=" * (len(title) + 2))
-        changes = BackupManager.status()
-        if changes:
-            BackupManager.process_changes(changes)
-        elif sys.stdin.isatty():
-            input("\nEveryting clean.\nPress enter to exit")
-            
-    @staticmethod
-    def process_changes(changes):
-        interactive = sys.stdin.isatty()
-        do_push = not interactive or climessage.ask("\nPush?")
-        if do_push:
-            Thread(BackupManager.start_push, changes).start()
-            
-    @staticmethod
-    def start_push(changes):
-        filters = [f"+ /{c[2:]}" for c in changes]
-        Backup.copy(Path.HOME, Path.remote, filters=filters, quiet=False, delete_missing=True)
-        Backup.copy(Path.HOME, Path.backup_cache, filters=filters, delete_missing=True)
+        filters = BackupManager.get_compared_filters()
+        if filters:
+            Backup().upload(filters, delete_missing=True, quiet=False)
+            Backup.copy(Path.HOME, Path.backup_cache, filters=filters, delete_missing=True)
         
     @staticmethod
-    def pull():
-        first_time = not Path.backup_cache.exists()
-        filters = BackupManager.get_filters() if not first_time else "+ **"
-        Backup.copy(Path.backup_cache, Path.HOME, filters=filters, overwrite_newer=True, delete_missing=not first_time)
-        if first_time:
-            Backup.copy(Path.HOME, Path.backup_cache, filters=BackupManager.get_filters(), delete_missing=True)
-        ProfileManager.reload()
+    def pull(option=None):
+        if option:
+            BackupManager.sync_remote(option)
+        filters = BackupManager.get_compared_filters(reverse=True)
+        if filters:
+            src = Path.remote if option else Path.backup_cache
+            Backup.copy(src, Path.HOME, filters=filters, overwrite_newer=True, delete_missing=True)
+            if option:
+                Backup.copy(Path.HOME, Path.backup_cache, filters=filters, delete_missing=True)
+            extract_archives(filters)
+            ProfileManager.reload()
+            
+    @staticmethod
+    def extract_archives(filters):
+        for filter_name in filters:
+            if filter_name.endswith(".zip"):
+                path = Path(filter_name[3:])
+                src = Path.HOME / path
+                dst = (Path.HOME / "/".join(path.name.split("_"))).with_suffix("")
+                Cli.get(f"rm -rf {dst}", f"unzip -o '{src}' -d '{dst}'")
         
     @staticmethod
-    def direct_pull(option):
+    def sync_remote(option):
         if option == ".":
             option = Path.cwd().relative_to(Path.HOME) if Path.cwd() != Path.HOME else ""
-        option = ""
         
         lines = Cli.get(f"rclone lsl {Path.remote}/{option}").split("\n")
         changes = []
@@ -92,13 +78,54 @@ class BackupManager:
             
         for deleted in (Path.backup_cache / option).find(is_deleted, recurse_on_match=True):
             deleted.unlink()
-            
-        changes = BackupManager.status(reverse=True)
+                
+    @staticmethod
+    def export_path(path):
+        root = Path.HOME / path
+        BackupManager.visited.add(root)
+        dest = (Path.exports / "_".join(path.parts)).with_suffix(".zip")
+        mtime = dest.mtime() if dest.exists() else 0
+        
+        changed = False
+        for item in root.find():
+            if item.is_file() and item.mtime() > mtime:
+                changed = True
+                print(f"{'*' if mtime else '+'} {item}")
+        
+        if changed:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            Cli.run(f'zip -r -q -o "{dest}" *', pwd=root) 
+        
+        return dest
+    
+    @staticmethod
+    def get_compared_filters(reverse=False):
+        message = "\nPull?" if reverse else "\nPush?"
+        changes = BackupManager.status(reverse=reverse)
+        
+        interactive = sys.stdin.isatty()
         if changes:
-            if climessage.ask("\nPull?"):
-                filters = [f"+ /{c[2:]}" for c in changes]
-                Backup().download(*filters, quiet=False, delete_missing=True)
-                Backup.copy(Path.HOME, Path.backup_cache, filters=filters, delete_missing=True)
+            if interactive and not climessage.ask(message):
+                changes = []
+        else:
+            if interactive:
+                input("\nEveryting clean.\nPress enter to exit")
+                
+        filters = [f"+ /{c[2:]}" for c in changes]
+        return filters
+    
+    @staticmethod
+    def status(reverse=False):
+        # first time run
+        if not Path.backup_cache.exists():
+            Cli.run(f"sudo mkdir {Path.backup_cache}", f"sudo chmod -R $(whoami):$(whoami) {Path.backup_cache}")
+            Backup.copy(Path.remote, Path.backup_cache, filters=["+ **"], quiet=False)
+            
+        filters = BackupManager.get_filters()
+        src, dst = Path.HOME, Path.backup_cache
+        if reverse:
+            src, dst = dst, src
+        return Backup.compare(src, dst, filters=filters)
         
     @staticmethod
     def get_filters():
@@ -106,7 +133,14 @@ class BackupManager:
         paths = BackupManager.load_path_config()
         items = set({})
         for (path, include) in paths:
-            path = Path.HOME / path
+            path_full = Path.HOME / path
+            if path_full.is_dir() and include:
+                if path_full.is_relative_to(Path.docs / "Drive") or (not path_full.is_relative_to(Path.docs) and not path_full.is_relative_to(Path.assets)):
+                    if not path_full.is_relative_to(Path.HOME / ".config" / "browser"):
+                        path_full = BackupManager.export_path(path)
+            path = path_full
+            
+            
             if include:
                 for item in path.find(exclude=BackupManager.exclude):
                     if item.is_file():
@@ -116,7 +150,7 @@ class BackupManager:
                             if not xattr.xattr(item).list():
                                 items.add(pattern)
             BackupManager.visited.add(path)
-        
+
         def match(p):
             if p.is_file():
                 mirror = Path.HOME / p.relative_to(Path.backup_cache)

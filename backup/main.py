@@ -19,9 +19,7 @@ def _main():
     parser.add_argument('action', nargs='?', help='The action to do [status, push, pull, sync, check]', default="push")
     parser.add_argument('option', nargs='?', help='Check browser or not', default="")
     args = parser.parse_args()
-    
-    Cli.set_title("Drive")
-    
+        
     if args.option == "browser":
         BackupManager.check_browser(args.action)
     elif args.action == "status":

@@ -36,13 +36,12 @@ class Backup:
              " || :"                                # command throws errors if not match: catch error code
              )
         
-        with Output() as o:
-            Backup.run(command, filters)
-        changes = [line for line in str(o).split("\n") if line]
+        out = Backup.run(command, filters, show=False)
+        changes = [line for line in out.split("\n") if line]
         return changes
     
     @staticmethod
-    def run(command, filters, **kwargs):
+    def run(command, filters, show=True, **kwargs):
         filters_path = Backup.set_filters(filters)
         options = {
             "skip-links": "",
@@ -66,8 +65,9 @@ class Backup:
                 options[k] = v if v != True else ""
                 
         command_options= " ".join([f"--{k} {v}" for k, v in options.items()])
+        command = f"rclone {command_options} {command}"
         try:
-            Cli.run(f"rclone {command_options} {command}")
+            return Cli.run(command) if show else Cli.get(command)
         finally:
             # catch interruptions
             filters_path.unlink()

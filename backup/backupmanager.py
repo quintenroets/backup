@@ -66,7 +66,7 @@ class BackupManager:
     @staticmethod
     def direct_pull(option):
         if option == ".":
-            option = Path.cwd().relative_to(Path.HOME)
+            option = Path.cwd().relative_to(Path.HOME) if Path.cwd() != Path.HOME else ""
         
         lines = Cli.get(f"rclone lsl {Path.remote}/{option}").split("\n")
         changes = []
@@ -79,10 +79,11 @@ class BackupManager:
                 changes.append(f"+ {path.relative_to(Path.HOME)}")
             else:
                 remotes.add(path)
-                
-        for path in (Path.HOME / option).rglob("*"):
+        """
+        BackupManager.get_filters() # activate excludes
+        for path in (Path.HOME / option).find(exclude=BackupManager.exclude):
             if path not in remotes and path.is_file():
-                changes.append(f"- {path.relative_to(Path.HOME)}")
+                changes.append(f"- {path.relative_to(Path.HOME)}")""" # dont check remote deletes
                 
         
         filters = [f"+ /{c[2:]}" for c in changes]

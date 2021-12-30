@@ -101,15 +101,13 @@ class BackupManager:
     @staticmethod
     def get_compared_filters(reverse=False):
         message = "\nPull?" if reverse else "\nPush?"
+        title_message = "\n".join(["", "Drive", "=" * 80]) + message
         changes = BackupManager.status(reverse=reverse)
         
         interactive = sys.stdin.isatty()
         if changes:
             if interactive and not climessage.ask(message):
                 changes = []
-        else:
-            if interactive:
-                print("Backup: clean")
                 
         filters = [f"+ /{c[2:]}" for c in changes]
         return filters

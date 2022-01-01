@@ -180,6 +180,7 @@ class BackupManager:
             or (path / ".git").exists()
             or path.is_symlink()
             or (path.stat().st_size > 50 * 10 ** 6 and path.suffix != ".zip")
+            or path.suffix == ".part"
         )
 
     @staticmethod

@@ -3,7 +3,6 @@ import argparse
 
 from libs.cli import Cli
 from libs.errorhandler import ErrorHandler
-from libs.path import Path
 
 from .backup import Backup
 from .backupmanager import BackupManager

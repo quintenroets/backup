@@ -1,4 +1,4 @@
-from spathlib import Path
+from path import Path
 
 assets = Path.assets / Path(__file__).parent.name
 

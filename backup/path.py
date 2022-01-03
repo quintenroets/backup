@@ -1,24 +1,26 @@
-from libs.path import Path
+from spathlib import Path
 
 assets = Path.assets / Path(__file__).parent.name
-Path.paths = assets / "paths"
-Path.syncs = Path.paths / "syncs"
-Path.ignore_names = Path.paths / "ignore_names"
-Path.ignore_patterns = Path.paths / "ignore_patterns"
-Path.paths_include = Path.paths / "include"
-Path.paths_include_pull = Path.paths / "pull_include"
-Path.paths_exclude = Path.paths / "exclude"
 
-Path.timestamps = assets / "timestamps" / "timestamps"
-Path.profiles = assets / "profiles"
-Path.filters = assets / "filters"
-Path.active_profile = Path.profiles / "active"
-Path.profile_paths = Path.profiles / "paths"
+class Path(Path):
+    paths = assets / "paths"
+    syncs = paths / "syncs"
+    ignore_names = paths / "ignore_names"
+    ignore_patterns = paths / "ignore_patterns"
+    paths_include = paths / "include"
+    paths_include_pull = paths / "pull_include"
+    paths_exclude = paths / "exclude"
 
-Path.exports = assets / "exports"
+    timestamps = assets / "timestamps" / "timestamps"
+    profiles = assets / "profiles"
+    filters = assets / "filters"
+    active_profile = profiles / "active"
+    profile_paths = profiles / "paths"
 
-Path.backup_cache = Path.HOME.parent / "backup"
+    exports = assets / "exports"
 
-Path.remote = "backup:Home"
+    backup_cache = Path.HOME.parent / "backup"
 
-Path.trusted = True
+    remote = "backup:Home"
+
+    trusted = True

@@ -29,7 +29,7 @@ setup(
 )
         
 from libs.cli import Cli
-from path import Path
+from plib import Path
 from backup.backup import Backup
 
 installed = Cli.get("which rclone", check=False)

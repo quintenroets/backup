@@ -1,4 +1,4 @@
-from path import Path
+from plib import Path
 
 assets = Path.assets / Path(__file__).parent.name
 

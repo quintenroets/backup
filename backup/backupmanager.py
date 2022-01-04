@@ -217,7 +217,7 @@ class BackupManager:
             Backup().upload(filters)
 
         elif command == "pull":
-            Backup().download(filters)
+            Backup().download(filters, quiet=False)
             config_folder.mkdir(parents=True, exist_ok=True)
             Cli.get(f"unzip -o '{config_save_file}' -d '{config_folder.parent}'")
         else:

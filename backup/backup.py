@@ -45,7 +45,6 @@ class Backup:
         filters_path = Backup.set_filters(filters)
         options = {
             "skip-links": "",
-            "copy-links": "",
             
             "retries": "5",
             "retries-sleep": "30s",

@@ -56,6 +56,7 @@ class BackupManager:
         
     @staticmethod
     def sync_remote(option):
+        BackupManager.check_cache_existence()
         if option == ".":
             option = "" # ls all files
         else:
@@ -117,11 +118,7 @@ class BackupManager:
     
     @staticmethod
     def status(reverse=False):
-        # first time run
-        if not Path.backup_cache.exists():
-            Cli.run(f"sudo mkdir {Path.backup_cache}", f"sudo chmod -R $(whoami):$(whoami) {Path.backup_cache}")
-            Backup.copy(Path.remote, Path.backup_cache, filters=["+ **"], quiet=False)
-            
+        BackupManager.check_cache_existence()
         filters = BackupManager.get_filters()
         src, dst = Path.HOME, Path.backup_cache
         if reverse:
@@ -165,6 +162,13 @@ class BackupManager:
         for it in new_items:
             items.add(it.relative_to(Path.backup_cache))
         return parser.make_filters(includes=items)
+    
+    @staticmethod
+    def check_cache_existence():
+        # first time run
+        if not Path.backup_cache.exists():
+            Cli.run(f"sudo mkdir {Path.backup_cache}", f"sudo chmod -R $(whoami):$(whoami) {Path.backup_cache}")
+            Backup.copy(Path.remote, Path.backup_cache, filters=["+ **"], quiet=False)
 
     @staticmethod
     def load_path_config():

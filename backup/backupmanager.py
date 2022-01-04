@@ -54,7 +54,7 @@ class BackupManager:
                 path = Path(filter_name[3:])
                 src = Path.HOME / path
                 dst = (Path.HOME / "/".join(path.name.split("_"))).with_suffix("")
-                dst.rmtree()
+                dst.rmtree(missing_ok=True)
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 Cli.get(f"unzip -o '{src}' -d '{dst}'")
         

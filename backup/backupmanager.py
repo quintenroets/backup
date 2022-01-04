@@ -73,6 +73,7 @@ class BackupManager:
             mtime = int(datetime.strptime(f"{date} {time[:-3]}", '%Y-%m-%d %H:%M:%S.%f').timestamp())
             cache_path = Path.backup_cache / option / ' '.join(names)
             if not cache_path.exists() or mtime != cache_path.mtime():
+                cache_path.parent.mkdir(parents=True, exist_ok=True)
                 Cli.run(f'touch "{cache_path}" -d @{mtime}')
             present.add(cache_path)
         

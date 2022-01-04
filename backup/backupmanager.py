@@ -46,7 +46,9 @@ class BackupManager:
             ProfileManager.reload()
             
     @staticmethod
-    def extract_archives(filters):
+    def extract_archives(filters=None):
+        if filters is None:
+            filters = [f"   {p}" for p in Path.exports.iterdir()]
         for filter_name in filters:
             if filter_name.endswith(".zip"):
                 path = Path(filter_name[3:])

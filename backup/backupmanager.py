@@ -42,11 +42,10 @@ class BackupManager:
             Backup.copy(src, Path.HOME, filters=filters, overwrite_newer=True, delete_missing=True, quiet=not option)
             if option:
                 Backup.copy(Path.HOME, Path.backup_cache, filters=filters, delete_missing=True)
-            extract_archives(filters)
-            ProfileManager.reload()
+            BackupManager.after_pull(filters)
             
     @staticmethod
-    def extract_archives(filters=None):
+    def after_pull(filters=None):
         if filters is None:
             filters = [f"   {p}" for p in Path.exports.iterdir()]
         for filter_name in filters:
@@ -57,6 +56,7 @@ class BackupManager:
                 dst.rmtree(missing_ok=True)
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 Cli.get(f"unzip -o '{src}' -d '{dst}'")
+        ProfileManager.reload()
         
     @staticmethod
     def sync_remote(option):

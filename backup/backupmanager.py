@@ -57,7 +57,9 @@ class BackupManager:
     @staticmethod
     def sync_remote(option):
         if option == ".":
-            option = Path.cwd().relative_to(Path.HOME) if Path.cwd() != Path.HOME else ""
+            option = "" # ls all files
+        else:
+            option = Path(option).relative_to(Path.HOME)
         
         lines = Cli.get(f"rclone lsl {Path.remote}/{option}").split("\n")
         changes = []

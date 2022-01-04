@@ -168,7 +168,7 @@ class BackupManager:
     def check_cache_existence():
         # first time run
         if not Path.backup_cache.exists():
-            Cli.run(f"sudo mkdir {Path.backup_cache}", f"sudo chmod -R $(whoami):$(whoami) {Path.backup_cache}")
+            Cli.run(f"sudo mkdir {Path.backup_cache}", f"sudo chown -R $(whoami):$(whoami) {Path.backup_cache}")
             Backup.copy(Path.remote, Path.backup_cache, filters=["+ **"], quiet=False)
 
     @staticmethod

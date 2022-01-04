@@ -39,7 +39,7 @@ class BackupManager:
         filters = BackupManager.get_compared_filters(reverse=True)
         if filters:
             src = Path.remote if option else Path.backup_cache
-            Backup.copy(src, Path.HOME, filters=filters, overwrite_newer=True, delete_missing=True)
+            Backup.copy(src, Path.HOME, filters=filters, overwrite_newer=True, delete_missing=True, quiet=not option)
             if option:
                 Backup.copy(Path.HOME, Path.backup_cache, filters=filters, delete_missing=True)
             extract_archives(filters)

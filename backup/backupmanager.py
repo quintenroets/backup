@@ -54,7 +54,9 @@ class BackupManager:
                 path = Path(filter_name[3:])
                 src = Path.HOME / path
                 dst = (Path.HOME / "/".join(path.name.split("_"))).with_suffix("")
-                Cli.get(f"rm -rf {dst}", f"unzip -o '{src}' -d '{dst}'")
+                dst.rmtree()
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                Cli.get(f"unzip -o '{src}' -d '{dst}'")
         
     @staticmethod
     def sync_remote(option):

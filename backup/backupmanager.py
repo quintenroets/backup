@@ -123,6 +123,7 @@ class BackupManager:
     
     @staticmethod
     def status(reverse=False):
+        ProfileManager.save_active()
         BackupManager.check_cache_existence()
         filters = BackupManager.get_filters()
         src, dst = Path.HOME, Path.backup_cache

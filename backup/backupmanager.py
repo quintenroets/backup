@@ -5,7 +5,6 @@ from datetime import datetime
 from libs.cli import Cli
 from libs import climessage
 from libs.output_copy import Output
-from libs.tagmanager import TagManager
 from libs.threading import Thread
 
 from .backup import Backup
@@ -76,9 +75,9 @@ class BackupManager:
             path = Path.HOME / option / " ".join(names)
             mtime = int(datetime.strptime(f"{date} {time[:-3]}", '%Y-%m-%d %H:%M:%S.%f').timestamp())
             cache_path = Path.backup_cache / option / ' '.join(names)
-            if not cache_path.exists() or mtime != cache_path.mtime():
+            if not cache_path.exists() or mtime != cache_path.mtime:
                 cache_path.parent.mkdir(parents=True, exist_ok=True)
-                Cli.run(f'touch "{cache_path}" -d @{mtime}')
+                cache_path.touch(mtime=mtime)
             present.add(cache_path)
         
         # delete cache items not in remote
@@ -93,13 +92,12 @@ class BackupManager:
         root = Path.HOME / path
         BackupManager.visited.add(root)
         dest = (Path.exports / "_".join(path.parts)).with_suffix(".zip")
-        mtime = dest.mtime() if dest.exists() else 0
         
         changed = False
         for item in root.find():
-            if item.is_file() and item.mtime() > mtime and not BackupManager.exclude(item):
+            if item.is_file() and item.mtime > dest.mtime and not BackupManager.exclude(item):
                 changed = True
-                print(f"{'*' if mtime else '+'} {item.relative_to(Path.HOME)}")
+                print(f"{'*' if dest.mtime else '+'} {item.relative_to(Path.HOME)}")
         
         if changed:
             dest.parent.mkdir(parents=True, exist_ok=True)
@@ -159,7 +157,7 @@ class BackupManager:
             if p.is_file():
                 mirror = Path.HOME / p.relative_to(Path.backup_cache)
                 try:
-                    match = p.mtime() != mirror.mtime()
+                    match = p.mtime != mirror.mtime
                 except FileNotFoundError:
                     match = True
                 return match
@@ -193,6 +191,7 @@ class BackupManager:
             or path.is_symlink()
             or (path.stat().st_size > 50 * 10 ** 6 and path.suffix != ".zip")
             or path.suffix == ".part"
+            or path.tag
         )
 
     @staticmethod

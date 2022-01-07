@@ -2,8 +2,8 @@ import sys
 from datetime import datetime
 
 from libs.cli import Cli
+from libs.clispinner import CliSpinner
 from libs import climessage
-from libs.output_copy import Output
 from libs.threading import Thread
 
 from .backup import Backup
@@ -64,7 +64,8 @@ class BackupManager:
         else:
             option = Path(option).relative_to(Path.HOME)
         
-        lines = Cli.get(f"rclone lsl {Path.remote}/{option}").split("\n")
+        with CliSpinner("Reading remote"):
+            lines = Cli.get(f"rclone lsl {Path.remote}/{option}").split("\n")
         changes = []
         present = set({})
         
@@ -125,7 +126,7 @@ class BackupManager:
         filters = BackupManager.get_filters()
         src, dst = (Path.HOME, Path.backup_cache) if not reverse else (Path.backup_cache, Path.HOME)
         status = Backup.compare(src, dst, filters=filters) if filters else []
-        no_changes_filters = [f for f in filters if f not in status]
+        no_changes_filters = [f for f in filters if f and f.replace(" /", " ") not in status] # first slash is thrown away in status
         if no_changes_filters:
             # adapt modified times to avoid checking again in future
             Backup.copy(src, dst, filters=no_changes_filters)
@@ -151,7 +152,8 @@ class BackupManager:
                     if item.is_file():
                         pattern = item.relative_to(Path.HOME)
                         mirror = Path.backup_cache / pattern
-                        if item.mtime != mirror.mtime:
+                        if item.mtime != mirror.mtime and not item.tag: 
+                            # check for tag here because we do not want to exclude tags recusively
                             items.add(pattern)
             BackupManager.visited.add(path)
 
@@ -193,7 +195,6 @@ class BackupManager:
             or path.is_symlink()
             or (path.stat().st_size > 50 * 10 ** 6 and path.suffix != ".zip")
             or path.suffix == ".part"
-            or path.tag
         )
 
     @staticmethod

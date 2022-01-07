@@ -1,8 +1,6 @@
 import time
 
 from libs.cli import Cli
-from libs.output_copy import Output
-
 from .path import Path
 
 

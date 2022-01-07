@@ -25,9 +25,7 @@ class BackupManager:
     
     @staticmethod
     def push():
-        from libs.timer import Timer
-        with Timer():
-            filters = BackupManager.get_compared_filters()
+        filters = BackupManager.get_compared_filters()
         if filters:
             Backup().upload(filters, delete_missing=True, quiet=False)
             Backup.copy(Path.HOME, Path.backup_cache, filters=filters, delete_missing=True)
@@ -144,9 +142,7 @@ class BackupManager:
             if path_full.is_dir() and include:
                 if path_full.is_relative_to(Path.docs / "Drive") or (not path_full.is_relative_to(Path.docs) and not path_full.is_relative_to(Path.assets)):
                     if not path_full.is_relative_to(Path.HOME / ".config" / "browser"):
-                        from libs.timer import Timer
-                        with Timer():
-                            path_full = BackupManager.export_path(path)
+                        path_full = BackupManager.export_path(path)
             path = path_full
             
             

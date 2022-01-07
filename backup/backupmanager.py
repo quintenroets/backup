@@ -74,8 +74,7 @@ class BackupManager:
             path = Path.HOME / option / " ".join(names)
             mtime = int(datetime.strptime(f"{date} {time[:-3]}", '%Y-%m-%d %H:%M:%S.%f').timestamp())
             cache_path = Path.backup_cache / option / ' '.join(names)
-            if not cache_path.exists() or mtime != cache_path.mtime:
-                cache_path.parent.mkdir(parents=True, exist_ok=True)
+            if mtime > cache_path.mtime:
                 cache_path.touch(mtime=mtime)
             present.add(cache_path)
         
@@ -126,9 +125,10 @@ class BackupManager:
         filters = BackupManager.get_filters()
         src, dst = (Path.HOME, Path.backup_cache) if not reverse else (Path.backup_cache, Path.HOME)
         status = Backup.compare(src, dst, filters=filters) if filters else []
-        if filters and not status and not reverse:
+        no_changes_filters = [f for f in filters if f not in status]
+        if no_changes_filters:
             # adapt modified times to avoid checking again in future
-            Backup.copy(src, dst, filters=filters)
+            Backup.copy(src, dst, filters=no_changes_filters)
         
         return status
         
@@ -152,9 +152,6 @@ class BackupManager:
                         pattern = item.relative_to(Path.HOME)
                         mirror = Path.backup_cache / pattern
                         if item.mtime != mirror.mtime:
-                            #print(item)
-                            #print(item.mtime, mirror.mtime)
-                            #raise Exception
                             items.add(pattern)
             BackupManager.visited.add(path)
 

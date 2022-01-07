@@ -99,7 +99,7 @@ class BackupManager:
         for item in root.find():
             if item.is_file() and item.mtime() > mtime and not BackupManager.exclude(item):
                 changed = True
-                print(f"{'*' if mtime else '+'} {item}")
+                print(f"{'*' if mtime else '+'} {item.relative_to(Path.HOME)}")
         
         if changed:
             dest.parent.mkdir(parents=True, exist_ok=True)

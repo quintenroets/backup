@@ -123,7 +123,7 @@ class BackupManager:
     def status(reverse=False):
         ProfileManager.save_active()
         BackupManager.check_cache_existence()
-        filters = BackupManager.get_filters()        
+        filters = BackupManager.get_filters()
         src, dst = (Path.HOME, Path.backup_cache) if not reverse else (Path.backup_cache, Path.HOME)
         status = Backup.compare(src, dst, filters=filters) if filters else []
         if filters and not status and not reverse:

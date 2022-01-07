@@ -1,4 +1,3 @@
-import xattr
 import sys
 from datetime import datetime
 
@@ -26,7 +25,9 @@ class BackupManager:
     
     @staticmethod
     def push():
-        filters = BackupManager.get_compared_filters()
+        from libs.timer import Timer
+        with Timer():
+            filters = BackupManager.get_compared_filters()
         if filters:
             Backup().upload(filters, delete_missing=True, quiet=False)
             Backup.copy(Path.HOME, Path.backup_cache, filters=filters, delete_missing=True)
@@ -101,8 +102,9 @@ class BackupManager:
         
         if changed:
             dest.parent.mkdir(parents=True, exist_ok=True)
-            Cli.run(f'zip -r -q -o "{dest}" *', pwd=root) 
-        
+            Cli.run(f'zip -r -q -o "{dest}" *', pwd=root)
+            dest.mtime += 1 # zip only has one second precision so be certain to make more recent
+                    
         return dest
     
     @staticmethod
@@ -123,11 +125,14 @@ class BackupManager:
     def status(reverse=False):
         ProfileManager.save_active()
         BackupManager.check_cache_existence()
-        filters = BackupManager.get_filters()
-        src, dst = Path.HOME, Path.backup_cache
-        if reverse:
-            src, dst = dst, src
-        return Backup.compare(src, dst, filters=filters)
+        filters = BackupManager.get_filters()        
+        src, dst = Path.HOME, Path.backup_cache if not reverse else Path.backup_cache, Path.HOME
+        status = Backup.compare(src, dst, filters=filters) if filters else []
+        if filters and not status and not reverse:
+            # adapt modified times to avoid checking again in future
+            Backup.copy(src, dst, filters=filters)
+        
+        return status
         
     @staticmethod
     def get_filters():
@@ -139,7 +144,9 @@ class BackupManager:
             if path_full.is_dir() and include:
                 if path_full.is_relative_to(Path.docs / "Drive") or (not path_full.is_relative_to(Path.docs) and not path_full.is_relative_to(Path.assets)):
                     if not path_full.is_relative_to(Path.HOME / ".config" / "browser"):
-                        path_full = BackupManager.export_path(path)
+                        from libs.timer import Timer
+                        with Timer():
+                            path_full = BackupManager.export_path(path)
             path = path_full
             
             
@@ -148,9 +155,11 @@ class BackupManager:
                     if item.is_file():
                         pattern = item.relative_to(Path.HOME)
                         mirror = Path.backup_cache / pattern
-                        if not mirror.exists() or int(item.stat().st_mtime) != int(mirror.stat().st_mtime):
-                            if not xattr.xattr(item).list():
-                                items.add(pattern)
+                        if item.mtime != mirror.mtime:
+                            #print(item)
+                            #print(item.mtime, mirror.mtime)
+                            #raise Exception
+                            items.add(pattern)
             BackupManager.visited.add(path)
 
         def match(p):

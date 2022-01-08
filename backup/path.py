@@ -25,6 +25,7 @@ class Path(Path):
 
     @property
     def mtime(self):
-        # no huge precision needed and remote path also has limited precision
-        # so avoid precision differences to lead to detected differences in mtime
-        return int(super().mtime)    
+        # only precision up to one second to decide which files have the same mtime
+        # cannot be too precise to avoid false positives
+        # remote filesystem also has limited precision
+        return int(super().mtime)

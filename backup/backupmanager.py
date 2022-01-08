@@ -141,7 +141,7 @@ class BackupManager:
         for (path, include) in paths:
             path_full = Path.HOME / path
             if path_full.is_dir() and include:
-                if path_full.is_relative_to(Path.docs / "Drive") or (not path_full.is_relative_to(Path.docs) and not path_full.is_relative_to(Path.assets)):
+                if path_full.is_relative_to(Path.docs / "Drive") or (not path_full.is_relative_to(Path.docs) and not path_full.is_relative_to(Path.assets.parent)):
                     if not path_full.is_relative_to(Path.HOME / ".config" / "browser"):
                         path_full = BackupManager.export_path(path)
             path = path_full

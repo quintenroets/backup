@@ -3,16 +3,19 @@ from plib import Path
 
 class Path(Path):
     # define here to make sure that all folders have this method
+    
     @property
     def mtime(self):
-        # only precision up to one second to decide which files have the same mtime
-        # cannot be too precise to avoid false positives
-        # remote filesystem also has limited precision
+        """
+        only precision up to one second to decide which files have the same mtime
+        cannot be too precise to avoid false positives
+        remote filesystem also has limited precision
+        """
         return int(super().mtime)
 
 
 class Path(Path):
-    assets = Path.assets
+    assets = Path.assets / "backup"
     paths = assets / "paths"
     syncs = paths / "syncs"
     ignore_names = paths / "ignore_names"

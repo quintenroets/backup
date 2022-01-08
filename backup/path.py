@@ -23,4 +23,8 @@ class Path(Path):
 
     remote = "backup:Home"
 
-    trusted = True
+    @property
+    def mtime(self):
+        # no huge precision needed and remote path also has limited precision
+        # so avoid precision differences to lead to detected differences in mtime
+        return int(super().mtime)    

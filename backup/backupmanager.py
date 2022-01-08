@@ -101,7 +101,6 @@ class BackupManager:
         if changed:
             dest.parent.mkdir(parents=True, exist_ok=True)
             Cli.run(f'zip -r -q -o "{dest}" *', pwd=root)
-            dest.mtime += 1 # zip only has one second precision so be certain to make more recent
                     
         return dest
     

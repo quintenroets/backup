@@ -36,8 +36,9 @@ class ProfileManager:
         ProfileManager.load(name)
         ProfileManager.set_active(name)
 
-    @staticmethod
-    def get_active():
+    @classmethod
+    @property
+    def active_profile(cls):
         return Path.active_profile.load() or "light"
 
     @staticmethod
@@ -49,15 +50,11 @@ class ProfileManager:
         """
         Reload config of active profile
         """
-        ProfileManager.load(
-            ProfileManager.get_active()
-        )
+        ProfileManager.load(ProfileManager.active_profile)
 
     @staticmethod
     def save_active():
         """
         Save config files to active profile
         """
-        ProfileManager.save(
-            ProfileManager.get_active()
-        )
+        ProfileManager.save(ProfileManager.active_profile)

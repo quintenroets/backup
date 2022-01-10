@@ -125,7 +125,8 @@ class BackupManager:
         filters = BackupManager.get_filters()
         src, dst = (Path.HOME, Path.backup_cache) if not reverse else (Path.backup_cache, Path.HOME)
         status = Backup.compare(src, dst, filters=filters) if filters else []
-        no_changes_filters = [f for f in filters if f and f.replace(" /", " ") not in status] # first slash is thrown away in status
+        changed_paths = [s[2:] for s in status] # cut away +/* and space
+        no_changes_filters = [f for f in filters if f and f[3:] not in changed_paths] # cut away +/*, space, slash
         if no_changes_filters:
             # adapt modified times to avoid checking again in future
             Backup.copy(src, dst, filters=no_changes_filters)

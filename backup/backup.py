@@ -62,8 +62,11 @@ class Backup:
                 options[k] = v if v != True else ""
                 
         command_options= " ".join([f"--{k} {v}" for k, v in options.items()])
-        command = f"rclone {command_options} {command}; rm {filters_path}"
-        return Cli.run(command) if show else Cli.get(command)
+        try:
+            command = f"rclone {command_options} {command}"
+            return Cli.run(command) if show else Cli.get(command)
+        finally:
+            filters_path.unlink()
 
     @staticmethod
     def set_filters(filters):

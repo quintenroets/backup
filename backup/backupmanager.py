@@ -98,7 +98,7 @@ class BackupManager:
         
         if changed:
             dest.parent.mkdir(parents=True, exist_ok=True)
-            cli.run(f'zip -r -q -o "{dest}" *', cwd=root)
+            cli.run(f'zip -r -q -o "{dest}" *', cwd=root, shell=True)
                     
         return dest
     

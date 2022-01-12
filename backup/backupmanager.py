@@ -215,7 +215,7 @@ class BackupManager:
                 )
             # make sure that all zipped files have the same root
             cli.run(command, cwd=config_folder.parent)
-            Backup().upload(filters)
+            Backup().upload(filters, quiet=False)
 
         elif command == "pull":
             Backup().download(filters, quiet=False)

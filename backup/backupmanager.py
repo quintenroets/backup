@@ -1,9 +1,7 @@
+import cli
 import sys
 from datetime import datetime
 
-from libs.cli import Cli
-from libs.clispinner import CliSpinner
-from libs import climessage
 from libs.threading import Thread
 
 from .backup import Backup
@@ -53,7 +51,7 @@ class BackupManager:
                 dst = (Path.HOME / "/".join(path.name.split("_"))).with_suffix("")
                 dst.rmtree(missing_ok=True)
                 dst.parent.mkdir(parents=True, exist_ok=True)
-                Cli.get(f"unzip -o '{src}' -d '{dst}'")
+                cli.get(f"unzip -o '{src}' -d '{dst}'")
         ProfileManager.reload()
         
     @staticmethod
@@ -64,8 +62,8 @@ class BackupManager:
         else:
             option = Path(option).relative_to(Path.HOME)
         
-        with CliSpinner("Reading remote"):
-            lines = Cli.get(f"rclone lsl {Path.remote}/{option}").split("\n")
+        with cli.spinner("Reading remote"):
+            lines = cli.get(f"rclone lsl {Path.remote}/{option}").split("\n")
         changes = []
         present = set({})
         
@@ -100,7 +98,7 @@ class BackupManager:
         
         if changed:
             dest.parent.mkdir(parents=True, exist_ok=True)
-            Cli.run(f'zip -r -q -o "{dest}" *', cwd=root)
+            cli.run(f'zip -r -q -o "{dest}" *', cwd=root)
                     
         return dest
     
@@ -112,7 +110,7 @@ class BackupManager:
             if interactive:
                 message = "\n".join(["", "Drive", "=" * 80, *changes, "", "Pull?" if reverse else "Push?"])
                 BackupManager.updated = True
-                if not climessage.ask(message):
+                if not cli.ask(message):
                     changes = []
                 
         filters = [f"+ /{c[2:]}" for c in changes]
@@ -175,7 +173,7 @@ class BackupManager:
     def check_cache_existence():
         # first time run
         if not Path.backup_cache.exists():
-            Cli.run(f"sudo mkdir {Path.backup_cache}", f"sudo chown -R $(whoami):$(whoami) {Path.backup_cache}")
+            cli.run(f"mkdir {Path.backup_cache}", f"chown -R $(whoami):$(whoami) {Path.backup_cache}", shell=True, root=True)
             Backup.copy(Path.remote, Path.backup_cache, filters=["+ **"], quiet=False)
 
     @staticmethod
@@ -216,13 +214,13 @@ class BackupManager:
                 else f"zip -r -q - {flags} '{config_folder.name}' | tqdm --bytes --desc='Compressing' > '{config_save_file}'"
                 )
             # make sure that all zipped files have the same root
-            Cli.run(command, pwd=config_folder.parent)
+            cli.run(command, cwd=config_folder.parent)
             Backup().upload(filters)
 
         elif command == "pull":
             Backup().download(filters, quiet=False)
             config_folder.mkdir(parents=True, exist_ok=True)
-            Cli.get(f"unzip -o '{config_save_file}' -d '{config_folder.parent}'")
+            cli.get(f"unzip -o '{config_save_file}' -d '{config_folder.parent}'")
         else:
             print("Choose pull or push")
 

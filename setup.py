@@ -27,16 +27,16 @@ setup(
         ]
     },
 )
-        
-from libs.cli import Cli
+
+import cli
 from plib import Path
 from backup.backup import Backup
 
-installed = Cli.get("which rclone", check=False)
+installed = cli.get("which rclone", check=False)
 if not installed:
-    Cli.install("curl")
+    cli.install("curl")
     # install newest version of rclone this way
-    Cli.run("curl https://rclone.org/install.sh | sudo bash")
+    cli.run("curl https://rclone.org/install.sh | sudo bash", shell=True)
 
 filename = "rclone.conf"
 src = Path(__file__).parent / "assets" / filename
@@ -45,10 +45,8 @@ dst = Path.HOME / ".config" / "rclone" / filename
 
 if not dst.exists():
     if not src.exists():
-        Cli.run(f"yes | gpg {src}.gpg") # decrypt credentials
+        cli.run(f"yes | gpg {src}.gpg") # decrypt credentials
         
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    src.rename(dst)
-    
+    src.rename(dst)    
     config_paths = (Path.assets / NAME / "paths").relative_to(Path.HOME)
     Backup().download(f"/{config_paths}/**")

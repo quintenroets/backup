@@ -1,12 +1,11 @@
 import argparse
-
-from libs.errorhandler import ErrorHandler
+import cli
 
 from .backupmanager import BackupManager
 
 
 def main():
-    with ErrorHandler():
+    with cli.errorhandler():
         _main()
 
 

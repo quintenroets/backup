@@ -1,6 +1,6 @@
+import cli
 import time
 
-from libs.cli import Cli
 from .path import Path
 
 
@@ -33,14 +33,15 @@ class Backup:
              " | grep --color=never '^*\|^-\|^+'"   # only show changed items in stdout
              " || :"                                # command throws errors if not match: catch error code
              )
-        
         out = Backup.run(command, filters, show=False)
         changes = [line for line in out.split("\n") if line]
         return changes
     
     @staticmethod
     def run(command, filters, show=True, overwrite_newer=False, **kwargs):
-        filters_path = Backup.set_filters(filters)
+        filters_path = Path.filters / f"{time.time()}.txt" # allow parallel runs without filter file conflicts
+        filters_path.lines = Backup.parse_filters(filters)
+        
         options = {
             "skip-links": "",
             
@@ -64,24 +65,13 @@ class Backup:
         command_options= " ".join([f"--{k} {v}" for k, v in options.items()])
         try:
             command = f"rclone {command_options} {command}"
-            return Cli.run(command) if show else Cli.get(command)
+            return cli.run(command) if show else cli.get(command)
         finally:
             filters_path.unlink()
-
-    @staticmethod
-    def set_filters(filters):
-        filename = f"{time.time()}.txt" # allow parallel runs without filter file conflicts
-        Path.filters.mkdir(parents=True, exist_ok=True)
-        path = (Path.filters / filename)
-        
-        filters = Backup.parse_filters(filters)
-        path.write_text(filters)
-        return path
         
     @staticmethod
     def parse_filters(filters):
         if filters and (isinstance(filters[0], list) or isinstance(filters[0], tuple)):
             filters = filters[0]
         filters = [f if f[0] in "+-" else f"+ {f}" for f in filters] + ["- **"]
-        filters = "\n".join(filters)
         return filters

@@ -21,53 +21,46 @@ class Backup:
         action = "sync --create-empty-src-dirs" if delete_missing else "copy"
         command = f'{action} "{source}" "{dest}"'
         return Backup.run(
-            command, filters, overwrite_newer=overwrite_newer, quiet=quiet, progress=not quiet, **kwargs
+            command, filters=filters, overwrite_newer=overwrite_newer, quiet=quiet, progress=not quiet, **kwargs
             )
 
     @staticmethod
     def compare(local, remote, filters=["+ **"]):
-        command = (
-            "check --combined -"                    # for every file: report +/-/*/=
-             " --log-file /dev/null"                # command throws errors if not match: discard error messages
-             f" \"{local}\" \"{remote}\""           # compare folder with remote
-             " | grep --color=never '^*\|^-\|^+'"   # only show changed items in stdout
-             " || :"                                # command throws errors if not match: catch error code
-             )
-        out = Backup.run(command, filters, show=False)
-        changes = [line for line in out.split("\n") if line]
+        options = {
+            'combined': '-',            # for every file: report +/-/*/=
+            'log-file': '/dev/null'     # command throws errors if not match: discard error messages
+            }
+        changes = Backup.run('check', options, local, remote, filters=filters, show=False)
+        changes = [c for c in changes if not c.startswith('=')]
         return changes
     
     @staticmethod
-    def run(command, filters, show=True, overwrite_newer=False, **kwargs):
-        filters_path = Path.filters / f"{time.time()}.txt" # allow parallel runs without filter file conflicts
-        filters_path.lines = Backup.parse_filters(filters)
-        
-        options = {
-            "skip-links": "",
+    def run(*args, filters, show=True, overwrite_newer=False, **kwargs):
+        with Path.tempfile() as filters_path:
+            filters_path.lines = Backup.parse_filters(filters)
             
-            "retries": "5",
-            "retries-sleep": "30s",
-            
-            "order-by": "size,desc", # send largest files first
-            # "fast-list": "", bad option: makes super slow
-            
-            "exclude-if-present": ".gitignore",
-            "filter-from": f"'{filters_path}'",
-            }
-        
-        if not overwrite_newer:
-            options["update"] = "" # dont overwrite newer files
-        
-        for k, v in kwargs.items():
-            if v != False:
-                options[k] = v if v != True else ""
+            options = {
+                "skip-links": True,
                 
-        command_options= " ".join([f"--{k} {v}" for k, v in options.items()])
-        try:
-            command = f"rclone {command_options} {command}"
-            return cli.run(command) if show else cli.get(command)
-        finally:
-            filters_path.unlink()
+                "retries": "5",
+                "retries-sleep": "30s",
+                
+                "order-by": "size,desc", # send largest files first
+                # "fast-list": "", bad option: makes super slow
+                
+                "exclude-if-present": ".gitignore",
+                "filter-from": filters_path,
+                }
+            
+            if not overwrite_newer:
+                options["update"] = True # dont overwrite newer files
+            
+            for k, v in kwargs.items():
+                if v != False:
+                    options[k] = v
+                    
+            args = ('rclone', options, *args)
+            return cli.run(*args) if show else cli.lines(*args, check=False)
         
     @staticmethod
     def parse_filters(filters):

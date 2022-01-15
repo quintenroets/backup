@@ -18,10 +18,10 @@ class Backup:
     
     @staticmethod
     def copy(source, dest, filters=[], overwrite_newer=True, delete_missing=False, quiet=True, **kwargs):
-        action = "sync --create-empty-src-dirs" if delete_missing else "copy"
-        command = f'{action} "{source}" "{dest}"'
+        action = ('sync', '--create-empty-src-dirs') if delete_missing else ('copy', )
         return Backup.run(
-            command, filters=filters, overwrite_newer=overwrite_newer, quiet=quiet, progress=not quiet, **kwargs
+            *action, source, dest, filters=filters, overwrite_newer=overwrite_newer, 
+            quiet=quiet, progress=not quiet, **kwargs
             )
 
     @staticmethod

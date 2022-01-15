@@ -63,7 +63,7 @@ class BackupManager:
             option = Path(option).relative_to(Path.HOME)
         
         with cli.spinner("Reading remote"):
-            lines = cli.get(f"rclone lsl {Path.remote}/{option}").split("\n")
+            lines = cli.lines('rclone lsl', Path.remote / option)
         changes = []
         present = set({})
         
@@ -173,7 +173,7 @@ class BackupManager:
     def check_cache_existence():
         # first time run
         if not Path.backup_cache.exists():
-            cli.run(f"mkdir {Path.backup_cache}", f"chown -R $(whoami):$(whoami) {Path.backup_cache}", shell=True, root=True)
+            cli.run_commands(f"mkdir {Path.backup_cache}", f"chown -R $(whoami):$(whoami) {Path.backup_cache}", shell=True, root=True)
             Backup.copy(Path.remote, Path.backup_cache, filters=["+ **"], quiet=False)
 
     @staticmethod

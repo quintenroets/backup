@@ -45,7 +45,7 @@ dst = Path.HOME / ".config" / "rclone" / filename
 
 if not dst.exists():
     if not src.exists():
-        cli.run(f"yes | gpg {src}.gpg") # decrypt credentials
+        cli.run('gpg {src}.gpg', input='yes') # decrypt credentials
         
     src.rename(dst)    
     config_paths = (Path.assets / NAME / "paths").relative_to(Path.HOME)

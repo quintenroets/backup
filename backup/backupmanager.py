@@ -158,11 +158,7 @@ class BackupManager:
         def match(p):
             if p.is_file():
                 mirror = Path.HOME / p.relative_to(Path.backup_cache)
-                try:
-                    match = p.mtime != mirror.mtime
-                except FileNotFoundError:
-                    match = True
-                return match
+                return p.mtime != mirror.mtime
             
         new_items = list(Path.backup_cache.find(match, recurse_on_match=True))
         for it in new_items:

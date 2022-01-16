@@ -40,7 +40,7 @@ class Backup:
             filters_path.lines = Backup.parse_filters(filters)
             
             options = {
-                'skip-links': True,
+                'skip-links': None,
                 
                 'retries': '5',
                 'retries-sleep': '30s',
@@ -53,11 +53,11 @@ class Backup:
                 }
             
             if not overwrite_newer:
-                options['update'] = True # dont overwrite newer files
+                options['update'] = None # dont overwrite newer files
             
             for k, v in kwargs.items():
                 if v != False:
-                    options[k] = v
+                    options[k] = None if v == True else v
                     
             args = ('rclone', options, *args)
             return cli.run(*args) if show else cli.lines(*args, check=False)

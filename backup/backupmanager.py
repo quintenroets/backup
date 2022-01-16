@@ -51,7 +51,7 @@ class BackupManager:
                 dst = (Path.HOME / '/'.join(path.name.split('_'))).with_suffix('')
                 dst.rmtree(missing_ok=True)
                 dst.parent.mkdir(parents=True, exist_ok=True)
-                cli.get(f'unzip -o '{src}' -d '{dst}'')
+                cli.get('unzip', '-o', src, '-d', dst)
         ProfileManager.reload()
         
     @staticmethod
@@ -94,11 +94,11 @@ class BackupManager:
         for item in root.find():
             if item.is_file() and item.mtime > dest.mtime and not BackupManager.exclude(item):
                 changed = True
-                print(f'{'*' if dest.mtime else '+'} {item.relative_to(Path.HOME)}')
+                print('*' if dest.mtime else '+', item.relative_to(Path.HOME))
         
         if changed:
             dest.parent.mkdir(parents=True, exist_ok=True)
-            cli.run(f'zip -r -q -o '{dest}' *', cwd=root, shell=True)
+            cli.run(f'zip -r -q -o "{dest}" *', cwd=root, shell=True)
                     
         return dest
     
@@ -202,21 +202,17 @@ class BackupManager:
         if command == 'push':
             ignores = ['Cache', 'Code Cache', 'Application Cache', 'CacheStorage', 'ScriptCache', 'GPUCache']
             flags = ''.join([
-                f'-x'*/{i}/*' ' for i in ignores
+                f'-x"*/{i}/*" ' for i in ignores
             ])
-            command = (
-                f'zip -r -q -u '{config_save_file}' {flags} '{config_folder.name}'' # only compress changes
-                if config_save_file.exists() and False # zip update is not a good idea
-                else f'zip -r -q - {flags} '{config_folder.name}' | tqdm --bytes --desc='Compressing' > '{config_save_file}''
-                )
+            command = f'zip -r -q - {flags} "{config_folder.name}" | tqdm --bytes --desc=Compressing > "{config_save_file}"'
             # make sure that all zipped files have the same root
-            cli.run(command, cwd=config_folder.parent)
+            cli.run(command, cwd=config_folder.parent, shell=True)
             Backup().upload(filters, quiet=False)
 
         elif command == 'pull':
             Backup().download(filters, quiet=False)
             config_folder.mkdir(parents=True, exist_ok=True)
-            cli.get(f'unzip -o '{config_save_file}' -d '{config_folder.parent}'')
+            cli.get('unzip', '-o', config_save_file, '-d', config_folder.parent)
         else:
             print('Choose pull or push')
 

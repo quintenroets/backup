@@ -23,9 +23,9 @@ class ProfileManager:
 
     @staticmethod
     def load(name):
-        """
+        '''
         Load new profile without saving the previous and changing active profile name
-        """
+        '''
         source = Path.profiles / name
         if source.exists():
             ProfileManager.copy(source, Path.HOME)
@@ -39,7 +39,7 @@ class ProfileManager:
     @classmethod
     @property
     def active_profile(cls):
-        return Path.active_profile.load() or "light"
+        return Path.active_profile.load() or 'light'
 
     @staticmethod
     def set_active(name):
@@ -47,14 +47,14 @@ class ProfileManager:
 
     @staticmethod
     def reload():
-        """
+        '''
         Reload config of active profile
-        """
+        '''
         ProfileManager.load(ProfileManager.active_profile)
 
     @staticmethod
     def save_active():
-        """
+        '''
         Save config files to active profile
-        """
+        '''
         ProfileManager.save(ProfileManager.active_profile)

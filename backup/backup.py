@@ -25,7 +25,7 @@ class Backup:
             )
 
     @staticmethod
-    def compare(local, remote, filters=["+ **"]):
+    def compare(local, remote, filters=['+ **']):
         options = {
             'combined': '-',            # for every file: report +/-/*/=
             'log-file': '/dev/null'     # command throws errors if not match: discard error messages
@@ -40,20 +40,20 @@ class Backup:
             filters_path.lines = Backup.parse_filters(filters)
             
             options = {
-                "skip-links": True,
+                'skip-links': True,
                 
-                "retries": "5",
-                "retries-sleep": "30s",
+                'retries': '5',
+                'retries-sleep': '30s',
                 
-                "order-by": "size,desc", # send largest files first
-                # "fast-list": "", bad option: makes super slow
+                'order-by': 'size,desc', # send largest files first
+                # 'fast-list': '', bad option: makes super slow
                 
-                "exclude-if-present": ".gitignore",
-                "filter-from": filters_path,
+                'exclude-if-present': '.gitignore',
+                'filter-from': filters_path,
                 }
             
             if not overwrite_newer:
-                options["update"] = True # dont overwrite newer files
+                options['update'] = True # dont overwrite newer files
             
             for k, v in kwargs.items():
                 if v != False:
@@ -66,5 +66,5 @@ class Backup:
     def parse_filters(filters):
         if filters and (isinstance(filters[0], list) or isinstance(filters[0], tuple)):
             filters = filters[0]
-        filters = [f if f[0] in "+-" else f"+ {f}" for f in filters] + ["- **"]
+        filters = [f if f[0] in '+-' else f'+ {f}' for f in filters] + ['- **']
         return filters

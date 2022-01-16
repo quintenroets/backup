@@ -43,35 +43,35 @@ class BackupManager:
     @staticmethod
     def after_pull(filters=None):
         if filters is None:
-            filters = [f"   {p}" for p in Path.exports.iterdir()]
+            filters = [f'   {p}' for p in Path.exports.iterdir()]
         for filter_name in filters:
-            if filter_name.endswith(".zip"):
+            if filter_name.endswith('.zip'):
                 path = Path(filter_name[3:])
                 src = Path.HOME / path
-                dst = (Path.HOME / "/".join(path.name.split("_"))).with_suffix("")
+                dst = (Path.HOME / '/'.join(path.name.split('_'))).with_suffix('')
                 dst.rmtree(missing_ok=True)
                 dst.parent.mkdir(parents=True, exist_ok=True)
-                cli.get(f"unzip -o '{src}' -d '{dst}'")
+                cli.get(f'unzip -o '{src}' -d '{dst}'')
         ProfileManager.reload()
         
     @staticmethod
     def sync_remote(option):
         BackupManager.check_cache_existence()
-        if option == ".":
-            option = "" # ls all files
+        if option == '.':
+            option = '' # ls all files
         else:
             option = Path(option).relative_to(Path.HOME)
         
-        with cli.spinner("Reading remote"):
+        with cli.spinner('Reading remote'):
             lines = cli.lines('rclone lsl', Path.remote / option)
         changes = []
         present = set({})
         
         # set cache to remote mod time
         for line in lines:
-            size, date, time, *names = line.strip().split(" ")
-            path = Path.HOME / option / " ".join(names)
-            mtime = int(datetime.strptime(f"{date} {time[:-3]}", '%Y-%m-%d %H:%M:%S.%f').timestamp())
+            size, date, time, *names = line.strip().split(' ')
+            path = Path.HOME / option / ' '.join(names)
+            mtime = int(datetime.strptime(f'{date} {time[:-3]}', '%Y-%m-%d %H:%M:%S.%f').timestamp())
             cache_path = Path.backup_cache / option / ' '.join(names)
             if mtime > cache_path.mtime:
                 cache_path.touch(mtime=mtime)
@@ -88,17 +88,17 @@ class BackupManager:
     def export_path(path):
         root = Path.HOME / path
         BackupManager.visited.add(root)
-        dest = (Path.exports / "_".join(path.parts)).with_suffix(".zip")
+        dest = (Path.exports / '_'.join(path.parts)).with_suffix('.zip')
         
         changed = False
         for item in root.find():
             if item.is_file() and item.mtime > dest.mtime and not BackupManager.exclude(item):
                 changed = True
-                print(f"{'*' if dest.mtime else '+'} {item.relative_to(Path.HOME)}")
+                print(f'{'*' if dest.mtime else '+'} {item.relative_to(Path.HOME)}')
         
         if changed:
             dest.parent.mkdir(parents=True, exist_ok=True)
-            cli.run(f'zip -r -q -o "{dest}" *', cwd=root, shell=True)
+            cli.run(f'zip -r -q -o '{dest}' *', cwd=root, shell=True)
                     
         return dest
     
@@ -108,12 +108,12 @@ class BackupManager:
         if changes:
             interactive = sys.stdin.isatty()
             if interactive:
-                message = "\n".join(["", "Drive", "=" * 80, *changes, "", "Pull?" if reverse else "Push?"])
+                message = '\n'.join(['', 'Drive', '=' * 80, *changes, '', 'Pull?' if reverse else 'Push?'])
                 BackupManager.updated = True
                 if not cli.ask(message):
                     changes = []
                 
-        filters = [f"+ /{c[2:]}" for c in changes]
+        filters = [f'+ /{c[2:]}' for c in changes]
         return filters
     
     @staticmethod
@@ -139,8 +139,8 @@ class BackupManager:
         for (path, include) in paths:
             path_full = Path.HOME / path
             if path_full.is_dir() and include:
-                if path_full.is_relative_to(Path.docs / "Drive") or (not path_full.is_relative_to(Path.docs) and not path_full.is_relative_to(Path.assets.parent)):
-                    if not path_full.is_relative_to(Path.HOME / ".config" / "browser"):
+                if path_full.is_relative_to(Path.docs / 'Drive') or (not path_full.is_relative_to(Path.docs) and not path_full.is_relative_to(Path.assets.parent)):
+                    if not path_full.is_relative_to(Path.HOME / '.config' / 'browser'):
                         path_full = BackupManager.export_path(path)
             path = path_full
             
@@ -169,8 +169,8 @@ class BackupManager:
     def check_cache_existence():
         # first time run
         if not Path.backup_cache.exists():
-            cli.run_commands(f"mkdir {Path.backup_cache}", f"chown -R $(whoami):$(whoami) {Path.backup_cache}", shell=True, root=True)
-            Backup.copy(Path.remote, Path.backup_cache, filters=["+ **"], quiet=False)
+            cli.run_commands(f'mkdir {Path.backup_cache}', f'chown -R $(whoami):$(whoami) {Path.backup_cache}', shell=True, root=True)
+            Backup.copy(Path.remote, Path.backup_cache, filters=['+ **'], quiet=False)
 
     @staticmethod
     def load_path_config():
@@ -185,40 +185,40 @@ class BackupManager:
             path in BackupManager.ignore_paths
             or path in BackupManager.visited
             or path.name in BackupManager.ignore_names
-            or (path / ".git").exists()
+            or (path / '.git').exists()
             or path.is_symlink()
-            or (path.stat().st_size > 50 * 10 ** 6 and path.suffix != ".zip")
-            or path.suffix == ".part"
+            or (path.stat().st_size > 50 * 10 ** 6 and path.suffix != '.zip')
+            or path.suffix == '.part'
         )
 
     @staticmethod
     def check_browser(command):
         local = Path.HOME
 
-        config_folder = local / "snap" / "chromium" / "common" / "chromium" / "Default"
-        config_save_file = local / ".config" / "browser" / "config.zip"
+        config_folder = local / 'snap' / 'chromium' / 'common' / 'chromium' / 'Default'
+        config_save_file = local / '.config' / 'browser' / 'config.zip'
         filters = parser.make_filters(includes=[config_save_file.relative_to(local)])
 
-        if command == "push":
-            ignores = ["Cache", "Code Cache", "Application Cache", "CacheStorage", "ScriptCache", "GPUCache"]
-            flags = "".join([
-                f"-x'*/{i}/*' " for i in ignores
+        if command == 'push':
+            ignores = ['Cache', 'Code Cache', 'Application Cache', 'CacheStorage', 'ScriptCache', 'GPUCache']
+            flags = ''.join([
+                f'-x'*/{i}/*' ' for i in ignores
             ])
             command = (
-                f"zip -r -q -u '{config_save_file}' {flags} '{config_folder.name}'" # only compress changes
+                f'zip -r -q -u '{config_save_file}' {flags} '{config_folder.name}'' # only compress changes
                 if config_save_file.exists() and False # zip update is not a good idea
-                else f"zip -r -q - {flags} '{config_folder.name}' | tqdm --bytes --desc='Compressing' > '{config_save_file}'"
+                else f'zip -r -q - {flags} '{config_folder.name}' | tqdm --bytes --desc='Compressing' > '{config_save_file}''
                 )
             # make sure that all zipped files have the same root
             cli.run(command, cwd=config_folder.parent)
             Backup().upload(filters, quiet=False)
 
-        elif command == "pull":
+        elif command == 'pull':
             Backup().download(filters, quiet=False)
             config_folder.mkdir(parents=True, exist_ok=True)
-            cli.get(f"unzip -o '{config_save_file}' -d '{config_folder.parent}'")
+            cli.get(f'unzip -o '{config_save_file}' -d '{config_folder.parent}'')
         else:
-            print("Choose pull or push")
+            print('Choose pull or push')
 
     @staticmethod
     def subcheck(custom_filters=[], command=None):

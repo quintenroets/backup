@@ -11,18 +11,17 @@ class Watcher:
     def __init__(self, folder=None):
         self.threads = []
         self.max_threads = 1
-        self.folder = folder if folder else os.getcwd()
+        self.folder = Path(folder or Path.cwd())
 
 
     def process_event(self, event):
-        path = event.pathname
-
-        if not any([path.endswith(end) for end in [".kate-swp", ".part", ".py~"]]):
-            if not any([f in path for f in BackupManager.ignore_names]):
-                filename = path.replace(self.folder, "")
-                print(filename)
-                filters = [f"+ {filename}"]
-                BackupManager.subcheck(custom_filters=filters, command="push")
+        path = Path(event.pathname)
+        if path.suffix not in ['.kate-swp', '.part', '.py~']:
+            if not any([f in path.parts for f in BackupManager.ignore_names]):
+                subpath = path.relative_to(self.folder)
+                print(path.name)
+                filters = [f'+ {subpath}']
+                BackupManager.subcheck(custom_filters=filters, command='push')
 
     def watch(self, folder=None):
         mask = (

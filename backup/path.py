@@ -12,6 +12,20 @@ class Path(Path):
         remote filesystem also has limited precision
         '''
         return int(super().mtime)
+    
+    @mtime.setter
+    def mtime(self, time):
+        '''
+        setter needs to be redefined as well
+        inheriting does not work for some reason
+        '''
+        import os
+        import subprocess
+        os.utime(self, (time, time)) # set create time as well
+        try:
+            subprocess.run(('touch', '-d', f'@{time}', self))
+        except subprocess.CalledProcessError:
+            pass # Doesn't work on Windows
 
 
 class Path(Path):
@@ -34,4 +48,4 @@ class Path(Path):
 
     backup_cache = Path.HOME.parent / 'backup'
 
-    remote = 'backup:Home'
+    remote = Path('backup:Home')

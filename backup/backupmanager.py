@@ -60,8 +60,10 @@ class BackupManager:
         else:
             option = Path(option).relative_to(Path.HOME)
         
-        with cli.console.status('Reading remote'):
-            lines = cli.lines('rclone lsl', Path.remote / option)
+        with Path.tempfile() as tmp:
+            cli.run(f'rclone lsl {Path.remote / option} | tee {tmp} | tqdm --desc="Reading Remote" --null --unit=files', shell=True)
+            lines = tmp.lines
+                
         changes = []
         present = set({})
         

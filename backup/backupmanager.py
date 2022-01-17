@@ -1,4 +1,3 @@
-import backup
 import cli
 import sys
 from datetime import datetime
@@ -107,7 +106,7 @@ class BackupManager:
         if changes:
             interactive = sys.stdin.isatty()
             if interactive:
-                backup.console.rule('Drive')
+                cli.console.rule('Drive')
                 message = '\n'.join([*changes, '', 'Pull?' if reverse else 'Push?'])
                 BackupManager.updated = True
                 if not cli.ask(message):

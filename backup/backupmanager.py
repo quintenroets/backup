@@ -60,7 +60,7 @@ class BackupManager:
         else:
             option = Path(option).relative_to(Path.HOME)
         
-        with cli.spinner('Reading remote'):
+        with cli.console.status('Reading remote'):
             lines = cli.lines('rclone lsl', Path.remote / option)
         changes = []
         present = set({})

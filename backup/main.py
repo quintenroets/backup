@@ -1,5 +1,4 @@
 import argparse
-import cli
 
 from .backupmanager import BackupManager
 
@@ -10,11 +9,6 @@ def main():
     parser.add_argument('option', nargs='?', help='Check browser or not', default='')
     args = parser.parse_args()
     
-    with cli.errorhandler():
-        _main(args)
-
-
-def _main(args):
     if args.option == 'browser':
         BackupManager.check_browser(args.action)
     elif args.action == 'status':

@@ -2,7 +2,7 @@ import pyinotify
 import os
 import json
 
-from libs.threading import Thread
+from tbhandler.threading import Thread
 
 from .backupmanager import BackupManager
 from .path import Path

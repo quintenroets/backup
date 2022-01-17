@@ -2,8 +2,6 @@ import cli
 import sys
 from datetime import datetime
 
-from libs.threading import Thread
-
 from .backup import Backup
 from .path import Path
 from .profilemanager import ProfileManager

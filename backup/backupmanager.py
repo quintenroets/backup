@@ -18,6 +18,7 @@ class BackupManager:
         for path in Path.HOME.glob(pattern)
     }
     visited = set({})
+    export_changes = []
     
     @staticmethod
     def push():
@@ -94,7 +95,7 @@ class BackupManager:
         for item in root.find():
             if item.is_file() and item.mtime > dest.mtime and not BackupManager.exclude(item):
                 changed = True
-                print('*' if dest.mtime else '+', item.relative_to(Path.HOME))
+                export_changes.append(f'{"*" if dest.mtime else "+"} {item.relative_to(Path.HOME)}')
         
         if changed:
             dest.parent.mkdir(parents=True, exist_ok=True)
@@ -108,8 +109,9 @@ class BackupManager:
         if changes:
             interactive = sys.stdin.isatty()
             if interactive:
+                cli.console.clear()
                 cli.console.rule('Drive')
-                message = '\n'.join([*changes, '', 'Pull?' if reverse else 'Push?'])
+                message = '\n'.join([*export_changes, *changes, '', 'Pull?' if reverse else 'Push?'])
                 BackupManager.updated = True
                 if not cli.ask(message):
                     changes = []

@@ -111,9 +111,10 @@ class BackupManager:
             if interactive:
                 cli.console.clear()
                 cli.console.rule('Drive')
-                message = '\n'.join([*BackupManager.export_changes, *changes, '', 'Pull?' if reverse else 'Push?'])
+                message = '\n'.join([*BackupManager.export_changes, *changes, ''])
+                print(message)
                 BackupManager.updated = True
-                if not cli.ask(message):
+                if not cli.confirm('Pull?' if reverse else 'Push?', default=True):
                     changes = []
                 
         filters = [f'+ /{c[2:]}' for c in changes]

@@ -2,15 +2,11 @@ import pyinotify
 import os
 import json
 
-from tbhandler.threading import Thread
-
 from .backupmanager import BackupManager
 from .path import Path
 
 class Watcher:
     def __init__(self, folder=None):
-        self.threads = []
-        self.max_threads = 1
         self.folder = Path(folder or Path.cwd())
 
 

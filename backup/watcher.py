@@ -1,33 +1,34 @@
-import pyinotify
-import os
 import json
+import os
+
+import pyinotify
 
 from .backupmanager import BackupManager
 from .path import Path
+
 
 class Watcher:
     def __init__(self, folder=None):
         self.folder = Path(folder or Path.cwd())
 
-
     def process_event(self, event):
         path = Path(event.pathname)
-        if path.suffix not in ['.kate-swp', '.part', '.py~']:
+        if path.suffix not in [".kate-swp", ".part", ".py~"]:
             if not any([f in path.parts for f in BackupManager.ignore_names]):
                 subpath = path.relative_to(self.folder)
                 print(path.name)
-                filters = [f'+ {subpath}']
-                BackupManager.subcheck(custom_filters=filters, command='push')
+                filters = [f"+ {subpath}"]
+                BackupManager.subcheck(custom_filters=filters, command="push")
 
     def watch(self, folder=None):
         mask = (
             pyinotify.IN_CLOSE_WRITE
             | pyinotify.IN_CREATE
-            #| pyinotify.IN_MOVED_FROM
-            #| pyinotify.IN_MOVED_TO
+            # | pyinotify.IN_MOVED_FROM
+            # | pyinotify.IN_MOVED_TO
             | pyinotify.IN_DELETE
-            #| pyinotify.IN_MODIFY
-            #| pyinotify.IN_ATTRIB
+            # | pyinotify.IN_MODIFY
+            # | pyinotify.IN_ATTRIB
         )
 
         watcher = pyinotify.WatchManager()
@@ -37,6 +38,7 @@ class Watcher:
 
         notifier = pyinotify.Notifier(watcher)
         notifier.loop()
+
 
 def main():
     syncs = Path.syncs.load()

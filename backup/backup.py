@@ -40,19 +40,21 @@ class Backup:
         )
 
     @staticmethod
-    def compare(local, remote, filters=["+ **"]):
+    def compare(local, remote, filters=["+ **"], **kwargs):
         options = {
             "combined": "-",  # for every file: report +/-/*/=
             "log-file": "/dev/null",  # command throws errors if not match: discard error messages
         }
         changes = Backup.run(
-            "check", options, local, remote, filters=filters, show=False
+            "check", options, local, remote, filters=filters, show=False, **kwargs
         )
         changes = [c for c in changes if not c.startswith("=")]
         return changes
 
     @staticmethod
-    def run(*args, filters, show=True, overwrite_newer=False, **kwargs):
+    def run(
+        *args, filters, show=True, overwrite_newer=False, exclude_git=True, **kwargs
+    ):
         with Path.tempfile() as filters_path:
             filters_path.lines = Backup.parse_filters(filters)
 
@@ -65,6 +67,8 @@ class Backup:
                 "exclude-if-present": ".gitignore",
                 "filter-from": filters_path,
             }
+            if not exclude_git:
+                options.pop("exclude-if-present")
 
             if not overwrite_newer:
                 options["update"] = None  # dont overwrite newer files

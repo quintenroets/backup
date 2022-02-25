@@ -28,7 +28,6 @@ setup(
     entry_points={
         "console_scripts": [
             "drive = backup.main:main",
-            "drivesync = backup.syncer:main",
             "watcher = backup.watcher:main",
         ]
     },

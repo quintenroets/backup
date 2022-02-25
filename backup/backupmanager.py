@@ -257,19 +257,36 @@ class BackupManager:
         else:
             print("Choose pull or push")
 
-    @classmethod
-    def subcheck(cls, custom_filters=[], command=None):
-        syncs = Path.syncs.load()
 
-        for local, remote_info in syncs.items():
-            for remote, ignore_patterns in remote_info.items():
-                filters = parser.make_filters(
-                    excludes=ignore_patterns,
-                    recursive=True,
-                    include_others=not custom_filters,
+def subcheck(custom_filters=[], command=None):
+    command = command or "status"
+    syncs = Path.syncs.load()
+    ignore_names = Path.ignore_names.load()
+    ignore_name_filters = [f"- **{n}**" for n in ignore_names]
+
+    for local, remote_info in syncs.items():
+        for remote, ignore_patterns in remote_info.items():
+            local = Path.HOME / local
+            remote = "backup:" + remote
+            filters = ignore_name_filters + parser.make_filters(
+                excludes=ignore_patterns,
+                recursive=True,
+                include_others=not custom_filters,
+                root=local,
+            )
+            if custom_filters:
+                filters += custom_filters
+
+            if command == "status":
+                changes = Backup.compare(
+                    local, remote, filters=filters, exclude_git=False
                 )
-                if custom_filters:
-                    filters += custom_filters
-
-                function = Backup.get_function(command)
-                function(local, remote, filters=filters)
+            elif command == "push":
+                Backup().copy(
+                    local,
+                    remote,
+                    filters=filters,
+                    delete_missing=True,
+                    exclude_git=False,
+                    quiet=False,
+                )

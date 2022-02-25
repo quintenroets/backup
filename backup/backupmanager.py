@@ -18,20 +18,20 @@ class BackupManager:
     visited = set({})
     export_changes = []
 
-    @staticmethod
-    def push():
-        filters = BackupManager.get_compared_filters()
+    @classmethod
+    def push(cls):
+        filters = cls.get_compared_filters()
         if filters:
             Backup().upload(filters, delete_missing=True, quiet=False)
             Backup.copy(
                 Path.HOME, Path.backup_cache, filters=filters, delete_missing=True
             )
 
-    @staticmethod
-    def pull(option=None):
+    @classmethod
+    def pull(cls, option=None):
         if option:
-            BackupManager.sync_remote(option)
-        filters = BackupManager.get_compared_filters(reverse=True)
+            cls.sync_remote(option)
+        filters = cls.get_compared_filters(reverse=True)
         if filters:
             src = Path.remote if option else Path.backup_cache
             Backup.copy(
@@ -46,10 +46,10 @@ class BackupManager:
                 Backup.copy(
                     Path.HOME, Path.backup_cache, filters=filters, delete_missing=True
                 )
-            BackupManager.after_pull(filters)
+            cls.after_pull(filters)
 
-    @staticmethod
-    def after_pull(filters=None):
+    @classmethod
+    def after_pull(cls, filters=None):
         if filters is None:
             filters = [f"   {p}" for p in Path.exports.iterdir()]
         for filter_name in filters:
@@ -62,9 +62,9 @@ class BackupManager:
                 cli.get("unzip", "-o", src, "-d", dst)
         profilemanager.reload()
 
-    @staticmethod
-    def sync_remote(option):
-        BackupManager.check_cache_existence()
+    @classmethod
+    def sync_remote(cls, option):
+        cls.check_cache_existence()
         if option == ".":
             option = ""  # ls all files
         else:
@@ -103,21 +103,17 @@ class BackupManager:
         ):
             deleted.unlink()
 
-    @staticmethod
-    def export_path(path):
+    @classmethod
+    def export_path(cls, path):
         root = Path.HOME / path
-        BackupManager.visited.add(root)
+        cls.visited.add(root)
         dest = (Path.exports / "_".join(path.parts)).with_suffix(".zip")
 
         changed = False
         for item in root.find():
-            if (
-                item.is_file()
-                and item.mtime > dest.mtime
-                and not BackupManager.exclude(item)
-            ):
+            if item.is_file() and item.mtime > dest.mtime and not cls.exclude(item):
                 changed = True
-                BackupManager.export_changes.append(
+                cls.export_changes.append(
                     f'{"*" if dest.mtime else "+"} {item.relative_to(Path.HOME)}'
                 )
 
@@ -127,28 +123,28 @@ class BackupManager:
 
         return dest
 
-    @staticmethod
-    def get_compared_filters(reverse=False):
-        changes = BackupManager.status(reverse=reverse)
+    @classmethod
+    def get_compared_filters(cls, reverse=False):
+        changes = cls.status(reverse=reverse)
         if changes:
             interactive = sys.stdin.isatty()
             if interactive:
                 cli.console.clear()
                 cli.console.rule("Drive")
-                message = "\n".join([*BackupManager.export_changes, *changes, ""])
+                message = "\n".join([*cls.export_changes, *changes, ""])
                 print(message)
-                BackupManager.updated = True
+                cls.updated = True
                 if not cli.confirm("Pull?" if reverse else "Push?", default=True):
                     changes = []
 
         filters = [f"+ /{c[2:]}" for c in changes]
         return filters
 
-    @staticmethod
-    def status(reverse=False):
+    @classmethod
+    def status(cls, reverse=False):
         profilemanager.save_active()
-        BackupManager.check_cache_existence()
-        filters = BackupManager.get_filters()
+        cls.check_cache_existence()
+        filters = cls.get_filters()
         src, dst = (
             (Path.HOME, Path.backup_cache)
             if not reverse
@@ -165,10 +161,10 @@ class BackupManager:
 
         return status
 
-    @staticmethod
-    def get_filters():
-        BackupManager.visited = set({})
-        paths = BackupManager.load_path_config()
+    @classmethod
+    def get_filters(cls):
+        cls.visited = set({})
+        paths = cls.load_path_config()
         items = set({})
         for (path, include) in paths:
             path_full = Path.HOME / path
@@ -178,18 +174,18 @@ class BackupManager:
                     and not path_full.is_relative_to(Path.assets.parent)
                 ):
                     if not path_full.is_relative_to(Path.HOME / ".config" / "browser"):
-                        path_full = BackupManager.export_path(path)
+                        path_full = cls.export_path(path)
             path = path_full
 
             if include:
-                for item in path.find(exclude=BackupManager.exclude):
+                for item in path.find(exclude=cls.exclude):
                     if item.is_file():
                         pattern = item.relative_to(Path.HOME)
                         mirror = Path.backup_cache / pattern
                         if item.mtime != mirror.mtime and not item.tag:
                             # check for tag here because we do not want to exclude tags recusively
                             items.add(pattern)
-            BackupManager.visited.add(path)
+            cls.visited.add(path)
 
         def match(p):
             if p.is_file():
@@ -201,8 +197,8 @@ class BackupManager:
             items.add(it.relative_to(Path.backup_cache))
         return parser.make_filters(includes=items)
 
-    @staticmethod
-    def check_cache_existence():
+    @classmethod
+    def check_cache_existence(cls):
         # first time run
         if not Path.backup_cache.exists():
             cli.run_commands(
@@ -213,26 +209,26 @@ class BackupManager:
             )
             Backup.copy(Path.remote, Path.backup_cache, filters=["+ **"], quiet=False)
 
-    @staticmethod
-    def load_path_config():
+    @classmethod
+    def load_path_config(cls):
         return parser.parse_paths_comb(
             Path.paths_include.load(), Path.paths_exclude.load()
         )
 
-    @staticmethod
-    def exclude(path: Path):
+    @classmethod
+    def exclude(cls, path: Path):
         return (
-            path in BackupManager.ignore_paths
-            or path in BackupManager.visited
-            or path.name in BackupManager.ignore_names
+            path in cls.ignore_paths
+            or path in cls.visited
+            or path.name in cls.ignore_names
             or (path / ".git").exists()
             or path.is_symlink()
             or (path.stat().st_size > 50 * 10 ** 6 and path.suffix != ".zip")
             or path.suffix == ".part"
         )
 
-    @staticmethod
-    def check_browser(command):
+    @classmethod
+    def check_browser(cls, command):
         local = Path.HOME
 
         config_folder = local / "snap" / "chromium" / "common" / "chromium" / "Default"
@@ -261,8 +257,8 @@ class BackupManager:
         else:
             print("Choose pull or push")
 
-    @staticmethod
-    def subcheck(custom_filters=[], command=None):
+    @classmethod
+    def subcheck(cls, custom_filters=[], command=None):
         syncs = Path.syncs.load()
 
         for local, remote_info in syncs.items():

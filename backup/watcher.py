@@ -43,4 +43,4 @@ class Watcher:
 def main():
     syncs = Path.syncs.load()
     for path in syncs:
-        Watcher().watch(path)
+        Watcher().watch(Path.HOME / path)

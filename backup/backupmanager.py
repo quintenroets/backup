@@ -3,10 +3,9 @@ from datetime import datetime
 
 import cli
 
-from . import parser
+from . import parser, profilemanager
 from .backup import Backup
 from .path import Path
-from .profilemanager import ProfileManager
 
 
 class BackupManager:
@@ -61,7 +60,7 @@ class BackupManager:
                 dst.rmtree(missing_ok=True)
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 cli.get("unzip", "-o", src, "-d", dst)
-        ProfileManager.reload()
+        profilemanager.reload()
 
     @staticmethod
     def sync_remote(option):
@@ -147,7 +146,7 @@ class BackupManager:
 
     @staticmethod
     def status(reverse=False):
-        ProfileManager.save_active()
+        profilemanager.save_active()
         BackupManager.check_cache_existence()
         filters = BackupManager.get_filters()
         src, dst = (

@@ -1,6 +1,8 @@
 import sys
 from datetime import datetime
 
+from rich import pretty
+
 import cli
 
 from . import parser, profilemanager
@@ -281,6 +283,7 @@ def subcheck(custom_filters=[], command=None):
                 changes = Backup.compare(
                     local, remote, filters=filters, exclude_git=False
                 )
+                pretty.pprint(changes)
             elif command == "push":
                 Backup().copy(
                     local,

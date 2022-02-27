@@ -20,7 +20,7 @@ class Watcher:
             ):
                 subpath = path.relative_to(self.path)
                 pretty.pprint(subpath)
-                filters = [f"+ {subpath}"]
+                filters = [f"+ {subpath}", "- **"]
                 backupmanager.subcheck(custom_filters=filters, command="push")
 
     def watch(self):

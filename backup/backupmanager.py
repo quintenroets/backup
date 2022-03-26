@@ -204,10 +204,9 @@ class BackupManager:
     def check_cache_existence(cls):
         # first time run
         if not Path.backup_cache.exists():
-            cli.run_commands(
+            cli.sh(
                 f"mkdir {Path.backup_cache}",
                 f"chown -R $(whoami):$(whoami) {Path.backup_cache}",
-                shell=True,
                 root=True,
             )
             Backup.copy(Path.remote, Path.backup_cache, filters=["+ **"], quiet=False)

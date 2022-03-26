@@ -1,8 +1,6 @@
 from setuptools import find_packages, setup
 
-import cli
 from backup.backup import Backup
-from plib import Path
 
 NAME = "backup"
 
@@ -32,6 +30,9 @@ setup(
         ]
     },
 )
+
+import cli  # isort:skip
+from plib import Path  # isort:skip
 
 
 installed = cli.get("which rclone", check=False)

@@ -1,9 +1,8 @@
 import sys
 from datetime import datetime
 
-from rich import pretty
-
 import cli
+from rich import pretty
 
 from . import parser, profilemanager
 from .backup import Backup
@@ -148,6 +147,7 @@ class BackupManager:
         profilemanager.save_active()
         cls.check_cache_existence()
         filters = cls.get_filters()
+
         src, dst = (
             (Path.HOME, Path.backup_cache)
             if not reverse
@@ -155,6 +155,7 @@ class BackupManager:
         )
         status = Backup.compare(src, dst, filters=filters) if filters else []
         changed_paths = [s[2:] for s in status]  # cut away +/* and space
+
         no_changes_filters = [
             f for f in filters if f and f[3:] not in changed_paths
         ]  # cut away +/*, space, slash

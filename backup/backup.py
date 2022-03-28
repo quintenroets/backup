@@ -63,8 +63,6 @@ class Backup:
                 "retries": "5",
                 "retries-sleep": "30s",
                 "order-by": "size,desc",  # send largest files first
-                # 'fast-list': '', bad option: makes super slow
-                "exclude-if-present": ".gitignore",
                 "filter-from": filters_path,
             }
             if not exclude_git:

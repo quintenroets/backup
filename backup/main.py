@@ -13,9 +13,12 @@ def main():
     )
     parser.add_argument("option", nargs="?", help="Check browser or not", default="")
     args = parser.parse_args()
+    print(args)
 
     if args.option == "browser":
         BackupManager.check_browser(args.action)
+    elif args.action == "browser":
+        BackupManager.check_browser(args.option)
     elif args.action == "status":
         BackupManager.status()
     elif args.action == "push":

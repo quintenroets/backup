@@ -1,9 +1,34 @@
+from typing import List
+
 from .path import Path
 
 
 def parse_paths(structure):
     tuples = parse_paths_comb(structure, {}, root=Path(""))
     return [t[0] for t in tuples]
+
+
+def is_drive_path(subpath: Path):
+    return Path.HOME / subpath == Path.drive
+
+
+def replace_subitems(subroot: Path, subitems: List[str]) -> List[str]:
+    if is_drive_path(subroot):
+        # special treatment needed for zip efficiency
+        subitems = [f.name for f in Path.drive.iterdir()]
+    return subitems
+
+
+def replace_special_characters(root: Path, name: str):
+    VERSION_KEYWORD = "__VERSION__"
+    if VERSION_KEYWORD in name:
+        name_start = name.split(VERSION_KEYWORD)[0]
+        absolute_root = Path.HOME / root
+        true_paths = absolute_root.glob(f"{name_start}*")
+        true_paths: List[Path] = sorted(list(true_paths), key=lambda path: -path.mtime)
+        name = true_paths[0].name
+
+    return name
 
 
 def make_filters(
@@ -54,13 +79,11 @@ class Structure:
             name, subitems = next(iter(item.items()))
 
             name, *parts = name.split("/")
+            name = replace_special_characters(root, name)
             subroot = root / name
-            drive = Path.docs / "Drive"  # special treatment needed for zip efficiency
-
-            if Path.HOME / subroot == drive:
-                subitems = [f.name for f in drive.iterdir()]
-
-            if parts:  # properly set path after / to sublevel
+            subitems = replace_subitems(subroot, subitems)
+            if parts:
+                # item was multiple directories deep => add first part and go one level deeper
                 subitems = [{"/".join(parts): subitems}]
             if subitems:
                 self.structures[name] = Structure(subitems, subroot)

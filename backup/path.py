@@ -36,6 +36,9 @@ class Path(BasePath2):
     active_profile = profiles / "active"
     profile_paths = profiles / "paths"
 
+    drive = BasePath2.docs / "Drive"
+    browser_config = BasePath2.HOME / ".config" / "browser"
+
     exports = assets / "exports"
 
     backup_cache = BasePath2.HOME.parent / "backup"

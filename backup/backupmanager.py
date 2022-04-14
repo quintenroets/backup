@@ -1,8 +1,9 @@
 import sys
 from datetime import datetime
 
-import cli
 from rich import pretty
+
+import cli
 
 from . import parser, profilemanager
 from .backup import Backup
@@ -173,11 +174,11 @@ class BackupManager:
         for (path, include) in paths:
             path_full = Path.HOME / path
             if path_full.is_dir() and include:
-                if path_full.is_relative_to(Path.docs / "Drive") or (
+                if path_full.is_relative_to(Path.drive) or (
                     not path_full.is_relative_to(Path.docs)
                     and not path_full.is_relative_to(Path.assets.parent)
                 ):
-                    if not path_full.is_relative_to(Path.HOME / ".config" / "browser"):
+                    if not path_full.is_relative_to(Path.browser_config):
                         path_full = cls.export_path(path)
             path = path_full
 
@@ -235,7 +236,7 @@ class BackupManager:
         local = Path.HOME
 
         config_folder = local / "snap" / "chromium" / "common" / "chromium" / "Default"
-        config_save_file = local / ".config" / "browser" / "config.zip"
+        config_save_file = Path.browser_config / "config.zip"
         filters = parser.make_filters(includes=[config_save_file.relative_to(local)])
 
         if command == "push":

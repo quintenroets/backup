@@ -192,12 +192,15 @@ class BackupManager:
                             items.add(pattern)
             cls.visited.add(path)
 
-        def match(p):
-            if p.is_file():
-                mirror = Path.HOME / p.relative_to(Path.backup_cache)
-                return p.mtime != mirror.mtime
+        volatile_items = cls.load_volatile()
 
-        new_items = list(Path.backup_cache.find(match, recurse_on_match=True))
+        def match(p: Path):
+            if p.is_file():
+                relative = p.relative_to(Path.backup_cache)
+                mirror = Path.HOME / relative
+                return p.mtime != mirror.mtime and relative not in volatile_items
+
+        new_items = Path.backup_cache.find(match, recurse_on_match=True)
         for it in new_items:
             items.add(it.relative_to(Path.backup_cache))
         return parser.make_filters(includes=items)
@@ -216,7 +219,14 @@ class BackupManager:
     @classmethod
     def load_path_config(cls):
         return parser.parse_paths_comb(
-            Path.paths_include.load(), Path.paths_exclude.load()
+            Path.paths_include.content, Path.paths_exclude.content
+        )
+
+    @classmethod
+    def load_volatile(cls):
+        return tuple(
+            volatile[0]
+            for volatile in parser.parse_paths_comb(Path.paths_volatile.content, {})
         )
 
     @classmethod

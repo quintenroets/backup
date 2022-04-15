@@ -29,6 +29,7 @@ class Path(BasePath2):
     paths_include = paths / "include"
     paths_include_pull = paths / "pull_include"
     paths_exclude = paths / "exclude"
+    paths_volatile = paths / "volatile"
 
     timestamps = assets / "timestamps" / "timestamps"
     profiles = assets / "profiles"

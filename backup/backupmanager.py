@@ -1,9 +1,8 @@
 import sys
 from datetime import datetime
 
-from rich import pretty
-
 import cli
+from rich import pretty
 
 from . import parser, profilemanager
 from .backup import Backup
@@ -237,7 +236,7 @@ class BackupManager:
             or path.name in cls.ignore_names
             or (path / ".git").exists()
             or path.is_symlink()
-            or (path.stat().st_size > 50 * 10 ** 6 and path.suffix != ".zip")
+            or (path.stat().st_size > 50 * 10**6 and path.suffix != ".zip")
             or path.suffix == ".part"
         )
 

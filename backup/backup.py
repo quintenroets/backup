@@ -1,4 +1,4 @@
-import time
+import shlex
 
 import cli
 
@@ -21,7 +21,7 @@ class Backup:
     def copy(
         source,
         dest,
-        filters=[],
+        filters=None,
         overwrite_newer=True,
         delete_missing=False,
         quiet=True,
@@ -40,23 +40,29 @@ class Backup:
         )
 
     @staticmethod
-    def compare(local, remote, filters=["+ **"], **kwargs):
+    def compare(local, remote, filters=None, show=False, **kwargs):
         options = {
             "combined": "-",  # for every file: report +/-/*/=
             "log-file": "/dev/null",  # command throws errors if not match: discard error messages
         }
         changes = Backup.run(
-            "check", options, local, remote, filters=filters, show=False, **kwargs
+            "check", options, local, remote, filters=filters, show=show, **kwargs
         )
-        changes = [c for c in changes if not c.startswith("=")]
+        if not show:
+            changes = [c for c in changes if not c.startswith("=")]
         return changes
 
     @staticmethod
     def run(
-        *args, filters, show=True, overwrite_newer=False, exclude_git=True, **kwargs
+        *args,
+        filters=None,
+        show=True,
+        overwrite_newer=False,
+        exclude_git=True,
+        **kwargs,
     ):
         with Path.tempfile() as filters_path:
-            filters_path.lines = Backup.parse_filters(filters)
+            filters_path.lines = Backup.parse_filters(filters or ["+ **"])
 
             options = {
                 "skip-links": None,
@@ -69,14 +75,28 @@ class Backup:
                 options.pop("exclude-if-present")
 
             if not overwrite_newer:
-                options["update"] = None  # dont overwrite newer files
+                options["update"] = None  # don't overwrite newer files
 
             for k, v in kwargs.items():
-                if v != False:
-                    options[k] = None if v == True else v
+                if v:
+                    options[k] = None if v is True else v
 
             args = ("rclone", options, *args)
-            return cli.run(*args) if show else cli.lines(*args, check=False)
+            if show:
+                clean_output_postprocessing = " | ".join(
+                    (
+                        "",
+                        "tee /dev/stdout",
+                        "tqdm --desc='Checking changes' --unit=files",
+                        "grep -v =",
+                    )
+                )
+                command = (
+                    shlex.join(cli.prepare_args(args)) + clean_output_postprocessing
+                )
+                cli.run(command, shell=True)
+            else:
+                return cli.lines(*args, check=False)
 
     @staticmethod
     def parse_filters(filters):

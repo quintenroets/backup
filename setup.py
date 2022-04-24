@@ -29,9 +29,9 @@ setup(
     },
 )
 
-import cli  # isort:skip
-from plib import Path  # isort:skip
-from backup.backup import Backup  # isort:skip
+import cli  # isort:skip # noqa: autoimport
+from plib import Path  # isort:skip # noqa: autoimport
+from backup.backup import Backup  # isort:skip # noqa: autoimport
 
 installed = cli.get("which rclone", check=False)
 if not installed:

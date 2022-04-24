@@ -30,6 +30,7 @@ class Path(BasePath2):
     paths_include_pull = paths / "pull_include"
     paths_exclude = paths / "exclude"
     paths_volatile = paths / "volatile"
+    harddrive_paths = paths / "harddrive.yaml"
 
     timestamps = assets / "timestamps" / "timestamps"
     profiles = assets / "profiles"
@@ -45,3 +46,4 @@ class Path(BasePath2):
     backup_cache = BasePath2.HOME.parent / "backup"
 
     remote = BasePath2("backup:Home")
+    harddrive = BasePath2(f"/media/{BasePath2.HOME.name}/Backup")

@@ -1,5 +1,6 @@
 import argparse
 
+from . import harddrive
 from .backupmanager import BackupManager, subcheck
 
 
@@ -16,16 +17,20 @@ def main():
 
     if args.option == "browser":
         BackupManager.check_browser(args.action)
-    elif args.action == "browser":
-        BackupManager.check_browser(args.option)
-    elif args.action == "status":
-        BackupManager.status()
-    elif args.action == "push":
-        BackupManager.push()
-    elif args.action == "pull":
-        BackupManager.pull(args.option)
-    elif args.action == "sync":
-        subcheck(command=args.option)
+    else:
+        match args.action:
+            case "browser":
+                BackupManager.check_browser(args.option)
+            case "status":
+                BackupManager.status()
+            case "push":
+                BackupManager.push()
+            case "pull":
+                BackupManager.pull(args.option)
+            case "sync":
+                subcheck(command=args.option)
+            case "harddrive":
+                harddrive.check(args.option)
 
 
 if __name__ == "__main__":

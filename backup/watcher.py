@@ -1,6 +1,3 @@
-import json
-import os
-
 import pyinotify
 from rich import pretty
 

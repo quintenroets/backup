@@ -36,6 +36,7 @@ class Backup:
             overwrite_newer=overwrite_newer,
             quiet=quiet,
             progress=not quiet,
+            show=not quiet,
             **kwargs,
         )
 
@@ -82,7 +83,7 @@ class Backup:
                     options[k] = None if v is True else v
 
             args = ("rclone", options, *args)
-            if show:
+            if show and args and args[0] == "check":
                 clean_output_postprocessing = " | ".join(
                     (
                         "",
@@ -95,6 +96,8 @@ class Backup:
                     shlex.join(cli.prepare_args(args)) + clean_output_postprocessing
                 )
                 cli.run(command, shell=True)
+            elif show:
+                cli.run(*args)
             else:
                 return cli.lines(*args, check=False)
 

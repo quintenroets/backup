@@ -4,7 +4,7 @@ from datetime import datetime
 import cli
 from rich import pretty
 
-from . import parser, profilemanager
+from . import custom_checher, parser, profilemanager
 from .backup import Backup
 from .path import Path
 
@@ -202,6 +202,8 @@ class BackupManager:
         new_items = Path.backup_cache.find(match, recurse_on_match=True)
         for it in new_items:
             items.add(it.relative_to(Path.backup_cache))
+
+        items = custom_checher.reduce(items)
         return parser.make_filters(includes=items)
 
     @classmethod

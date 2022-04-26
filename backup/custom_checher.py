@@ -18,7 +18,7 @@ def check_kate(path: Path):
     return non_volatile_sections
 
 
-def custom_checkers() -> Dict[str, FunctionType]:
+def custom_checkers() -> Dict[Path, FunctionType]:
     checkers = {".config/katerc": check_kate}
     return {Path(k): v for k, v in checkers.items()}
 

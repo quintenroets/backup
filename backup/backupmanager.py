@@ -93,6 +93,7 @@ class BackupManager:
             cache_path = Path.backup_cache / option / " ".join(names)
             if mtime > cache_path.mtime:
                 cache_path.touch(mtime=mtime)
+                cache_path.text = ""
             present.add(cache_path)
 
         # delete cache items not in remote

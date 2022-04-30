@@ -128,6 +128,8 @@ class BackupManager:
     @classmethod
     def get_compared_filters(cls, reverse=False):
         changes = cls.status(reverse=reverse)
+        if reverse and changes:
+            changes = cls.remove_excludes(changes)
         if changes:
             interactive = sys.stdin.isatty()
             if interactive:
@@ -141,6 +143,21 @@ class BackupManager:
 
         filters = [f"+ /{c[2:]}" for c in changes]
         return filters
+
+    @classmethod
+    def remove_excludes(cls, changes):
+        filtered_changes = []
+        config = cls.load_path_config()
+
+        for change in changes:
+            path = Path(change[2:])
+            for config_path, include in config:
+                if path.is_relative_to(config_path):
+                    if include:
+                        filtered_changes.append(change)
+                        break
+
+        return filtered_changes
 
     @classmethod
     def status(cls, reverse=False):

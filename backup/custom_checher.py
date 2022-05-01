@@ -12,6 +12,9 @@ def check_kate(path: Path):
     non_volatile_sections = []
     for start, end in zip(header_indices, header_indices[1:]):
         section = lines[start:end]
+        for line in section:
+            if "Color Theme=" in line:
+                section.remove(line)
         if section[0] not in ignore_sections:
             non_volatile_sections.append(section)
 

@@ -1,5 +1,3 @@
-import shlex
-
 import cli
 
 from .path import Path
@@ -92,10 +90,7 @@ class Backup:
                         "grep -v =",
                     )
                 )
-                command = (
-                    shlex.join(cli.prepare_args(args)) + clean_output_postprocessing
-                )
-                cli.run(command, shell=True)
+                cli.run(*args, clean_output_postprocessing, shell=True)
             elif show:
                 cli.run(*args)
             else:

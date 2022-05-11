@@ -13,6 +13,7 @@ class BackupManager:
     updated = False
     ignore_names = Path.ignore_names.load()
     ignore_patterns = Path.ignore_patterns.load()
+    exclude_zip = Path.exclude_zip.load()
     ignore_paths = {
         path for pattern in ignore_patterns for path in Path.HOME.glob(pattern)
     }
@@ -191,12 +192,16 @@ class BackupManager:
         for (path, include) in paths:
             path_full = Path.HOME / path
             if path_full.is_dir() and include:
-                if path_full.is_relative_to(Path.drive) or (
-                    not path_full.is_relative_to(Path.docs)
-                    and not path_full.is_relative_to(Path.assets.parent)
+                if (
+                    path_full.is_relative_to(Path.drive)
+                    or (
+                        not path_full.is_relative_to(Path.docs)
+                        and not path_full.is_relative_to(Path.assets.parent)
+                    )
+                    and not path_full.is_relative_to(Path.browser_config)
+                    and str(path) not in cls.exclude_zip
                 ):
-                    if not path_full.is_relative_to(Path.browser_config):
-                        path_full = cls.export_path(path)
+                    path_full = cls.export_path(path)
             path = path_full
 
             if include:
@@ -208,7 +213,6 @@ class BackupManager:
                             # check for tag here because we do not want to exclude tags recusively
                             items.add(pattern)
             cls.visited.add(path)
-
         volatile_items = cls.load_volatile()
 
         def match(p: Path):
@@ -222,6 +226,7 @@ class BackupManager:
             items.add(it.relative_to(Path.backup_cache))
 
         items = custom_checher.reduce(items)
+
         return parser.make_filters(includes=items)
 
     @classmethod
@@ -291,7 +296,9 @@ class BackupManager:
             print("Choose pull or push")
 
 
-def subcheck(custom_filters=[], command=None):
+def subcheck(custom_filters=None, command=None):
+    if custom_filters is None:
+        custom_filters = []
     command = command or "status"
     syncs = Path.syncs.load()
     ignore_names = Path.ignore_names.load()

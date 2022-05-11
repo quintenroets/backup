@@ -26,6 +26,7 @@ class Path(BasePath2):
     syncs = paths / "syncs"
     ignore_names = paths / "ignore_names"
     ignore_patterns = paths / "ignore_patterns"
+    exclude_zip = paths / "exclude_zip"
     paths_include = paths / "include"
     paths_include_pull = paths / "pull_include"
     paths_exclude = paths / "exclude"

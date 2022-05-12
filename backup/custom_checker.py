@@ -6,7 +6,7 @@ from .path import Path
 
 def check_ksmserverrc(path: Path):
     return filter_sections(
-        path, ignore_sections=("[Session: saved at previous logout]")
+        path, ignore_sections=("[Session: saved at previous logout]",)
     )
 
 
@@ -14,7 +14,7 @@ def check_kate(path: Path):
     sections = filter_sections(
         path,
         ignore_sections=("[KTextEditor::Search]", "[KFileDialog Settings]"),
-        ignore_lines=("Color Theme="),
+        ignore_lines=("Color Theme=",),
     )
 
     return sections
@@ -39,7 +39,7 @@ def filter_sections(path: Path, ignore_sections=(), ignore_lines=()):
 
 
 def remove_comments(path: Path):
-    return filter_sections(path, ignore_lines="+")
+    return filter_sections(path, ignore_lines=("+",))
 
 
 def custom_checkers() -> Dict[Path, FunctionType]:

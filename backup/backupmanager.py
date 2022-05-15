@@ -209,7 +209,9 @@ class BackupManager:
                     if item.is_file():
                         pattern = item.relative_to(Path.HOME)
                         mirror = Path.backup_cache / pattern
-                        if item.mtime != mirror.mtime and not item.tag:
+                        # zip_changed to notify file deletion from zip export
+                        zip_changed = item.suffix == ".zip" and item.size != mirror.size
+                        if (item.mtime != mirror.mtime or zip_changed) and not item.tag:
                             # check for tag here because we do not want to exclude tags recusively
                             items.add(pattern)
             cls.visited.add(path)
@@ -226,7 +228,6 @@ class BackupManager:
             items.add(it.relative_to(Path.backup_cache))
 
         items = custom_checker.reduce(items)
-
         return parser.make_filters(includes=items)
 
     @classmethod

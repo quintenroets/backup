@@ -63,6 +63,7 @@ class BackupManager:
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 cli.get("unzip", "-o", src, "-d", dst)
         profilemanager.reload()
+        export_resume_changes()
 
     @classmethod
     def sync_remote(cls, option):
@@ -351,3 +352,15 @@ def load_path_config():
     return parser.parse_paths_comb(
         Path.paths_include.content, Path.paths_exclude.content
     )
+
+
+def export_resume_changes():
+    resume_local_folder = Path.drive / "resume"
+    resume_file = resume_local_folder / "Resume Quinten Roets.docx"
+    exported_resume_file = resume_file.with_suffix(".pdf")
+    if exported_resume_file.mtime < resume_file.mtime:
+        remote_resume_file = Path.remote / exported_resume_file.relative_to(Path.HOME)
+        cli.run(
+            f"rclone --drive-export-formats pdf copy '{remote_resume_file}' {resume_local_folder}"
+        )
+        exported_resume_file.mtime = resume_file.mtime

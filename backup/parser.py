@@ -13,7 +13,7 @@ def is_drive_path(subpath: Path):
 
 
 def replace_subitems(subroot: Path, subitems: List[str]) -> List[str]:
-    if is_drive_path(subroot):
+    if False and is_drive_path(subroot):  # disable drive folder zipping
         # special treatment needed for zip efficiency
         subitems = [f.name for f in Path.drive.iterdir()]
     return subitems

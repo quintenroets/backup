@@ -72,20 +72,32 @@ class BackupManager:
         else:
             option = Path(option).relative_to(Path.HOME)
 
-        with Path.tempfile() as tmp:
+        config = load_path_config()
+        drive_includes = [
+            path
+            for path, include in config
+            if include
+            and path.is_relative_to("Documents/Drive")
+            and path != Path("Documents/Drive")
+        ]
+        drive_include_filters = [f"/{path}/**" for path in drive_includes]
+        with Path.tempfile() as tmp, Path.tempfile() as filters_path:
+            filters_path.lines = Backup.parse_filters(
+                drive_include_filters + ["- /Documents/Drive/**"]
+            )[:-1]
             cli.run(
-                f'rclone lsl {Path.remote / option} | tee {tmp} | tqdm --desc="Reading Remote" --null --unit=files',
+                f"rclone lsl --filter-from {filters_path} {Path.remote / option}"
+                f" | tee {tmp} |"
+                f' tqdm --desc="Reading Remote" --null --unit=files',
                 shell=True,
             )
             lines = tmp.lines
 
-        changes = []
         present = set({})
 
         # set cache to remote mod time
         for line in lines:
             size, date, time, *names = line.strip().split(" ")
-            path = Path.HOME / option / " ".join(names)
             mtime = int(
                 datetime.strptime(
                     f"{date} {time[:-3]}", "%Y-%m-%d %H:%M:%S.%f"
@@ -98,13 +110,17 @@ class BackupManager:
             present.add(cache_path)
 
         # delete cache items not in remote
-        def is_deleted(p):
-            return p.is_file() and p not in present
+        def is_deleted(p: Path):
+            deleted = p.is_file() and p not in present
+            if deleted and p.is_relative_to(Path.backup_cache / "Documents" / "Drive"):
+                deleted = any(p.is_relative_to(parent) for parent in drive_includes)
 
-        for deleted in (Path.backup_cache / option).find(
+            return deleted
+
+        for path in (Path.backup_cache / option).find(
             is_deleted, recurse_on_match=True
         ):
-            deleted.unlink()
+            path.unlink()
 
     @classmethod
     def export_path(cls, path):
@@ -149,7 +165,7 @@ class BackupManager:
     @classmethod
     def remove_excludes(cls, changes):
         filtered_changes = []
-        config = cls.load_path_config()
+        config = load_path_config()
 
         for change in changes:
             path = Path(change[2:])
@@ -187,13 +203,13 @@ class BackupManager:
     @classmethod
     def get_filters(cls):
         cls.visited = set({})
-        paths = cls.load_path_config()
+        paths = load_path_config()
         items = set({})
         for (path, include) in paths:
             path_full = Path.HOME / path
             if path_full.is_dir() and include:
                 if (
-                    path_full.is_relative_to(Path.drive)
+                    False  # path_full.is_relative_to(Path.drive) # disable zipping in drive folder
                     or (
                         not path_full.is_relative_to(Path.docs)
                         and not path_full.is_relative_to(Path.assets.parent)
@@ -240,12 +256,6 @@ class BackupManager:
                 root=True,
             )
             Backup.copy(Path.remote, Path.backup_cache, filters=["+ **"], quiet=False)
-
-    @classmethod
-    def load_path_config(cls):
-        return parser.parse_paths_comb(
-            Path.paths_include.content, Path.paths_exclude.content
-        )
 
     @classmethod
     def load_volatile(cls):
@@ -332,3 +342,9 @@ def subcheck(custom_filters=None, command=None):
                     exclude_git=False,
                     quiet=False,
                 )
+
+
+def load_path_config():
+    return parser.parse_paths_comb(
+        Path.paths_include.content, Path.paths_exclude.content
+    )

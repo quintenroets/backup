@@ -113,7 +113,10 @@ class BackupManager:
         def is_deleted(p: Path):
             deleted = p.is_file() and p not in present
             if deleted and p.is_relative_to(Path.backup_cache / "Documents" / "Drive"):
-                deleted = any(p.is_relative_to(parent) for parent in drive_includes)
+                deleted = any(
+                    p.is_relative_to(Path.backup_cache / parent)
+                    for parent in drive_includes
+                )
 
             return deleted
 

@@ -221,7 +221,7 @@ class BackupManager:
                     and not path_full.is_relative_to(Path.browser_config)
                     and str(path) not in cls.exclude_zip
                 ):
-                    path_full = cls.export_path(path)
+                    pass # disalbe all zipping#path_full = cls.export_path(path)
             path = path_full
 
             if include:

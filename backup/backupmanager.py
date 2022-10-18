@@ -87,7 +87,7 @@ class BackupManager:
                 drive_include_filters + ["- /Documents/Drive/**"]
             )[:-1]
             cli.run(
-                f"rclone lsl --filter-from {filters_path} {Path.remote / option}"
+                f"rclone lsl --filter-from {filters_path} {Path.remote / option} --drive-export-formats pdf"
                 f" | tee {tmp} |"
                 f' tqdm --desc="Reading Remote" --null --unit=files',
                 shell=True,

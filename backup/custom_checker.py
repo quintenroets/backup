@@ -42,6 +42,21 @@ def remove_comments(path: Path):
     return filter_sections(path, ignore_lines=("+",))
 
 
+def check_user_places(path: Path):
+    from bs4 import BeautifulSoup  # noqa: autoimport
+
+    text = path.text
+    soup = BeautifulSoup(text, features="lxml")
+    tags = []
+
+    for tag in soup.find_all("bookmark"):
+        href = tag.get("href")
+        ignore_names = ("tags", "kdeconnect")
+        if not any([name in href for name in ignore_names]):
+            tags.append(str(tag))
+    return tags
+
+
 def custom_checkers() -> Dict[Path, FunctionType]:
     checkers = {
         ".config/gtkrc": remove_comments,
@@ -51,6 +66,7 @@ def custom_checkers() -> Dict[Path, FunctionType]:
         ".config/kglobalshortcutsrc": lambda path: filter_sections(
             path, ignore_sections=("[ActivityManager]", "[mediacontrol]")
         ),
+        ".local/share/user-places.xbel": check_user_places,
     }
     return {Path(k): v for k, v in checkers.items()}
 
@@ -68,10 +84,11 @@ def reduce(items: Set[Path]):
 
         checker = checkers.get(item) or checkers.get(profile_item)
         if checker:
-            full_path = Path.HOME / item
+            full_path: Path = Path.HOME / item
             mirror = Path.backup_cache / item
 
             if checker(full_path) == checker(mirror):
+                full_path.copy_to(mirror)
                 to_remove.add(item)
 
     return items - to_remove

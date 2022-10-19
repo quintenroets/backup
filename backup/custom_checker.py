@@ -1,6 +1,8 @@
 from types import FunctionType
 from typing import Dict, Set
 
+import cli
+
 from .path import Path
 
 
@@ -57,6 +59,37 @@ def check_user_places(path: Path):
     return tags
 
 
+def generate_kwallet_hash():
+    import hashlib  # noqa: autoimport
+    import json  # noqa: autoimport
+
+    def get_folder_info(folder):
+        items = cli.lines("kwallet-query -l kdewallet -f", folder)
+        return {
+            item: cli.get("kwallet-query kdewallet -r", item, "-f", folder)
+            for item in items
+        }
+
+    folders = ("Network Management", "Passwords", "ksshaskpass")
+    info = {folder: get_folder_info(folder) for folder in folders}
+    info_bytes = json.dumps(info).encode()
+    hash_value = hashlib.new("sha512", data=info_bytes).hexdigest()
+    return hash_value
+
+
+def check_wallet(path: Path):
+    hash_path = path.with_stem(path.stem + "_hash")
+
+    # compare generated hash with saved hash
+    if path.is_relative_to(Path.backup_cache):
+        hash_value = hash_path.text
+    else:
+        hash_value = generate_kwallet_hash()
+        if hash_path.text != hash_value:
+            hash_path.text = hash_value
+    return hash_value
+
+
 def custom_checkers() -> Dict[Path, FunctionType]:
     checkers = {
         ".config/gtkrc": remove_comments,
@@ -67,6 +100,7 @@ def custom_checkers() -> Dict[Path, FunctionType]:
             path, ignore_sections=("[ActivityManager]", "[mediacontrol]")
         ),
         ".local/share/user-places.xbel": check_user_places,
+        ".local/share/kwalletd/kdewallet.kwl": check_wallet,
     }
     return {Path(k): v for k, v in checkers.items()}
 
@@ -74,6 +108,8 @@ def custom_checkers() -> Dict[Path, FunctionType]:
 def reduce(items: Set[Path]):
     checkers = custom_checkers()
     to_remove = set({})
+    new_items = set({})
+
     for item in items:
         full_item = Path.HOME / item
         if full_item.is_relative_to(Path.profiles):
@@ -90,5 +126,7 @@ def reduce(items: Set[Path]):
             if checker(full_path) == checker(mirror):
                 full_path.copy_to(mirror)
                 to_remove.add(item)
+            elif item.name == "kdewallet.kwl":
+                new_items.add(Path(".local/share/kwalletd/kdewallet_hash.kwl"))
 
-    return items - to_remove
+    return (items | new_items) - to_remove

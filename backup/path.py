@@ -35,6 +35,7 @@ class Path(BasePath2):
 
     timestamps = assets / "timestamps" / "timestamps"
     profiles = assets / "profiles"
+    hashes = assets / "hashes"
     filters = assets / "filters"
     active_profile = profiles / "active"
     profile_paths = profiles / "paths"

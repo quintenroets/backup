@@ -157,7 +157,8 @@ class BackupManager:
             if interactive:
                 cli.console.clear()
                 cli.console.rule("Drive")
-                message = "\n".join([*cls.export_changes, *changes, ""])
+                changes_to_show = [c for c in changes if Path(c[2:]).name != "kdewallet_hash.kwl"]
+                message = "\n".join([*cls.export_changes, *changes_to_show, ""])
                 print(message)
                 cls.updated = True
                 if not cli.confirm("Pull?" if reverse else "Push?", default=True):
@@ -221,7 +222,7 @@ class BackupManager:
                     and not path_full.is_relative_to(Path.browser_config)
                     and str(path) not in cls.exclude_zip
                 ):
-                    pass # disalbe all zipping#path_full = cls.export_path(path)
+                    pass  # disable all zipping#path_full = cls.export_path(path)
             path = path_full
 
             if include:

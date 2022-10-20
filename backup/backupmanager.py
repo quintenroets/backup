@@ -6,6 +6,7 @@ from rich import pretty
 
 from . import custom_checker, parser, profilemanager
 from .backup import Backup
+from .changes import Change, Changes
 from .path import Path
 
 
@@ -149,7 +150,7 @@ class BackupManager:
 
     @classmethod
     def get_compared_filters(cls, reverse=False):
-        changes = cls.status(reverse=reverse)
+        changes: Changes = cls.status(reverse=reverse)
         if changes:
             changes = cls.remove_excludes(changes)
         if changes:
@@ -157,32 +158,24 @@ class BackupManager:
             if interactive:
                 cli.console.clear()
                 cli.console.rule("Drive")
-                changes_to_show = [
-                    c for c in changes if Path(c[2:]).parent.name != "kwalletd_hash"
-                ]
-                message = "\n".join([*cls.export_changes, *changes_to_show, ""])
-                print(message)
+                changes.print()
                 cls.updated = True
                 if not cli.confirm("Pull?" if reverse else "Push?", default=True):
-                    changes = []
+                    changes = Changes([])
 
-        filters = [f"+ /{c[2:]}" for c in changes]
+        filters = [f"+ /{c.path}" for c in changes]
         return filters
 
     @classmethod
-    def remove_excludes(cls, changes):
-        filtered_changes = []
+    def remove_excludes(cls, changes: Changes) -> Changes:
         config = load_path_config()
+        include_paths = [config_path for config_path, include in config if include]
 
-        for change in changes:
-            path = Path(change[2:])
-            for config_path, include in config:
-                if path.is_relative_to(config_path):
-                    if include:
-                        filtered_changes.append(change)
-                    break
+        def is_include(change: Change):
+            return any([change.path.is_relative_to(path) for path in include_paths])
 
-        return filtered_changes
+        changes = [change for change in changes if is_include(change)]
+        return Changes(changes)
 
     @classmethod
     def status(cls, reverse=False):
@@ -195,17 +188,24 @@ class BackupManager:
             if not reverse
             else (Path.backup_cache, Path.HOME)
         )
-        status = Backup.compare(src, dst, filters=filters) if filters else []
-        changed_paths = [s[2:] for s in status]  # cut away +/* and space
+        change_patterns = Backup.compare(src, dst, filters=filters) if filters else []
 
-        no_changes_filters = [
-            f for f in filters if f and f[3:] not in changed_paths
-        ]  # cut away +/*, space, slash
+        changes = Changes.from_patterns(change_patterns)
+        changed_path_strings = [str(c.path) for c in changes]
+
+        def filter_path(filter_str: str):
+            # cut away +/*, space, slash
+            return filter_str[3:]
+
+        def is_no_change_filter(filter_str: str):
+            return filter_str and filter_path(filter_str) not in changed_path_strings
+
+        no_changes_filters = [f for f in filters if is_no_change_filter(f)]
         if no_changes_filters:
             # adapt modified times to avoid checking again in future
             Backup.copy(src, dst, filters=no_changes_filters)
 
-        return status
+        return changes
 
     @classmethod
     def get_filters(cls):

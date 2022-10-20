@@ -19,6 +19,10 @@ class BasePath2(BasePath):
     def mtime(self, time):
         BasePath.mtime.fset(self, time)
 
+    @property
+    def kwallet_hash_path(self):
+        return self.parent.parent / "kwalletd_hash" / self.name
+
 
 class Path(BasePath2):
     assets: Path = BasePath2.assets / "backup"

@@ -157,7 +157,9 @@ class BackupManager:
             if interactive:
                 cli.console.clear()
                 cli.console.rule("Drive")
-                changes_to_show = [c for c in changes if Path(c[2:]).name != "kdewallet_hash.kwl"]
+                changes_to_show = [
+                    c for c in changes if Path(c[2:]).parent.name != "kwalletd_hash"
+                ]
                 message = "\n".join([*cls.export_changes, *changes_to_show, ""])
                 print(message)
                 cls.updated = True

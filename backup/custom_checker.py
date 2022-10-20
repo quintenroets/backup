@@ -78,7 +78,7 @@ def generate_kwallet_hash():
 
 
 def check_wallet(path: Path):
-    hash_path = path.with_stem(path.stem + "_hash")
+    hash_path = path.kwallet_hash_path
 
     # compare generated hash with saved hash
     if path.is_relative_to(Path.backup_cache):
@@ -126,7 +126,7 @@ def reduce(items: Set[Path]):
             if checker(full_path) == checker(mirror):
                 full_path.copy_to(mirror)
                 to_remove.add(item)
-            elif item.name == "kdewallet.kwl":
-                new_items.add(Path(".local/share/kwalletd/kdewallet_hash.kwl"))
+            elif item.parent.name == "kwalletd":
+                new_items.add(item.kwallet_hash_path)
 
     return (items | new_items) - to_remove

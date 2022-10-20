@@ -4,6 +4,8 @@ from typing import List
 
 import cli
 
+from .path import Path
+
 
 class ChangeType(Enum):
     created = "created"
@@ -44,6 +46,14 @@ class ChangeType(Enum):
     def __str__(self):
         return self.symbol
 
+    @property
+    def sort_order(self):
+        symbols = list(self.symbol_mapper.keys())
+        return symbols.index(self.symbol)
+
+    def __lt__(self, other):
+        return self.sort_order.__lt__(other.sort_order)
+
 
 @dataclass
 class Change:
@@ -60,6 +70,10 @@ class Change:
     def message(self):
         return f"{self.type} [bold {self.type.color}]{self.path}\n"
 
+    @property
+    def sort_index(self):
+        return self.type, self.path
+
     def print(self):
         if self.path.parent.name != "kwalletd_hash":
             cli.console.print(self.message, end="")
@@ -68,6 +82,9 @@ class Change:
 @dataclass
 class Changes:
     changes: List[Change]
+
+    def __post_init__(self):
+        self.changes = sorted(self.changes, key=lambda c: c.sort_index)
 
     def __iter__(self):
         yield from self.changes

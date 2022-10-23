@@ -39,15 +39,6 @@ if not installed:
     # install newest version of rclone this way
     cli.run("curl https://rclone.org/install.sh | sudo bash", shell=True)
 
-filename = "rclone.conf"
-src = Path(__file__).parent / "assets" / filename
-dst = Path.HOME / ".config" / "rclone" / filename
-
-
-if not dst.exists():
-    if not src.exists():
-        cli.run(f"gpg --decrypt {src}.gpg", input="yes")  # decrypt credentials
-
-    src.rename(dst)
-    config_paths = (Path.assets / NAME / "paths").relative_to(Path.HOME)
-    Backup().download(f"/{config_paths}/**")
+# assume encrypted config file and password manager in ~/.config/environment.d set
+config_paths = (Path.assets / NAME / "paths").relative_to(Path.HOME)
+Backup().download(f"/{config_paths}/**")

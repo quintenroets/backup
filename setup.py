@@ -39,8 +39,14 @@ if not installed:
     # install newest version of rclone this way
     cli.run("curl https://rclone.org/install.sh | sudo bash", shell=True)
 
+
+def download_config_file(path):
+    command = f"wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=13f7p1nTJ3mPhLxvMMmCBLuwYpMmsayvM' -O '{path}'"
+    cli.get(command, shell=True)
+
+
 config_path = Path.HOME / ".config" / "rclone" / "rclone.conf"
 if not config_path.exists():
-    raise Exception("manually download encrypted rclone config file to ~/.config/rclone/rclone.conf")
-backup_config_paths = (Path.assets / NAME / "paths").relative_to(Path.HOME)
-Backup().download(f"/{backup_config_paths}/**")
+    download_config_file(config_path)
+    backup_config_paths = (Path.assets / NAME / "paths").relative_to(Path.HOME)
+    Backup().download(f"/{backup_config_paths}/**")

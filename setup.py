@@ -41,8 +41,9 @@ if not installed:
 
 
 def download_config_file(path):
-    command = f"wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=13f7p1nTJ3mPhLxvMMmCBLuwYpMmsayvM' -O '{path}'"
-    cli.get(command, shell=True)
+    file_id = "13f7p1nTJ3mPhLxvMMmCBLuwYpMmsayvM"
+    url = f"https://docs.google.com/uc?export=download&id={file_id}"
+    cli.get("wget --no-check-certificate", url, "-O", path)
 
 
 config_path = Path.HOME / ".config" / "rclone" / "rclone.conf"

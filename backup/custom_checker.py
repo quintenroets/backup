@@ -145,7 +145,7 @@ def reduce(items: Set[Path]):
             mirror = Path.backup_cache / item
 
             if checker(full_path) == checker(mirror):
-                full_path.copy_to(mirror)
+                mirror.touch(mtime=full_path.mtime)
                 to_remove.add(item)
             elif full_path.hash_path.exists():
                 new_items.add(full_path.hash_path.relative_to(Path.HOME))

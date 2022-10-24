@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import assets
 from plib import Path as BasePath
 
 
@@ -30,9 +29,17 @@ class BasePath2(BasePath):
     def hashes(cls) -> BasePath2:
         return cls.assets / "hashes"
 
+    @classmethod
+    @property
+    def backup_cache(cls) -> BasePath2:
+        return cls.HOME.parent / "backup"
+
     @property
     def hash_path(self):
-        return self.hashes / self.name
+        path = self.hashes / self.name
+        if not self.is_relative_to(self.HOME):
+            path = self.backup_cache / path.relative_to(self.HOME)
+        return path
 
 
 class Path(BasePath2):
@@ -58,8 +65,6 @@ class Path(BasePath2):
     browser_config = BasePath2.HOME / ".config" / "browser"
 
     exports = assets / "exports"
-
-    backup_cache = BasePath2.HOME.parent / "backup"
 
     remote = BasePath2("backup:Home")
     harddrive = BasePath2(f"/media/{BasePath2.HOME.name}/Backup")

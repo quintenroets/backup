@@ -352,6 +352,10 @@ def subcheck(custom_filters=None, command=None):
 
 
 def load_path_config():
+    if not Path.paths.exists():
+        download_filter = f"/{Path.paths.relative_to(Path.HOME)}/**"
+        Backup().download(download_filter)
+
     return parser.parse_paths_comb(
         Path.paths_include.content, Path.paths_exclude.content
     )

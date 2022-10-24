@@ -48,5 +48,3 @@ def download_config_file(path):
 config_path = Path.HOME / ".config" / "rclone" / "rclone.conf"
 if not config_path.exists():
     download_config_file(config_path)
-    backup_config_paths = (Path.assets / NAME / "paths").relative_to(Path.HOME)
-    Backup().download(f"/{backup_config_paths}/**")

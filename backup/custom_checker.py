@@ -1,3 +1,4 @@
+import json
 from types import FunctionType
 from typing import Dict, Set
 
@@ -59,10 +60,7 @@ def check_user_places(path: Path):
     return tags
 
 
-def generate_kwallet_hash():
-    import hashlib  # noqa: autoimport
-    import json  # noqa: autoimport
-
+def kwallet_content():
     def get_folder_info(folder):
         items = cli.lines("kwallet-query -l kdewallet -f", folder)
         return {
@@ -72,19 +70,41 @@ def generate_kwallet_hash():
 
     folders = ("Network Management", "Passwords", "ksshaskpass")
     info = {folder: get_folder_info(folder) for folder in folders}
-    info_bytes = json.dumps(info).encode()
-    hash_value = hashlib.new("sha512", data=info_bytes).hexdigest()
-    return hash_value
+    info = json.dumps(info)
+    return info
+
+
+def rclone_content():
+    config_lines = cli.lines("rclone config show")
+    nonvolatile_config_lines = [l for l in config_lines if "refresh_token" not in l]
+    return nonvolatile_config_lines
 
 
 def check_wallet(path: Path):
-    hash_path = path.kwallet_hash_path
+    return check_hash(path, kwallet_content)
 
+
+def check_rclone(path: Path):
+    return check_hash(path, rclone_content)
+
+
+def calculate_hash(path: Path, content_generator):
+    import hashlib  # noqa: autoimport
+    import json  # noqa: autoimport
+
+    content = content_generator()
+    content_bytes = json.dumps(content).encode()
+    hash_value = hashlib.new("sha512", data=content_bytes).hexdigest()
+    return hash_value
+
+
+def check_hash(path: Path, content_generator):
+    hash_path = path.hash_path
     # compare generated hash with saved hash
     if path.is_relative_to(Path.backup_cache):
         hash_value = hash_path.text
     else:
-        hash_value = generate_kwallet_hash()
+        hash_value = calculate_hash(path, content_generator)
         if hash_path.text != hash_value:
             hash_path.text = hash_value
     return hash_value
@@ -101,6 +121,7 @@ def custom_checkers() -> Dict[Path, FunctionType]:
         ),
         ".local/share/user-places.xbel": check_user_places,
         ".local/share/kwalletd/kdewallet.kwl": check_wallet,
+        ".config/rclone/rclone.conf": check_rclone,
     }
     return {Path(k): v for k, v in checkers.items()}
 
@@ -126,7 +147,7 @@ def reduce(items: Set[Path]):
             if checker(full_path) == checker(mirror):
                 full_path.copy_to(mirror)
                 to_remove.add(item)
-            elif item.parent.name == "kwalletd":
-                new_items.add(item.kwallet_hash_path)
+            elif full_path.hash_path.exists():
+                new_items.add(full_path.hash_path.relative_to(Path.HOME))
 
     return (items | new_items) - to_remove

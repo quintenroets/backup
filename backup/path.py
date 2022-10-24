@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import assets
 from plib import Path as BasePath
 
 
@@ -19,13 +20,23 @@ class BasePath2(BasePath):
     def mtime(self, time):
         BasePath.mtime.fset(self, time)
 
+    @classmethod
     @property
-    def kwallet_hash_path(self):
-        return self.parent.parent / "kwalletd_hash" / self.name
+    def assets(cls) -> BasePath2:
+        return super(BasePath2, cls).assets / "backup"
+
+    @classmethod
+    @property
+    def hashes(cls) -> BasePath2:
+        return cls.assets / "hashes"
+
+    @property
+    def hash_path(self):
+        return self.hashes / self.name
 
 
 class Path(BasePath2):
-    assets: Path = BasePath2.assets / "backup"
+    assets = BasePath2.assets
     paths = assets / "paths"
     syncs = paths / "syncs"
     ignore_names = paths / "ignore_names"
@@ -39,7 +50,6 @@ class Path(BasePath2):
 
     timestamps = assets / "timestamps" / "timestamps"
     profiles = assets / "profiles"
-    hashes = assets / "hashes"
     filters = assets / "filters"
     active_profile = profiles / "active"
     profile_paths = profiles / "paths"

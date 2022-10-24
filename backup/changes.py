@@ -75,7 +75,8 @@ class Change:
         return self.type, self.path
 
     def print(self):
-        if self.path.parent.name != "kwalletd_hash":
+        full_path = Path.HOME / self.path
+        if not full_path.is_relative_to(Path.hashes):
             cli.console.print(self.message, end="")
 
 

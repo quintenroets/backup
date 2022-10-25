@@ -1,4 +1,6 @@
-from dataclasses import dataclass
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import List
 
@@ -74,10 +76,114 @@ class Change:
     def sort_index(self):
         return self.type, self.path
 
+    @property
+    def skip_print(self):
+        return (Path.HOME / self.path).is_relative_to(Path.hashes)
+
     def print(self):
-        full_path = Path.HOME / self.path
-        if not full_path.is_relative_to(Path.hashes):
-            cli.console.print(self.message, end="")
+        cli.console.print(self.message, end="")
+
+
+@dataclass
+class PrintChange:
+    path: Path
+    type: ChangeType | None
+    indent_count: int = 0
+
+    @property
+    def root(self):
+        return self.path.parts[0]
+
+    @property
+    def path_from_root(self):
+        return self.path.relative_to(self.root)
+
+    @property
+    def child(self):
+        return PrintChange(self.path_from_root, self.type, self.indent_count + 1)
+
+    def __hash__(self):
+        attributes = tuple(asdict(self).values())
+        return hash(attributes)
+
+    def print(self):
+        whitespace = "  " * self.indent_count
+        symbol = self.type.symbol if self.type else "\u2022"
+        color = self.type.color if self.type else "black"
+        message = f"{whitespace}{symbol} [bold {color}]{self.path}"
+        cli.console.print(message)
+
+
+@dataclass
+class PrintStructure:
+    root: PrintChange | None
+    changes: List[PrintChange]
+    substructures: List[PrintStructure]
+
+    @classmethod
+    def from_changes(cls, changes: List[Change]):
+        print_changes = [
+            PrintChange(change.path, change.type)
+            for change in changes
+            if not change.skip_print
+        ]
+        return cls.from_print_changes(print_changes)
+
+    def un_indent(self):
+        for c in self.changes:
+            c.indent_count -= 1
+        for substructure in self.substructures:
+            substructure.un_indent()
+
+    def closest_nodes(self):
+        if self.changes:
+            return 0
+        else:
+            return min(sub.closest_nodes() for sub in self.substructures) + 1
+
+    def current_level_empty(self):
+        return not self.changes and len(self.substructures) == 1
+
+    @classmethod
+    def from_print_changes(cls, changes: List[PrintChange]):
+        changes_per_root = {}
+        for change in changes:
+            if change.root not in changes_per_root:
+                changes_per_root[change.root] = []
+            changes_per_root[change.root].append(change)
+
+        substructures = []
+        changes = []
+
+        for root_name, sub_print_changes in changes_per_root.items():
+            if len(sub_print_changes) == 1:
+                changes += sub_print_changes
+            else:
+                root_path = Path(root_name)
+                children = [c.child for c in sub_print_changes]
+                sub_structure = PrintStructure.from_print_changes(children)
+
+                if sub_structure.current_level_empty():
+                    if sub_structure.root is not None:
+                        root_path /= sub_structure.root.path
+                    sub_structure = sub_structure.substructures[0]
+                    sub_structure.un_indent()
+
+                sub_structure.root = PrintChange(
+                    root_path, None, sub_print_changes[0].indent_count
+                )
+                substructures.append(sub_structure)
+
+        return PrintStructure(None, changes, substructures)
+
+    def print(self):
+        if self.root is not None:
+            self.root.print()
+        for change in self.changes:
+            change.print()
+        substructures = sorted(self.substructures, key=lambda s: s.closest_nodes())
+        for sub_structure in substructures:
+            sub_structure.print()
 
 
 @dataclass
@@ -101,7 +207,26 @@ class Changes:
     def from_patterns(cls, patterns: List[str]):
         return Changes([Change.from_pattern(pattern) for pattern in patterns])
 
-    def print(self):
+    def print_old(self):
         for change in self.changes:
             change.print()
         print("")
+
+    def print(self):
+        print_structure = PrintStructure.from_changes(self.changes)
+        print_structure.print()
+
+    def print_paths(self, paths, indent=0):
+        parts_mapper = {}
+        for p in paths:
+            parts_mapper[p.parts[0]] = parts_mapper.get(p.parts[0], []) + [
+                p.relative_to(p.parts[0])
+            ]
+
+        for name, paths in parts_mapper.items():
+            tab = indent * " "
+            if len(paths) == 1:
+                print(f"{tab}+ {name}/{paths[0]}")
+            else:
+                print(f"{tab}{name}: ")
+                self.print_paths(paths, indent + 1)

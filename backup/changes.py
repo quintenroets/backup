@@ -130,16 +130,20 @@ class PrintStructure:
         return cls.from_print_changes(print_changes)
 
     def un_indent(self):
+        if self.root is not None:
+            self.root.indent_count -= 1
         for c in self.changes:
             c.indent_count -= 1
         for substructure in self.substructures:
             substructure.un_indent()
 
     def closest_nodes(self):
-        if self.changes:
-            return 0
-        else:
-            return min(sub.closest_nodes() for sub in self.substructures) + 1
+        closest = (
+            0
+            if self.changes
+            else 1 + min(sub.closest_nodes() for sub in self.substructures)
+        )
+        return closest
 
     def current_level_empty(self):
         return not self.changes and len(self.substructures) == 1
@@ -164,8 +168,10 @@ class PrintStructure:
                 sub_structure = PrintStructure.from_print_changes(children)
 
                 if sub_structure.current_level_empty():
-                    if sub_structure.root is not None:
-                        root_path /= sub_structure.root.path
+                    if sub_structure.root is None:
+                        sub_structure.root = sub_structure.substructures[0].root
+
+                    root_path /= sub_structure.root.path
                     sub_structure = sub_structure.substructures[0]
                     sub_structure.un_indent()
 

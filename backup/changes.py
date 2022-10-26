@@ -110,8 +110,17 @@ class PrintChange:
         whitespace = "  " * self.indent_count
         symbol = self.type.symbol if self.type else "\u2022"
         color = self.type.color if self.type else "black"
-        message = f"{whitespace}{symbol} [bold {color}]{self.path}"
-        cli.console.print(message)
+
+        message = str(self.path)
+        available_width = cli.console.width - len(whitespace + symbol + " ")
+        message_chunks = [
+            message[start : start + available_width]
+            for start in range(0, len(message), available_width)
+        ]
+        for i, message in enumerate(message_chunks):
+            prefix = f"{symbol} " if i == 0 else "  "
+            formatted_message = f"{whitespace}{prefix}[bold {color}]{message}"
+            cli.console.print(formatted_message)
 
 
 @dataclass

@@ -230,6 +230,7 @@ class Changes:
     def print(self):
         print_structure = PrintStructure.from_changes(self.changes)
         print_structure.print()
+        print("")
 
     def print_paths(self, paths, indent=0):
         parts_mapper = {}

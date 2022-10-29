@@ -112,14 +112,19 @@ class PrintChange:
         color = self.type.color if self.type else "black"
 
         message = str(self.path)
-        available_width = cli.console.width - len(whitespace + symbol + " ")
+        available_width = cli.console.width - len(whitespace + symbol + " " + "-")
         message_chunks = [
             message[start : start + available_width]
             for start in range(0, len(message), available_width)
         ]
         for i, message in enumerate(message_chunks):
             prefix = f"{symbol} " if i == 0 else "  "
-            formatted_message = f"{whitespace}{prefix}[bold {color}]{message}"
+            need_suffix = i + 1 < len(message_chunks) and " " not in (
+                message[-1],
+                message_chunks[i + 1][0],
+            )
+            suffix = "-" if need_suffix else ""
+            formatted_message = f"{whitespace}{prefix}[bold {color}]{message}{suffix}"
             cli.console.print(formatted_message)
 
 

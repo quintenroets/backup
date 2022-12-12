@@ -72,7 +72,7 @@ class BackupManager:
         if option == ".":
             option = ""  # ls all files
         else:
-            option = Path(option).relative_to(Path.HOME)
+            option = Path.cwd().relative_to(Path.HOME)
 
         config = load_path_config()
         drive_includes = [
@@ -88,9 +88,10 @@ class BackupManager:
                 drive_include_filters + ["- /Documents/Drive/**"]
             )[:-1]
             cli.run(
-                f"rclone lsl --filter-from {filters_path} {Path.remote / option} --drive-export-formats pdf"
+                f"rclone lsl --filter-from {filters_path} {Path.remote / option} "
+                "--drive-export-formats pdf"
                 f" | tee {tmp} |"
-                f' tqdm --desc="Reading Remote" --null --unit=files',
+                ' tqdm --desc="Reading Remote" --null --unit=files',
                 shell=True,
             )
             lines = tmp.lines
@@ -212,31 +213,22 @@ class BackupManager:
         cls.visited = set({})
         paths = load_path_config()
         items = set({})
-        for (path, include) in paths:
-            path_full = Path.HOME / path
-            if path_full.is_dir() and include:
-                if (
-                    False  # path_full.is_relative_to(Path.drive) # disable zipping in drive folder
-                    or (
-                        not path_full.is_relative_to(Path.docs)
-                        and not path_full.is_relative_to(Path.assets.parent)
-                    )
-                    and not path_full.is_relative_to(Path.browser_config)
-                    and str(path) not in cls.exclude_zip
-                ):
-                    pass  # disable all zipping#path_full = cls.export_path(path)
-            path = path_full
 
+        def check_item(item):
+            pattern = item.relative_to(Path.HOME)
+            mirror = Path.backup_cache / pattern
+            # zip_changed to notify file deletion from zip export
+            zip_changed = item.suffix == ".zip" and item.size != mirror.size
+            if (item.mtime != mirror.mtime or zip_changed) and not item.tag:
+                # check for tag here because we do not want to exclude tags recursively
+                items.add(pattern)
+
+        for path, include in paths:
+            path = Path.HOME / path
             if include:
                 for item in path.find(exclude=cls.exclude):
                     if item.is_file():
-                        pattern = item.relative_to(Path.HOME)
-                        mirror = Path.backup_cache / pattern
-                        # zip_changed to notify file deletion from zip export
-                        zip_changed = item.suffix == ".zip" and item.size != mirror.size
-                        if (item.mtime != mirror.mtime or zip_changed) and not item.tag:
-                            # check for tag here because we do not want to exclude tags recusively
-                            items.add(pattern)
+                        check_item(item)
             cls.visited.add(path)
         volatile_items = cls.load_volatile()
 
@@ -301,7 +293,10 @@ class BackupManager:
                 "GPUCache",
             ]
             flags = "".join([f'-x"*/{i}/*" ' for i in ignores])
-            command = f'zip -r -q - {flags} "{config_folder.name}" | tqdm --bytes --desc=Compressing > "{config_save_file}"'
+            command = (
+                f'zip -r -q - {flags} "{config_folder.name}" | tqdm --bytes'
+                f' --desc=Compressing > "{config_save_file}"'
+            )
             # make sure that all zipped files have the same root
             cli.run(command, cwd=config_folder.parent, shell=True)
             Backup().upload(filters, quiet=False)
@@ -368,6 +363,7 @@ def export_resume_changes():
     if exported_resume_file.mtime < resume_file.mtime:
         remote_resume_file = Path.remote / exported_resume_file.relative_to(Path.HOME)
         cli.run(
-            f"rclone --drive-export-formats pdf copy '{remote_resume_file}' {resume_local_folder}"
+            f"rclone --drive-export-formats pdf copy '{remote_resume_file}'"
+            f" {resume_local_folder}"
         )
         exported_resume_file.mtime = resume_file.mtime

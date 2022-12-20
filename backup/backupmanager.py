@@ -1,3 +1,4 @@
+import shlex
 import sys
 from datetime import datetime
 
@@ -87,9 +88,11 @@ class BackupManager:
             filters_path.lines = Backup.parse_filters(
                 drive_include_filters + ["- /Documents/Drive/**"]
             )[:-1]
+            args = (filters_path, Path.remote / option)
+            args = shlex.join(str(a) for a in args)
             cli.run(
-                f"rclone lsl --filter-from {filters_path} {Path.remote / option} "
-                "--drive-export-formats pdf"
+                f"rclone lsl --filter-from {args}"
+                f" --drive-export-formats pdf"
                 f" | tee {tmp} |"
                 ' tqdm --desc="Reading Remote" --null --unit=files',
                 shell=True,

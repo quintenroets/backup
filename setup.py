@@ -48,4 +48,5 @@ def download_config_file(path):
 
 config_path = Path.HOME / ".config" / "rclone" / "rclone.conf"
 if not config_path.exists():
+    config_path.create_parent()
     download_config_file(config_path)

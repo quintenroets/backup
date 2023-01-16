@@ -29,8 +29,8 @@ def save(name):
 
 
 def load(name):
-    """
-    Load new profile without saving the previous and changing active profile name
+    """Load new profile without saving the previous and changing active profile
+    name.
     """
     source = Path.profiles / name
     if source.exists():
@@ -44,14 +44,11 @@ def apply(name):
 
 
 def reload():
-    """
-    Reload config of active profile
-    """
-    load(active_profile.name)
+    """Reload config of active profile."""
+    if active_profile.name:
+        load(active_profile.name)
 
 
 def save_active():
-    """
-    Save config files to active profile
-    """
+    """Save config files to active profile."""
     save(active_profile.name)

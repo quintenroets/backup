@@ -1,5 +1,6 @@
 import cli
 
+from .changes import Changes
 from .path import Path
 
 
@@ -39,16 +40,18 @@ class Backup:
         )
 
     @staticmethod
-    def compare(local, remote, filters=None, show=False, **kwargs):
+    def compare(local, remote, filters=None, show=False, **kwargs) -> Changes:
         options = {
             "combined": "-",  # for every file: report +/-/*/=
-            "log-file": "/dev/null",  # command throws errors if not match: discard error messages
+            "log-file": "/dev/null",  # discard errors thrown when files are different
         }
-        changes = Backup.run(
+        change_patterns = Backup.run(
             "check", options, local, remote, filters=filters, show=show, **kwargs
         )
         if not show:
-            changes = [c for c in changes if not c.startswith("=")]
+            change_patterns = [c for c in change_patterns if not c.startswith("=")]
+
+        changes = Changes.from_patterns(change_patterns)
         return changes
 
     @staticmethod

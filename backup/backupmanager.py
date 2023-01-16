@@ -92,7 +92,7 @@ class BackupManager:
             args = shlex.join(str(a) for a in args)
             cli.run(
                 f"rclone lsl --filter-from {args}"
-                f" --drive-export-formats pdf"
+                " --drive-export-formats pdf"
                 f" | tee {tmp} |"
                 ' tqdm --desc="Reading Remote" --null --unit=files',
                 shell=True,
@@ -165,10 +165,9 @@ class BackupManager:
                 changes.print()
                 cls.updated = True
                 if not cli.confirm("Pull?" if reverse else "Push?", default=True):
-                    changes = Changes([])
+                    changes.changes = []
 
-        filters = [f"+ /{c.path}" for c in changes]
-        return filters
+        return changes.get_push_filters()
 
     @classmethod
     def remove_excludes(cls, changes: Changes) -> Changes:
@@ -192,9 +191,7 @@ class BackupManager:
             if not reverse
             else (Path.backup_cache, Path.HOME)
         )
-        change_patterns = Backup.compare(src, dst, filters=filters) if filters else []
-
-        changes = Changes.from_patterns(change_patterns)
+        changes = Backup.compare(src, dst, filters=filters) if filters else []
         changed_path_strings = [str(c.path) for c in changes]
 
         def filter_path(filter_str: str):

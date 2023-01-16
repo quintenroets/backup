@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import List
 
 import cli
 
@@ -131,11 +130,11 @@ class PrintChange:
 @dataclass
 class PrintStructure:
     root: PrintChange | None
-    changes: List[PrintChange]
-    substructures: List[PrintStructure]
+    changes: list[PrintChange]
+    substructures: list[PrintStructure]
 
     @classmethod
-    def from_changes(cls, changes: List[Change]):
+    def from_changes(cls, changes: list[Change]):
         print_changes = [
             PrintChange(change.path, change.type)
             for change in changes
@@ -163,7 +162,7 @@ class PrintStructure:
         return not self.changes and len(self.substructures) == 1
 
     @classmethod
-    def from_print_changes(cls, changes: List[PrintChange]):
+    def from_print_changes(cls, changes: list[PrintChange]):
         changes_per_root = {}
         for change in changes:
             if change.root not in changes_per_root:
@@ -208,7 +207,7 @@ class PrintStructure:
 
 @dataclass
 class Changes:
-    changes: List[Change]
+    changes: list[Change]
 
     def __post_init__(self):
         self.changes = sorted(self.changes, key=lambda c: c.sort_index)
@@ -224,8 +223,11 @@ class Changes:
         return [change.path for change in self.changes]
 
     @classmethod
-    def from_patterns(cls, patterns: List[str]):
+    def from_patterns(cls, patterns: list[str]):
         return Changes([Change.from_pattern(pattern) for pattern in patterns])
+
+    def get_push_filters(self):
+        return [f"+ /{c.path}" for c in self.changes]
 
     def print_old(self):
         for change in self.changes:

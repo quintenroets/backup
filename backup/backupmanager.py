@@ -191,7 +191,7 @@ class BackupManager:
             if not reverse
             else (Path.backup_cache, Path.HOME)
         )
-        changes = Backup.compare(src, dst, filters=filters) if filters else []
+        changes = Backup.compare(src, dst, filters=filters) if filters else Changes([])
         changed_path_strings = [str(c.path) for c in changes]
 
         def filter_path(filter_str: str):

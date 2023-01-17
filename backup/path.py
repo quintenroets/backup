@@ -8,10 +8,9 @@ class BasePath2(BasePath):
 
     @property
     def mtime(self):
-        """
-        only precision up to one second to decide which files have the same mtime
-        cannot be too precise to avoid false positives
-        remote filesystem also has limited precision
+        """only precision up to one second to decide which files have the same
+        mtime cannot be too precise to avoid false positives remote filesystem
+        also has limited precision.
         """
         return int(super().mtime)
 
@@ -22,7 +21,7 @@ class BasePath2(BasePath):
     @classmethod
     @property
     def assets(cls) -> BasePath2:
-        return super(BasePath2, cls).assets / "backup"
+        return super().assets / "backup"
 
     @classmethod
     @property
@@ -63,6 +62,7 @@ class Path(BasePath2):
 
     drive = BasePath2.docs / "Drive"
     browser_config = BasePath2.HOME / ".config" / "browser"
+    browser_config_folder = BasePath2.HOME / ".config" / "chromium" / "Default"
 
     exports = assets / "exports"
 

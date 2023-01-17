@@ -279,7 +279,6 @@ class BackupManager:
     def check_browser(cls, command):
         local = Path.HOME
 
-        config_folder = local / "snap" / "chromium" / "common" / "chromium" / "Default"
         config_save_file = Path.browser_config / "config.zip"
         filters = parser.make_filters(includes=[config_save_file.relative_to(local)])
 
@@ -294,17 +293,19 @@ class BackupManager:
             ]
             flags = "".join([f'-x"*/{i}/*" ' for i in ignores])
             command = (
-                f'zip -r -q - {flags} "{config_folder.name}" | tqdm --bytes'
-                f' --desc=Compressing > "{config_save_file}"'
+                f'zip -r -q - {flags} "{Path.browser_config_folder.name}" | tqdm'
+                f' --bytes --desc=Compressing > "{config_save_file}"'
             )
             # make sure that all zipped files have the same root
-            cli.run(command, cwd=config_folder.parent, shell=True)
+            cli.run(command, cwd=Path.browser_config_folder.parent, shell=True)
             Backup().upload(filters, quiet=False)
 
         elif command == "pull":
             Backup().download(filters, quiet=False)
-            config_folder.mkdir(parents=True, exist_ok=True)
-            cli.get("unzip", "-o", config_save_file, "-d", config_folder.parent)
+            Path.browser_config_folder.mkdir(parents=True, exist_ok=True)
+            cli.get(
+                "unzip", "-o", config_save_file, "-d", Path.browser_config_folder.parent
+            )
         else:
             print("Choose pull or push")
 

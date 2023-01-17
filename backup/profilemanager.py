@@ -45,7 +45,7 @@ def apply(name):
 
 def reload():
     """Reload config of active profile."""
-    if Path.active_profile.with_suffix(".yaml").exists():
+    if Path.active_profile.exists():
         load(active_profile.name)
 
 

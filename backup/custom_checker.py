@@ -1,6 +1,5 @@
 import json
 from types import FunctionType
-from typing import Dict, Set
 
 import cli
 
@@ -35,7 +34,7 @@ def filter_sections(path: Path, ignore_sections=(), ignore_lines=()):
 
     for section in non_volatile_sections:
         for line in section:
-            if any(l in line for l in ignore_lines):
+            if any(word in line for word in ignore_lines):
                 section.remove(line)
 
     return non_volatile_sections
@@ -49,7 +48,7 @@ def check_user_places(path: Path):
     from bs4 import BeautifulSoup  # noqa: autoimport
 
     text = path.text
-    soup = BeautifulSoup(text, features="lxml")
+    soup = BeautifulSoup(text, features="xml")
     tags = []
 
     for tag in soup.find_all("bookmark"):
@@ -76,7 +75,9 @@ def kwallet_content():
 
 def rclone_content():
     config_lines = cli.lines("rclone config show")
-    nonvolatile_config_lines = [l for l in config_lines if "refresh_token" not in l]
+    nonvolatile_config_lines = [
+        line for line in config_lines if "refresh_token" not in line
+    ]
     return nonvolatile_config_lines
 
 
@@ -110,7 +111,7 @@ def check_hash(path: Path, content_generator):
     return hash_value
 
 
-def custom_checkers() -> Dict[Path, FunctionType]:
+def custom_checkers() -> dict[Path, FunctionType]:
     checkers = {
         ".config/gtkrc": remove_comments,
         ".config/gtkrc-2.0": remove_comments,
@@ -126,7 +127,7 @@ def custom_checkers() -> Dict[Path, FunctionType]:
     return {Path(k): v for k, v in checkers.items()}
 
 
-def reduce(items: Set[Path]):
+def reduce(items: set[Path]):
     checkers = custom_checkers()
     to_remove = set({})
     new_items = set({})

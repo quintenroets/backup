@@ -36,6 +36,5 @@ class Watcher:
 
 
 def main():
-    syncs = Path.syncs.load()
-    for path in syncs:
+    for path in Path.syncs.yaml:
         Watcher(Path.HOME / path).watch()

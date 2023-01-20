@@ -13,9 +13,9 @@ from .path import Path
 
 class BackupManager:
     updated = False
-    ignore_names = Path.ignore_names.load()
-    ignore_patterns = Path.ignore_patterns.load()
-    exclude_zip = Path.exclude_zip.load()
+    ignore_names = Path.ignore_names.yaml
+    ignore_patterns = Path.ignore_patterns.yaml
+    exclude_zip = Path.exclude_zip.yaml
     ignore_paths = {
         path for pattern in ignore_patterns for path in Path.HOME.glob(pattern)
     }
@@ -314,8 +314,8 @@ def subcheck(custom_filters=None, command=None):
     if custom_filters is None:
         custom_filters = []
     command = command or "status"
-    syncs = Path.syncs.load()
-    ignore_names = Path.ignore_names.load()
+    syncs = Path.syncs.yaml
+    ignore_names = Path.ignore_names.yaml
     ignore_name_filters = [f"- **{n}**" for n in ignore_names]
 
     for local, remote_info in syncs.items():

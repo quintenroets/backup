@@ -5,8 +5,7 @@ from .path import Path
 
 
 def get_filters():
-    paths = Path.profile_paths.load()
-    paths = parser.parse_paths(paths)
+    paths = parser.parse_paths(Path.profile_paths.yaml)
     filters = parser.make_filters(paths)
     return filters
 

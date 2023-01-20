@@ -260,7 +260,7 @@ class BackupManager:
     def load_volatile(cls):
         return tuple(
             volatile[0]
-            for volatile in parser.parse_paths_comb(Path.paths_volatile.content, {})
+            for volatile in parser.parse_paths_comb(Path.paths_volatile.yaml, {})
         )
 
     @classmethod
@@ -352,9 +352,7 @@ def load_path_config():
         download_filter = f"/{Path.paths.relative_to(Path.HOME)}/**"
         Backup().download(download_filter)
 
-    return parser.parse_paths_comb(
-        Path.paths_include.content, Path.paths_exclude.content
-    )
+    return parser.parse_paths_comb(Path.paths_include.yaml, Path.paths_exclude.yaml)
 
 
 def export_resume_changes():

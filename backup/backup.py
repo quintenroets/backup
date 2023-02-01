@@ -72,7 +72,6 @@ class Backup:
                 "retries-sleep": "30s",
                 "order-by": "size,desc",  # send largest files first
                 "filter-from": filters_path,
-                "drive-export-formats": "pdf",
             }
             if not exclude_git:
                 options.pop("exclude-if-present")

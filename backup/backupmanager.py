@@ -90,13 +90,11 @@ class BackupManager:
             )[:-1]
             args = (filters_path, Path.remote / option)
             args = shlex.join(str(a) for a in args)
-            cli.run(
-                f"rclone lsl --filter-from {args}"
-                " --drive-export-formats pdf"
-                f" | tee {tmp} |"
-                ' tqdm --desc="Reading Remote" --null --unit=files',
-                shell=True,
+            command = (
+                f'rclone lsl --filter-from {args} | tee {tmp} | tqdm --desc="Reading'
+                ' Remote" --null --unit=files'
             )
+            cli.run(command, shell=True)
             lines = tmp.lines
 
         present = set({})

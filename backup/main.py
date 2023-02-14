@@ -1,7 +1,10 @@
 import argparse
 
+import cli
+
 from . import harddrive
 from .backupmanager import BackupManager, subcheck
+from .path import Path
 
 
 def main():
@@ -31,6 +34,8 @@ def main():
                 subcheck(command=args.option)
             case "harddrive":
                 harddrive.check(args.option)
+            case "paths":
+                cli.urlopen(Path.paths)
 
 
 if __name__ == "__main__":

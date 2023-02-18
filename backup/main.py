@@ -16,6 +16,13 @@ def main():
         default="push",
     )
     parser.add_argument("option", nargs="?", help="Check browser or not", default="")
+    parser.add_argument(
+        "--subcheck",
+        default=False,
+        const=True,
+        help="only check subpath of current working directory",
+        action="store_const",
+    )
     args = parser.parse_args()
 
     if args.option == "browser":
@@ -29,7 +36,7 @@ def main():
             case "push":
                 BackupManager.push()
             case "pull":
-                BackupManager.pull(args.option)
+                BackupManager.pull(args.subcheck)
             case "sync":
                 subcheck(command=args.option)
             case "harddrive":

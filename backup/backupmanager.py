@@ -31,24 +31,15 @@ class BackupManager:
             )
 
     @classmethod
-    def pull(cls, option=None):
-        if option:
-            cls.sync_remote(option)
+    def pull(cls, sub_check: bool):
+        cls.sync_remote(sub_check)
         filters = cls.get_compared_filters(reverse=True)
         if filters:
-            src = Path.remote if option else Path.backup_cache
+            kwargs = {"delete_missing": True, "filters": filters}
             Backup.copy(
-                src,
-                Path.HOME,
-                filters=filters,
-                overwrite_newer=True,
-                delete_missing=True,
-                quiet=not option,
+                Path.remote, Path.HOME, overwrite_newer=True, quiet=False, **kwargs
             )
-            if option:
-                Backup.copy(
-                    Path.HOME, Path.backup_cache, filters=filters, delete_missing=True
-                )
+            Backup.copy(Path.HOME, Path.backup_cache, **kwargs)
             cls.after_pull()
 
     @classmethod
@@ -57,9 +48,9 @@ class BackupManager:
         export_resume_changes()
 
     @classmethod
-    def sync_remote(cls, subpath):
+    def sync_remote(cls, sub_check: bool):
         cls.check_cache_existence()
-
+        sub_path = Path.cwd().relative_to(Path.HOME) if sub_check else ""
         present = set({})
 
         def extract_tuple(date: datetime):
@@ -70,8 +61,8 @@ class BackupManager:
             return extract_tuple(date1) == extract_tuple(date2)
 
         # set cache to remote mod time
-        for path_str, date in cls.get_remote_info(subpath):
-            cache_path = Path.backup_cache / subpath / path_str
+        for path_str, date in cls.get_remote_info(sub_path):
+            cache_path = Path.backup_cache / sub_path / path_str
             cache_date = datetime.fromtimestamp(cache_path.mtime)
             cache_date = cache_date.astimezone(timezone.utc)
 
@@ -83,20 +74,19 @@ class BackupManager:
         def is_deleted(p: Path):
             return p.is_file() and p not in present
 
-        sub_cache = Path.backup_cache / subpath
+        sub_cache = Path.backup_cache / sub_path
         for path in sub_cache.find(is_deleted, recurse_on_match=True):
             # delete cache items not in remote
             path.unlink()
 
     @classmethod
-    def get_remote_info(cls, subpath):
-        subpath = "" if subpath == "." else Path.cwd().relative_to(Path.HOME)
-
-        options = ("--all", "--modtime", "--sort-modtime", "--noreport", "--full-path")
+    def get_remote_info(cls, sub_path):
+        options = ("--all", "--modtime", "--noreport", "--full-path")
         command = "rclone tree"
-        args = (command, options, Path.remote / subpath)
+        args = (command, options, Path.remote / sub_path)
         rclone_command = cli.prepare_args(args, command=True)[0]
-        command = f"{rclone_command} | sed 's/\x1B\\[[0-9;]*[JKmsu]//g'"
+        remove_color_command = r"sed 's/\x1B\[[0-9;]*[JKmsu]//g'"
+        command = f"{rclone_command} | {remove_color_command}"
         with cli.status("Getting remote info"):
             lines = cli.lines(command, shell=True)
 

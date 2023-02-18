@@ -67,8 +67,10 @@ class BackupManager:
             cache_date = cache_date.astimezone(timezone.utc)
 
             if not are_equal(cache_date, date) or not cache_path.exists():
-                cache_path.touch(mtime=cache_path.mtime + 1)
-                cache_path.text = ""
+                mtime = cache_path.mtime + 1
+                original_path = Path.HOME / cache_path.relative_to(Path.backup_cache)
+                cache_path.text = "" if original_path.size else " "
+                cache_path.touch(mtime=mtime)
             present.add(cache_path)
 
         def is_deleted(p: Path):
@@ -183,8 +185,7 @@ class BackupManager:
             pattern = item.relative_to(Path.HOME)
             mirror = Path.backup_cache / pattern
             # zip_changed to notify file deletion from zip export
-            zip_changed = item.suffix == ".zip" and item.size != mirror.size
-            if (item.mtime != mirror.mtime or zip_changed) and not item.tag:
+            if item.mtime != mirror.mtime and not item.tag:
                 # check for tag here because we do not want to exclude tags recursively
                 items.add(pattern)
 

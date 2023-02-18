@@ -1,6 +1,5 @@
-import shlex
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 import cli
 from rich import pretty
@@ -50,84 +49,62 @@ class BackupManager:
                 Backup.copy(
                     Path.HOME, Path.backup_cache, filters=filters, delete_missing=True
                 )
-            cls.after_pull(filters)
+            cls.after_pull()
 
     @classmethod
-    def after_pull(cls, filters=None):
-        if filters is None:
-            filters = [f"   {p}" for p in Path.exports.iterdir()]
-        for filter_name in filters:
-            if filter_name.endswith(".zip"):
-                path = Path(filter_name[3:])
-                src = Path.HOME / path
-                dst = (Path.HOME / "/".join(path.name.split("_"))).with_suffix("")
-                dst.rmtree(missing_ok=True)
-                dst.parent.mkdir(parents=True, exist_ok=True)
-                cli.get("unzip", "-o", src, "-d", dst)
+    def after_pull(cls):
         profilemanager.reload()
         export_resume_changes()
 
     @classmethod
-    def sync_remote(cls, option):
+    def sync_remote(cls, subpath):
         cls.check_cache_existence()
-        if option == ".":
-            option = ""  # ls all files
-        else:
-            option = Path.cwd().relative_to(Path.HOME)
-
-        config = load_path_config()
-        drive_includes = [
-            path
-            for path, include in config
-            if include
-            and path.is_relative_to("Documents/Drive")
-            and path != Path("Documents/Drive")
-        ]
-        drive_include_filters = [f"/{path}/**" for path in drive_includes]
-        with Path.tempfile() as tmp, Path.tempfile() as filters_path:
-            filters_path.lines = Backup.parse_filters(
-                drive_include_filters + ["- /Documents/Drive/**"]
-            )[:-1]
-            args = (filters_path, Path.remote / option)
-            args = shlex.join(str(a) for a in args)
-            command = (
-                f'rclone lsl --filter-from {args} | tee {tmp} | tqdm --desc="Reading'
-                ' Remote" --null --unit=files'
-            )
-            cli.run(command, shell=True)
-            lines = tmp.lines
 
         present = set({})
 
+        def extract_tuple(date: datetime):
+            # drive only remote minute precision and month range
+            return date.month, date.day, date.hour, date.minute
+
+        def are_equal(date1: datetime, date2: datetime):
+            return extract_tuple(date1) == extract_tuple(date2)
+
         # set cache to remote mod time
-        for line in lines:
-            size, date, time, *names = line.strip().split(" ")
-            mtime = int(
-                datetime.strptime(
-                    f"{date} {time[:-3]}", "%Y-%m-%d %H:%M:%S.%f"
-                ).timestamp()
-            )
-            cache_path = Path.backup_cache / option / " ".join(names)
-            if mtime > cache_path.mtime:
-                cache_path.touch(mtime=mtime)
+        for path_str, date in cls.get_remote_info(subpath):
+            cache_path = Path.backup_cache / subpath / path_str
+            cache_date = datetime.fromtimestamp(cache_path.mtime)
+            cache_date = cache_date.astimezone(timezone.utc)
+
+            if not are_equal(cache_date, date) or not cache_path.exists():
+                cache_path.touch(mtime=cache_path.mtime + 1)
                 cache_path.text = ""
             present.add(cache_path)
 
-        # delete cache items not in remote
         def is_deleted(p: Path):
-            deleted = p.is_file() and p not in present
-            if deleted and p.is_relative_to(Path.backup_cache / "Documents" / "Drive"):
-                deleted = any(
-                    p.is_relative_to(Path.backup_cache / parent)
-                    for parent in drive_includes
-                )
+            return p.is_file() and p not in present
 
-            return deleted
-
-        for path in (Path.backup_cache / option).find(
-            is_deleted, recurse_on_match=True
-        ):
+        sub_cache = Path.backup_cache / subpath
+        for path in sub_cache.find(is_deleted, recurse_on_match=True):
+            # delete cache items not in remote
             path.unlink()
+
+    @classmethod
+    def get_remote_info(cls, subpath):
+        subpath = "" if subpath == "." else Path.cwd().relative_to(Path.HOME)
+
+        options = ("--all", "--modtime", "--sort-modtime", "--noreport", "--full-path")
+        command = "rclone tree"
+        args = (command, options, Path.remote / subpath)
+        rclone_command = cli.prepare_args(args, command=True)[0]
+        command = f"{rclone_command} | sed 's/\x1B\\[[0-9;]*[JKmsu]//g'"
+        with cli.status("Getting remote info"):
+            lines = cli.lines(command, shell=True)
+
+        for line in lines:
+            if "[" in line:
+                date_str, path_str = line.split("[")[1].split("]  /")
+                date = datetime.strptime(date_str, "%b %d %H:%M")
+                yield path_str, date
 
     @classmethod
     def export_path(cls, path):

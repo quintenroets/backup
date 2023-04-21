@@ -1,5 +1,6 @@
 import cli
 
+from . import setup
 from .changes import Changes
 from .path import Path
 
@@ -8,7 +9,7 @@ class Backup:
     def __init__(self, local=None, remote=None):
         self.local = local or Path.HOME
         self.remote = remote or Path.remote
-        # remote mappings defined in .config/rclone/rclone.conf
+        # remote mappings defined in Path.config
 
     def upload(self, *filters, **kwargs):
         return Backup.copy(self.local, self.remote, filters=filters, **kwargs)
@@ -63,6 +64,7 @@ class Backup:
         exclude_git=True,
         **kwargs,
     ):
+        setup.check_setup()
         with Path.tempfile() as filters_path:
             filters_path.lines = Backup.parse_filters(filters or ["+ **"])
 

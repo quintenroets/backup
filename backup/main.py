@@ -2,13 +2,12 @@ import argparse
 
 import cli
 
-from . import harddrive, setup
+from . import harddrive
 from .backupmanager import BackupManager, subcheck
 from .path import Path
 
 
 def main():
-    setup.check_setup()
     parser = argparse.ArgumentParser(description="Automate backup process")
     parser.add_argument(
         "action",

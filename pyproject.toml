@@ -25,5 +25,5 @@ build-backend = "poetry.core.masonry.api"
 
 [options.entry_points]
 console_scripts =
-    drive = backup.main:main
-    watcher = backup.watcher:main
+    drive = "backup.main:main"
+    watcher = "backup.watcher:main"

@@ -22,7 +22,6 @@ pre-commit = "^3.2.2"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[options.entry_points]
-console_scripts =
-    drive = "backup.main:main"
-    watcher = "backup.watcher:main"
+[project.scripts]
+drive = "backup.main:main"
+watcher = "backup.watcher:main"

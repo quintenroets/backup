@@ -2,13 +2,14 @@ import argparse
 
 import cli
 
-from . import harddrive
+from . import harddrive, setup
 from .backupmanager import BackupManager, subcheck
 from .path import Path
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Automate common git workflows")
+    setup.check_setup()
+    parser = argparse.ArgumentParser(description="Automate backup process")
     parser.add_argument(
         "action",
         nargs="?",

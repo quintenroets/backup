@@ -1,6 +1,7 @@
-pyinotify
-xattr
-rich
-tqdm
 libs @ git+https://github.com/quintenroets/libs
-superpathlib @ git+https://github.com/quintenroets/superpathlib
+pyinotify
+quinten-cli
+rich
+superpathlib
+tqdm
+xattr

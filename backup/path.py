@@ -68,3 +68,5 @@ class Path(BasePath2):
 
     remote = BasePath2("backup:Home")
     harddrive = BasePath2(f"/media/{BasePath2.HOME.name}/Backup")
+
+    config = BasePath2.HOME / ".config" / "rclone" / "rclone.conf"

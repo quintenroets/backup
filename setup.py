@@ -29,24 +29,3 @@ setup(
     },
 )
 
-import cli  # isort:skip # noqa: autoimport
-from plib import Path  # isort:skip # noqa: autoimport
-from backup.backup import Backup  # isort:skip # noqa: autoimport
-
-installed = cli.get("which rclone", check=False)
-if not installed:
-    cli.install("curl")
-    # install newest version of rclone this way
-    cli.run("curl https://rclone.org/install.sh | sudo bash", shell=True)
-
-
-def download_config_file(path):
-    file_id = "13f7p1nTJ3mPhLxvMMmCBLuwYpMmsayvM"
-    url = f"https://docs.google.com/uc?export=download&id={file_id}"
-    cli.get("wget --no-check-certificate", url, "-O", path)
-
-
-config_path = Path.HOME / ".config" / "rclone" / "rclone.conf"
-if not config_path.exists():
-    config_path.create_parent()
-    download_config_file(config_path)

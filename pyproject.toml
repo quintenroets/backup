@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "backup"
+version = "0.1.0"
+description = ""
+authors = ["Quinten <quinten.roets@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pyinotify = "^0.9.6"
+quinten-cli = "^1.0.4"
+rich = "^13.3.4"
+superpathlib = "^1.0.0"
+tqdm = "^4.65.0"
+xattr = "^0.10.1"
+libs = {git = "https://github.com/quintenroets/libs"}
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[options.entry_points]
+console_scripts =
+    drive = backup.main:main
+    watcher = backup.watcher:main

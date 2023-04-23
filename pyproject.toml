@@ -1,27 +1,34 @@
-[tool.poetry]
+[project]
 name = "backup"
 version = "0.1.0"
 description = ""
-authors = ["Quinten <quinten.roets@gmail.com>"]
-license = "MIT"
+authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
+license = {text = "MIT"}
 readme = "README.md"
+requires-python = ">=3.10"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-pyinotify = "^0.9.6"
-quinten-cli = "^1.0.4"
-rich = "^13.3.4"
-superpathlib = "^1.0.0"
-tqdm = "^4.65.0"
-xattr = "^0.10.1"
+[project.dependencies]
+dependencies = [
+    "pyinotify",
+    "quinten-cli",
+    "rich",
+    "superpathlib",
+    "tqdm",
+    "xattr",
+]
 
-[tool.poetry.group.dev.dependencies]
-pre-commit = "^3.2.2"
+[project.optional-dependencies]
+dev = [
+    "pre-commit"
+]
+test = [
+    "pytest"
+]
 
-[toel.poetry.scripts]
+[project.scripts]
 drive = "backup.main:main"
 watcher = "backup.watcher:main"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

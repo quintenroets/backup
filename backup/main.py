@@ -25,24 +25,19 @@ def main():
     )
     args = parser.parse_args()
 
-    if args.option == "browser":
-        BackupManager.check_browser(args.action)
-    else:
-        match args.action:
-            case "browser":
-                BackupManager.check_browser(args.option)
-            case "status":
-                BackupManager.status()
-            case "push":
-                BackupManager.push()
-            case "pull":
-                BackupManager.pull(args.subcheck)
-            case "sync":
-                subcheck(command=args.option)
-            case "harddrive":
-                harddrive.check(args.option)
-            case "paths":
-                cli.urlopen(Path.paths)
+    match args.action:
+        case "status":
+            BackupManager.status()
+        case "push":
+            BackupManager.push()
+        case "pull":
+            BackupManager.pull(args.subcheck)
+        case "sync":
+            subcheck(command=args.option)
+        case "harddrive":
+            harddrive.check(args.option)
+        case "paths":
+            cli.urlopen(Path.paths)
 
 
 if __name__ == "__main__":

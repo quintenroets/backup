@@ -1,3 +1,5 @@
+import subprocess
+
 import cli
 
 from . import setup
@@ -44,7 +46,6 @@ class Backup:
     def compare(local, remote, filters=None, show=False, **kwargs) -> Changes:
         options = {
             "combined": "-",  # for every file: report +/-/*/=
-            "log-file": "/dev/null",  # discard errors thrown when files are different
         }
         change_patterns = Backup.run(
             "check", options, local, remote, filters=filters, show=show, **kwargs
@@ -99,7 +100,15 @@ class Backup:
             elif show:
                 cli.run(*args)
             else:
-                return cli.lines(*args, check=False)
+                try:
+                    result = cli.lines(*args, verbose_errors=False)
+                except subprocess.CalledProcessError as error:
+                    expected_error = error.stderr.endswith("differences found\n")
+                    if expected_error:
+                        result = error.stdout.strip().splitlines()
+                    else:
+                        raise Exception(error.stderr)
+                return result
 
     @staticmethod
     def parse_filters(filters):

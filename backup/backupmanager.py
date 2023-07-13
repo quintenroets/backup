@@ -99,27 +99,6 @@ class BackupManager:
                 yield path_str, date
 
     @classmethod
-    def export_path(cls, path):
-        root = Path.HOME / path
-        cls.visited.add(root)
-        dest = (Path.exports / "_".join(path.parts)).with_suffix(".zip")
-
-        changed = False
-        for item in root.find():
-            if item.is_file() and item.mtime > dest.mtime and not cls.exclude(item):
-                changed = True
-                cls.export_changes.append(
-                    f'{"*" if dest.mtime else "+"} {item.relative_to(Path.HOME)}'
-                )
-
-        if changed:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.unlink(missing_ok=True)
-            cli.run(f'zip -r -q -o "{dest}" *', cwd=root, shell=True)
-
-        return dest
-
-    @classmethod
     def get_compared_filters(cls, reverse=False):
         changes: Changes = cls.status(reverse=reverse)
         if changes:
@@ -152,28 +131,32 @@ class BackupManager:
         profilemanager.save_active()
         cls.check_cache_existence()
         filters = cls.get_filters()
+        src = Path.HOME
+        dst = Path.backup_cache
+        if reverse:
+            src, dst = dst, src
 
-        src, dst = (
-            (Path.HOME, Path.backup_cache)
-            if not reverse
-            else (Path.backup_cache, Path.HOME)
-        )
         changes = Backup.compare(src, dst, filters=filters) if filters else Changes([])
-        changed_path_strings = [str(c.path) for c in changes]
-
-        def filter_path(filter_str: str):
-            # cut away +/*, space, slash
-            return filter_str[3:]
-
-        def is_no_change_filter(filter_str: str):
-            return filter_str and filter_path(filter_str) not in changed_path_strings
-
-        no_changes_filters = [f for f in filters if is_no_change_filter(f)]
-        if no_changes_filters:
+        filters_without_change = cls.get_filters_without_change(filters, changes)
+        if filters_without_change:
             # adapt modified times to avoid checking again in future
-            Backup.copy(src, dst, filters=no_changes_filters)
+            Backup.copy(src, dst, filters=filters_without_change)
 
         return changes
+
+    @classmethod
+    def get_filters_without_change(cls, filters, changes):
+        filters = cls.generate_filters_without_change(filters, changes)
+        return list(filters)
+
+    @classmethod
+    def generate_filters_without_change(cls, filters, changes):
+        changed_path_strings = [str(c.path) for c in changes]
+        for pattern in filters:
+            if pattern:
+                pattern_path = pattern[3:]
+                if pattern_path not in changed_path_strings:
+                    yield pattern
 
     @classmethod
     def get_filters(cls):
@@ -240,40 +223,6 @@ class BackupManager:
             or (path.stat().st_size > 50 * 10**6 and path.suffix != ".zip")
             or path.suffix == ".part"
         )
-
-    @classmethod
-    def check_browser(cls, command):
-        local = Path.HOME
-
-        config_save_file = Path.browser_config / "config.zip"
-        filters = parser.make_filters(includes=[config_save_file.relative_to(local)])
-
-        if command == "push":
-            ignores = [
-                "Cache",
-                "Code Cache",
-                "Application Cache",
-                "CacheStorage",
-                "ScriptCache",
-                "GPUCache",
-            ]
-            flags = "".join([f'-x"*/{i}/*" ' for i in ignores])
-            command = (
-                f'zip -r -q - {flags} "{Path.browser_config_folder.name}" | tqdm'
-                f' --bytes --desc=Compressing > "{config_save_file}"'
-            )
-            # make sure that all zipped files have the same root
-            cli.run(command, cwd=Path.browser_config_folder.parent, shell=True)
-            Backup().upload(filters, quiet=False)
-
-        elif command == "pull":
-            Backup().download(filters, quiet=False)
-            Path.browser_config_folder.mkdir(parents=True, exist_ok=True)
-            cli.get(
-                "unzip", "-o", config_save_file, "-d", Path.browser_config_folder.parent
-            )
-        else:
-            print("Choose pull or push")
 
 
 def subcheck(custom_filters=None, command=None):

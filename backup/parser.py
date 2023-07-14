@@ -1,5 +1,3 @@
-from typing import List
-
 from .path import Path
 
 
@@ -12,7 +10,7 @@ def is_drive_path(subpath: Path):
     return Path.HOME / subpath == Path.drive
 
 
-def replace_subitems(subroot: Path, subitems: List[str]) -> List[str]:
+def replace_subitems(subroot: Path, subitems: list[str]) -> list[str]:
     if False and is_drive_path(subroot):  # disable drive folder zipping
         # special treatment needed for zip efficiency
         subitems = [f.name for f in Path.drive.iterdir()]
@@ -25,7 +23,7 @@ def replace_special_characters(root: Path, name: str):
         name_start = name.split(VERSION_KEYWORD)[0]
         absolute_root = Path.HOME / root
         true_paths = absolute_root.glob(f"{name_start}*")
-        true_paths: List[Path] = sorted(list(true_paths), key=lambda path: -path.mtime)
+        true_paths: list[Path] = sorted(list(true_paths), key=lambda path: -path.mtime)
         name = true_paths[0].name
 
     return name
@@ -34,18 +32,30 @@ def replace_special_characters(root: Path, name: str):
 def make_filters(
     includes=None, excludes=None, recursive=True, include_others=False, root=Path.HOME
 ):
+    filters = generate_filters(includes, excludes, recursive, include_others, root)
+    return list(filters)
+
+
+def generate_filters(
+    includes, excludes, recursive: bool, include_others: bool, root: Path
+):
     mapping = {"+": includes or [], "-": excludes or []}
-    filters = []
     for symbol, paths in mapping.items():
         for path in paths:
+            path = escape(path)
             addition = "/**" if recursive and (root / path).is_dir() else ""
-            filter = f"{symbol} /{path}{addition}"
-            filters.append(filter)
+            yield f"{symbol} /{path}{addition}"
 
     if include_others:
-        filters.append("+ **")
+        yield "+ **"
 
-    return filters
+
+def escape(path: Path):
+    reserved_characters = "[", "]", "*", "**", "?", "\\", "{", "}"
+    path = str(path)
+    for character in reserved_characters:
+        path = path.replace(character, f"\\{character}")
+    return path
 
 
 def parse_paths_comb(include, exclude, root=None):
@@ -58,8 +68,8 @@ def parse_paths_comb(include, exclude, root=None):
             (it, False) for it in exclude.items
         ]
         todo += [
-            tuple(s.structures.get(subroot, Structure([])) for s in (include, exclude))
-            for subroot in (include.structures | exclude.structures)
+            tuple(s.structures.get(sub_root, Structure([])) for s in (include, exclude))
+            for sub_root in (include.structures | exclude.structures)
         ]
     return paths[::-1]
 
@@ -76,16 +86,16 @@ class Structure:
             if not isinstance(item, dict):
                 item = {item: []}
 
-            name, subitems = next(iter(item.items()))
+            name, sub_items = next(iter(item.items()))
 
             name, *parts = name.split("/")
             name = replace_special_characters(root, name)
-            subroot = root / name
-            subitems = replace_subitems(subroot, subitems)
+            sub_root = root / name
             if parts:
-                # item was multiple directories deep => add first part and go one level deeper
-                subitems = [{"/".join(parts): subitems}]
-            if subitems:
-                self.structures[name] = Structure(subitems, subroot)
+                # item was multiple directories deep
+                # => add first part and go one level deeper
+                sub_items = [{"/".join(parts): sub_items}]
+            if sub_items:
+                self.structures[name] = Structure(sub_items, sub_root)
             else:
-                self.items.append(subroot)
+                self.items.append(sub_root)

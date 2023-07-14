@@ -1,5 +1,9 @@
 fail_fast: true
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.278
+    hooks:
+      - id: ruff
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
@@ -10,12 +14,6 @@ repos:
     hooks:
       - id: docformatter
         args: [--in-place, --pre-summary-newline, --close-quotes-on-newline]
-        stages: [commit]
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
-    hooks:
-    -   id: pyupgrade
-        args: [--py310-plus]
         stages: [commit]
   - repo: https://github.com/hadialqattan/pycln
     rev: v2.1.3

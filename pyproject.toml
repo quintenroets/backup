@@ -1,6 +1,6 @@
 [project]
 name = "backup"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
 license = {text = "MIT"}
@@ -30,3 +30,13 @@ watcher = "backup.watcher:main"
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "UP",  # pyupgrade
+]
+fix = true

@@ -40,6 +40,10 @@ class BasePath2(BasePath):
             path = self.backup_cache / path.relative_to(self.HOME)
         return path
 
+    @property
+    def export(self):
+        return self.with_suffix(".pdf")
+
 
 class Path(BasePath2):
     assets = BasePath2.assets
@@ -63,6 +67,7 @@ class Path(BasePath2):
     drive = BasePath2.docs / "Drive"
     browser_config = BasePath2.HOME / ".config" / "browser"
     browser_config_folder = BasePath2.HOME / ".config" / "chromium" / "Default"
+    resume = drive / "resume" / "Resume"
 
     exports = assets / "exports"
 

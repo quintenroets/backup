@@ -51,7 +51,9 @@ def generate_filters(
 
 
 def escape(path: Path):
-    reserved_characters = "[", "]", "*", "**", "?", "\\", "{", "}"
+    # backslash character needs to be first in sequence
+    # or otherwise each escape gets escaped again
+    reserved_characters = "\\", "[", "]", "*", "**", "?", "{", "}"
     path = str(path)
     for character in reserved_characters:
         path = path.replace(character, f"\\{character}")

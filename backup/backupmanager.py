@@ -153,7 +153,7 @@ class BackupManager:
 
     @classmethod
     def generate_filters_without_change(cls, filters, changes):
-        changed_path_strings = [str(c.path) for c in changes]
+        changed_path_strings = [c.path_str for c in changes]
         for pattern in filters:
             if pattern:
                 pattern_path = pattern[3:]

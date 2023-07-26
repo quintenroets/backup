@@ -5,6 +5,7 @@ from enum import Enum
 
 import cli
 
+from . import parser
 from .path import Path
 
 
@@ -81,6 +82,10 @@ class Change:
 
     def print(self):
         cli.console.print(self.message, end="")
+
+    @property
+    def path_str(self):
+        return parser.escape(self.path)
 
 
 @dataclass
@@ -227,7 +232,7 @@ class Changes:
         return Changes([Change.from_pattern(pattern) for pattern in patterns])
 
     def get_push_filters(self):
-        return [f"+ /{c.path}" for c in self.changes]
+        return [f"+ /{c.path_str}" for c in self.changes]
 
     def print_old(self):
         for change in self.changes:

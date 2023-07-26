@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import cli
 from rich import pretty
 
-from . import custom_checker, parser, profilemanager
+from . import custom_checker, exporter, parser, profilemanager
 from .backup import Backup
 from .changes import Change, Changes
 from .path import Path
@@ -45,8 +45,6 @@ class BackupManager:
     @classmethod
     def after_pull(cls):
         profilemanager.reload()
-        from . import exporter
-
         exporter.export_changes()
 
     @classmethod

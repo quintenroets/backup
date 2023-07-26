@@ -12,11 +12,15 @@ def export_resume():
         if path.export.mtime < path.mtime:
             export_path(path)
     resume_name = "Resume Quinten Roets.pdf"
-    main_resume = Path.resume / "Research" / resume_name
-    main_resume.copy_to(Path.resume.parent / resume_name, only_if_newer=True)
+    selected_resume = Path.resume / "Research" / resume_name
+    main_resume = Path.resume.parent / resume_name
+    selected_resume.copy_to(main_resume, only_if_newer=True, include_properties=False)
+    if main_resume.mtime > selected_resume.mtime:
+        main_resume.mtime = selected_resume.mtime
 
 
 def export_path(path: Path):
     remote_path = Path.remote / path.export.relative_to(Path.HOME)
     cli.run("rclone --drive-export-formats pdf copy", remote_path, path.parent)
     path.export.mtime = path.mtime
+    path.export.tag = "exported"

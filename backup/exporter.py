@@ -10,7 +10,8 @@ def export_changes():
 def export_resume():
     for path in Path.resume.rglob("*.docx"):
         if path.export.mtime < path.mtime:
-            export_path(path)
+            with cli.status(f"Exporting {path}"):
+                export_path(path)
     resume_name = "Resume Quinten Roets.pdf"
     selected_resume = Path.resume / "Research" / resume_name
     main_resume = Path.resume.parent / resume_name
@@ -22,5 +23,7 @@ def export_resume():
 def export_path(path: Path):
     remote_path = Path.remote / path.export.relative_to(Path.HOME)
     cli.run("rclone --drive-export-formats pdf copy", remote_path, path.parent)
+    cli.get("exiftool -Producer='PDF'", path.export)
+    path.export.with_suffix(path.export.suffix + "_original").unlink()
     path.export.mtime = path.mtime
     path.export.tag = "exported"

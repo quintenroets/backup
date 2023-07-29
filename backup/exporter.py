@@ -13,7 +13,7 @@ def export_resume():
             with cli.status(f"Exporting {path}"):
                 export_path(path)
     resume_name = "Resume Quinten Roets.pdf"
-    selected_resume = Path.resume / "Research" / resume_name
+    selected_resume = Path.resume / "Main" / resume_name
     main_resume = Path.resume.parent / resume_name
     selected_resume.copy_to(main_resume, only_if_newer=True, include_properties=False)
     if main_resume.mtime > selected_resume.mtime:

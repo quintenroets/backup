@@ -92,8 +92,10 @@ class BackupManager:
         with cli.status("Getting remote info"):
             lines = cli.lines(command, shell=True)
 
+        date_start = "── ["
         for line in lines:
-            if "[" in line:
+            contains_date = date_start in line
+            if contains_date:
                 date_str, path_str = line.split("[")[1].split("]  /")
                 date = datetime.strptime(date_str, "%b %d %H:%M")
                 yield path_str, date

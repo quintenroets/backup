@@ -93,10 +93,12 @@ class BackupManager:
             lines = cli.lines(command, shell=True)
 
         date_start = "── ["
+        date_end = "]  /"
+
         for line in lines:
             contains_date = date_start in line
             if contains_date:
-                date_str, path_str = line.split("[")[1].split("]  /")
+                date_str, path_str = line.split(date_start)[1].split(date_end)
                 date = datetime.strptime(date_str, "%b %d %H:%M")
                 yield path_str, date
 

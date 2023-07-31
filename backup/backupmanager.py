@@ -31,8 +31,9 @@ class BackupManager:
             )
 
     @classmethod
-    def pull(cls, sub_check: bool):
-        cls.sync_remote(sub_check)
+    def pull(cls, sub_check: bool, sync_remote: bool = True):
+        if sync_remote:
+            cls.sync_remote(sub_check)
         filters = cls.get_compared_filters(reverse=True)
         if filters:
             kwargs = {"delete_missing": True, "filters": filters}

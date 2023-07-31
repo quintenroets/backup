@@ -23,6 +23,14 @@ def main():
         help="only check subpath of current working directory",
         action="store_const",
     )
+    parser.add_argument(
+        "--no-sync",
+        dest="no_sync",
+        default=False,
+        const=True,
+        help="don't sync remote changes when pulling from remote",
+        action="store_const",
+    )
     args = parser.parse_args()
 
     match args.action:
@@ -31,7 +39,7 @@ def main():
         case "push":
             BackupManager.push()
         case "pull":
-            BackupManager.pull(args.subcheck)
+            BackupManager.pull(args.subcheck, sync_remote=not args.no_sync)
         case "sync":
             subcheck(command=args.option)
         case "harddrive":

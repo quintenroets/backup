@@ -141,7 +141,7 @@ class BackupManager:
         if reverse:
             src, dst = dst, src
 
-        changes = Backup.compare(src, dst, filters=filters) if filters else Changes([])
+        changes = compare(src, dst, filters=filters) if filters else Changes([])
         filters_without_change = cls.get_filters_without_change(filters, changes)
         if filters_without_change:
             # adapt modified times to avoid checking again in future
@@ -252,9 +252,7 @@ def subcheck(custom_filters=None, command=None):
                 filters += custom_filters
 
             if command == "status":
-                changes = Backup.compare(
-                    local, remote, filters=filters, exclude_git=False
-                )
+                changes = compare(local, remote, filters=filters, exclude_git=False)
                 pretty.pprint(changes)
             elif command == "push":
                 Backup().copy(
@@ -265,6 +263,30 @@ def subcheck(custom_filters=None, command=None):
                     exclude_git=False,
                     quiet=False,
                 )
+
+
+def compare(local, remote, filters, **kwargs):
+    try:
+        changes = Backup.compare(local, remote, filters=filters, **kwargs)
+    except cli.CalledProcessError:
+        raise create_malformed_filters_error(filters)
+    return changes
+
+
+def create_malformed_filters_error(filters):
+    delimiter = "\n\t"
+    malformed_rules = generate_malformed_rules(filters)
+    message = f"Invalid paths:{delimiter}" + delimiter.join(malformed_rules)
+    return Exception(message)
+
+
+def generate_malformed_rules(filters):
+    invalid_characters = ("\n",)
+    for rule in filters:
+        if any(character in rule for character in invalid_characters):
+            path = rule[3:]
+            raw_path = path.encode("unicode_escape").decode()
+            yield raw_path
 
 
 def load_path_config():

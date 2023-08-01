@@ -107,7 +107,7 @@ class Backup:
                     if expected_error:
                         result = error.stdout.strip().splitlines()
                     else:
-                        raise Exception(error.stderr)
+                        raise cli.CalledProcessError(error.stderr)
                 return result
 
     @staticmethod

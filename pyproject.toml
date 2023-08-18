@@ -24,8 +24,7 @@ test = [
 ]
 
 [project.scripts]
-drive = "backup.main:main"
-watcher = "backup.watcher:main"
+backup = "backup:main"
 
 [build-system]
 requires = ["setuptools"]

@@ -10,13 +10,6 @@ def is_drive_path(subpath: Path):
     return Path.HOME / subpath == Path.drive
 
 
-def replace_subitems(subroot: Path, subitems: list[str]) -> list[str]:
-    if False and is_drive_path(subroot):  # disable drive folder zipping
-        # special treatment needed for zip efficiency
-        subitems = [f.name for f in Path.drive.iterdir()]
-    return subitems
-
-
 def replace_special_characters(root: Path, name: str):
     VERSION_KEYWORD = "__VERSION__"
     if VERSION_KEYWORD in name:
@@ -42,22 +35,11 @@ def generate_filters(
     mapping = {"+": includes or [], "-": excludes or []}
     for symbol, paths in mapping.items():
         for path in paths:
-            path = escape(path)
             addition = "/**" if recursive and (root / path).is_dir() else ""
             yield f"{symbol} /{path}{addition}"
 
     if include_others:
         yield "+ **"
-
-
-def escape(path: Path):
-    # backslash character needs to be first in sequence
-    # or otherwise each escape gets escaped again
-    reserved_characters = "\\", "[", "]", "*", "**", "?", "{", "}"
-    path = str(path)
-    for character in reserved_characters:
-        path = path.replace(character, f"\\{character}")
-    return path
 
 
 def parse_paths_comb(include, exclude, root=None):

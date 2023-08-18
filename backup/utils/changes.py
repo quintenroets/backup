@@ -13,6 +13,7 @@ class ChangeType(Enum):
     created = "created"
     modified = "modified"
     deleted = "deleted"
+    preserved = "preserved"
 
     @classmethod
     @property
@@ -21,6 +22,7 @@ class ChangeType(Enum):
             "+": ChangeType.created,
             "*": ChangeType.modified,
             "-": ChangeType.deleted,
+            "=": ChangeType.preserved,
         }
 
     @classmethod
@@ -230,14 +232,6 @@ class Changes:
     @classmethod
     def from_patterns(cls, patterns: list[str]):
         return Changes([Change.from_pattern(pattern) for pattern in patterns])
-
-    def get_push_filters(self):
-        return [f"+ /{c.path_str}" for c in self.changes]
-
-    def print_old(self):
-        for change in self.changes:
-            change.print()
-        print("")
 
     def print(self):
         print_structure = PrintStructure.from_changes(self.changes)

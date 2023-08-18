@@ -1,6 +1,6 @@
 import cli
 
-from .path import Path
+from .utils import Path
 
 
 def check(subpaths: str):

@@ -3,10 +3,13 @@ import cli
 from .path import Path
 
 
-def check_setup():
-    if not Path.config.exists():
-        download_config_file(Path.config)
-        cli.install("rclone")
+def check_setup(install=True):
+    path = Path.rclone_config
+    if not path.exists():
+        download_config_file(path)
+        if install:
+            command = "sudo -v ; curl https://rclone.org/install.sh | sudo bash"
+            cli.run(command, shell=True)
 
 
 def download_config_file(path: Path):

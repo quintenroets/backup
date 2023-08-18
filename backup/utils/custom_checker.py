@@ -3,7 +3,7 @@ from types import FunctionType
 
 import cli
 
-from .path import Path
+from .utils import Path
 
 
 def check_ksmserverrc(path: Path):

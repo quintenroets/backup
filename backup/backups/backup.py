@@ -17,7 +17,7 @@ class Backup(remote.Backup):
     def status(self):
         self.quiet_cache = True
         self.paths = self.cache_status().paths
-        status = super().status()
+        status = super().status() if self.paths else Changes()
         status.print()
 
     def push(self):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from enum import Enum
 
 import cli
@@ -214,7 +214,7 @@ class PrintStructure:
 
 @dataclass
 class Changes:
-    changes: list[Change]
+    changes: list[Change] = field(default_factory=list)
 
     def __post_init__(self):
         self.changes = sorted(self.changes, key=lambda c: c.sort_index)

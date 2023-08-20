@@ -10,7 +10,7 @@ def main():
     if args.configure:
         cli.urlopen(Path.config)
     else:
-        backup = Backup()
+        backup = Backup(include_browser=args.include_browser)
         match args.action:
             case "status":
                 backup.status()

@@ -1,6 +1,6 @@
 import pytest
 
-from backup.backups import cache
+from backup.backups import smart_cache
 from backup.utils import Path, check_setup
 
 
@@ -37,7 +37,7 @@ def restore_rclone_config_path(restore_and_check):
 
 def test_config_download(restore_config_path):
     Path.config.rmtree()
-    cache.Backup.check_config_path()
+    smart_cache.Backup.check_config_path()
     assert Path.config.exists()
 
 

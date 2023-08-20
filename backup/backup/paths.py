@@ -7,7 +7,7 @@ from . import rclone
 @dataclass
 class Rclone(rclone.Rclone):
     folder: Path = None
-    paths: list[Path] | tuple[Path] = field(default_factory=list)
+    paths: list[Path] | tuple[Path] | set[Path] = field(default_factory=list)
 
     def create_filters_path(self):
         if not self.filter_rules:

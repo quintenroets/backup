@@ -1,45 +1,11 @@
+import os
+
 from .path import Path
 
 
 def parse_paths(structure):
-    tuples = parse_paths_comb(structure, {}, root=Path(""))
+    tuples = parse_paths_comb(structure, {})
     return [t[0] for t in tuples]
-
-
-def is_drive_path(subpath: Path):
-    return Path.HOME / subpath == Path.drive
-
-
-def replace_special_characters(root: Path, name: str):
-    VERSION_KEYWORD = "__VERSION__"
-    if VERSION_KEYWORD in name:
-        name_start = name.split(VERSION_KEYWORD)[0]
-        absolute_root = Path.HOME / root
-        true_paths = absolute_root.glob(f"{name_start}*")
-        true_paths: list[Path] = sorted(list(true_paths), key=lambda path: -path.mtime)
-        name = true_paths[0].name
-
-    return name
-
-
-def make_filters(
-    includes=None, excludes=None, recursive=True, include_others=False, root=Path.HOME
-):
-    filters = generate_filters(includes, excludes, recursive, include_others, root)
-    return list(filters)
-
-
-def generate_filters(
-    includes, excludes, recursive: bool, include_others: bool, root: Path
-):
-    mapping = {"+": includes or [], "-": excludes or []}
-    for symbol, paths in mapping.items():
-        for path in paths:
-            addition = "/**" if recursive and (root / path).is_dir() else ""
-            yield f"{symbol} /{path}{addition}"
-
-    if include_others:
-        yield "+ **"
 
 
 def parse_paths_comb(include, exclude, root=None):
@@ -78,8 +44,20 @@ class Structure:
             if parts:
                 # item was multiple directories deep
                 # => add first part and go one level deeper
-                sub_items = [{"/".join(parts): sub_items}]
+                sub_items = [{os.sep.join(parts): sub_items}]
             if sub_items:
                 self.structures[name] = Structure(sub_items, sub_root)
             else:
                 self.items.append(sub_root)
+
+
+def replace_special_characters(root: Path, name: str):
+    VERSION_KEYWORD = "__VERSION__"
+    if VERSION_KEYWORD in name:
+        name_start = name.split(VERSION_KEYWORD)[0]
+        absolute_root = Path.HOME / root
+        true_paths = absolute_root.glob(f"{name_start}*")
+        true_paths: list[Path] = sorted(list(true_paths), key=lambda path: -path.mtime)
+        name = true_paths[0].name
+
+    return name

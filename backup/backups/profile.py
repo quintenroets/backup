@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from .. import backup
-from ..utils import Path, parser
+from ..utils import Path
 
 
 @dataclass
@@ -9,7 +9,7 @@ class Backup(backup.Backup):
     quiet: bool = True
 
     def __post_init__(self):
-        self.paths = parser.parse_paths(Path.profile_paths.yaml)
+        self.paths = Path.profile_paths.parsed_paths
         super().__post_init__()
         self.set_dest(self.profile_name)
 
@@ -34,3 +34,7 @@ class Backup(backup.Backup):
     def reload(self):
         if Path.active_profile.exists():
             self.pull()
+
+    def pull(self):
+        self.reverse = True
+        self.copy()

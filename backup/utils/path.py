@@ -1,6 +1,13 @@
 from __future__ import annotations
 
+import typing
+
 from plib import Path as BasePath
+
+from . import parser
+
+if typing.TYPE_CHECKING:
+    from datetime import datetime  # noqa: autoimport
 
 
 class BasePath2(BasePath):
@@ -8,9 +15,10 @@ class BasePath2(BasePath):
 
     @property
     def mtime(self):
-        """Only precision up to one second to decide which files have the same
-        mtime cannot be too precise to avoid false positives remote filesystem
-        also has limited precision.
+        """
+        Only precision up to one second to decide which files have the same mtime cannot
+        be too precise to avoid false positives remote filesystem also has limited
+        precision.
         """
         return int(super().mtime)
 
@@ -44,6 +52,25 @@ class BasePath2(BasePath):
     def export(self):
         return self.with_suffix(".pdf")
 
+    @property
+    def date(self):
+        from datetime import datetime, timezone  # noqa: autoimport
+
+        date = datetime.fromtimestamp(self.mtime)
+        return date.astimezone(timezone.utc)
+
+    def has_date(self, date: datetime):
+        return self.extract_date_tuple(date) == self.extract_date_tuple(self.date)
+
+    @classmethod
+    def extract_date_tuple(cls, date: datetime):
+        # drive remote only minute precision and month range
+        return date.month, date.day, date.hour, date.minute
+
+    @property
+    def parsed_paths(self):
+        return parser.parse_paths(self.yaml)
+
 
 class Path(BasePath2):
     assets = BasePath2.assets
@@ -54,17 +81,14 @@ class Path(BasePath2):
     paths_include = config / "include.yaml"
     paths_include_pull = config / "pull_include"
     paths_exclude = config / "exclude.yaml"
-    paths_volatile = config / "volatile.yaml"
     harddrive_paths = config / "harddrive.yaml"
     profile_paths = config / "profiles.yaml"
 
-    timestamps = assets / "timestamps" / "timestamps"
+    number_of_paths = assets / "cache" / "number_of_paths"
+
     profiles = assets / "profiles"
-    filters = assets / "filters"
     active_profile = profiles / "active.txt"
 
-    browser_config = BasePath2.HOME / ".config" / "browser"
-    browser_config_folder = BasePath2.HOME / ".config" / "chromium" / "Default"
     resume = BasePath2.docs / "Drive" / "resume" / "Resume"
 
     remote = BasePath2("backup:Home")

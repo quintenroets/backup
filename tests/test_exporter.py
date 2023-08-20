@@ -1,5 +1,4 @@
-from backup import exporter
-from backup.path import Path
+from backup.utils import Path, exporter
 
 
 def test_status():

@@ -1,5 +1,5 @@
-from backup.backupmanager import BackupManager
+from backup import Backup
 
 
 def test_status():
-    BackupManager.status()
+    Backup().status()

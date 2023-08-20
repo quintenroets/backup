@@ -111,7 +111,7 @@ def check_hash(path: Path, content_generator):
     return hash_value
 
 
-def custom_checkers() -> dict[Path, FunctionType]:
+def get_custom_checkers() -> dict[Path, FunctionType]:
     checkers = {
         ".config/gtkrc": remove_comments,
         ".config/gtkrc-2.0": remove_comments,
@@ -127,28 +127,4 @@ def custom_checkers() -> dict[Path, FunctionType]:
     return {Path(k): v for k, v in checkers.items()}
 
 
-def reduce(items: set[Path]):
-    checkers = custom_checkers()
-    to_remove = set({})
-    new_items = set({})
-
-    for item in items:
-        full_item = Path.HOME / item
-        if full_item.is_relative_to(Path.profiles):
-            profile_item = full_item.relative_to(Path.profiles)
-            profile_item = profile_item.relative_to(profile_item.parts[0])
-        else:
-            profile_item = None
-
-        checker = checkers.get(item) or checkers.get(profile_item)
-        if checker:
-            full_path: Path = Path.HOME / item
-            mirror = Path.backup_cache / item
-
-            if checker(full_path) == checker(mirror):
-                mirror.touch(mtime=full_path.mtime)
-                to_remove.add(item)
-            elif full_path.hash_path.exists():
-                new_items.add(full_path.hash_path.relative_to(Path.HOME))
-
-    return (items | new_items) - to_remove
+custom_checkers = get_custom_checkers()

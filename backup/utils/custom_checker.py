@@ -6,16 +6,22 @@ import cli
 from .path import Path
 
 
-def check_ksmserverrc(path: Path):
+def check_kglobalshortcutsrc(path: Path):
     return filter_sections(
-        path, ignore_sections=("[Session: saved at previous logout]",)
+        path,
+        ignore_sections=("ActivityManager", "mediacontrol"),
+        ignore_lines=("activate widget",),
     )
+
+
+def check_ksmserverrc(path: Path):
+    return filter_sections(path, ignore_sections=("Session: saved at previous logout",))
 
 
 def check_kate(path: Path):
     sections = filter_sections(
         path,
-        ignore_sections=("[KTextEditor::Search]", "[KFileDialog Settings]"),
+        ignore_sections=("KTextEditor::Search", "KFileDialog Settings"),
         ignore_lines=("Color Theme=",),
     )
 
@@ -23,6 +29,7 @@ def check_kate(path: Path):
 
 
 def filter_sections(path: Path, ignore_sections=(), ignore_lines=()):
+    ignore_sections = [f"[{section}]" for section in ignore_sections]
     lines = path.lines
     header_indices = [i for i, line in enumerate(lines) if line.startswith("[")]
 
@@ -32,12 +39,12 @@ def filter_sections(path: Path, ignore_sections=(), ignore_lines=()):
         if section[0] not in ignore_sections:
             non_volatile_sections.append(section)
 
-    for section in non_volatile_sections:
-        for line in section:
-            if any(word in line for word in ignore_lines):
-                section.remove(line)
-
-    return non_volatile_sections
+    return [
+        line
+        for section in non_volatile_sections
+        for line in section
+        if not any(word in line for word in ignore_lines)
+    ]
 
 
 def remove_comments(path: Path):
@@ -117,9 +124,7 @@ def get_custom_checkers() -> dict[Path, FunctionType]:
         ".config/gtkrc-2.0": remove_comments,
         ".config/katerc": check_kate,
         ".config/ksmserverrc": check_ksmserverrc,
-        ".config/kglobalshortcutsrc": lambda path: filter_sections(
-            path, ignore_sections=("[ActivityManager]", "[mediacontrol]")
-        ),
+        ".config/kglobalshortcutsrc": check_kglobalshortcutsrc,
         ".local/share/user-places.xbel": check_user_places,
         ".local/share/kwalletd/kdewallet.kwl": check_wallet,
         ".config/rclone/rclone.conf": check_rclone,

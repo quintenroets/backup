@@ -5,9 +5,8 @@ from functools import cached_property
 
 import cli
 
-from ..utils import Changes, Path, parser
+from ..utils import Changes, Path, PathEntry, parser
 from . import cache
-from .cache import PathEntry
 
 
 @dataclass
@@ -51,12 +50,14 @@ class Backup(cache.Backup):
             source_root = self.source / relative_root
             if include:
                 for source_path in source_root.find(exclude=self.exclude_root):
-                    yield PathEntry(source=source_path)
+                    yield PathEntry(
+                        source=source_path, include_browser=self.include_browser
+                    )
             self.visited.add(source_root)
 
     def generate_dest_entries(self):
         for dest_path in self.dest.rglob("*"):
-            yield PathEntry(dest=dest_path)
+            yield PathEntry(dest=dest_path, include_browser=self.include_browser)
 
     def path_config(self):
         self.check_config_path()

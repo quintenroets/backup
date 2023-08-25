@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import cli
 
 from ..utils import Changes, exporter
+from ..utils.path_entry import PathEntry
 from . import profile, remote, smart_cache
 
 
@@ -12,7 +13,7 @@ class Backup(remote.Backup):
     quiet_cache: bool = False
     sync_remote: bool = True
     reverse: bool = False
-    include_browser: bool = True
+    include_browser: bool = False
 
     def status(self):
         self.quiet_cache = True
@@ -52,7 +53,7 @@ class Backup(remote.Backup):
     def pull(self):
         if self.sync_remote:
             self.start_sync_remote()
-        Backup(reverse=True).push()
+        Backup(reverse=True, include_browser=self.include_browser).push()
         self.after_pull()
 
     @classmethod
@@ -61,5 +62,7 @@ class Backup(remote.Backup):
         exporter.export_changes()
 
     def start_sync_remote(self):
+        if not self.include_browser:
+            self.filter_rules = [f"- {PathEntry.browser_pattern}"]
         dest_info = self.get_dest_info()
         smart_cache.Backup(sub_check=self.sub_check).update_dest(dest_info)

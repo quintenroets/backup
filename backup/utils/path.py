@@ -77,7 +77,6 @@ class Path(BasePath2):
     config = assets / "config"
     ignore_names = config / "ignore_names.yaml"
     ignore_patterns = config / "ignore_patterns.yaml"
-    exclude_zip = config / "exclude_zip.yaml"
     paths_include = config / "include.yaml"
     paths_include_pull = config / "pull_include"
     paths_exclude = config / "exclude.yaml"

@@ -1,22 +1,26 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from backup.backups.cache import Backup
+from ...utils import Path, custom_checker
+from .raw import Backup
 
-from ..utils import Path
-from ..utils.custom_checker import custom_checkers as checkers
+checkers = custom_checker.custom_checkers
 
 
 @dataclass
-class PathEntry:
+class Entry:
     source: Path = None
     relative: Path = None
     dest: Path = None
     changed: bool = None
     include_browser: bool = None
     max_backup_size: int = 50e6
-    browser_name: str = "chromium"
-    browser_folder: Path = Path(".config") / browser_name
-    browser_pattern: str = f"{browser_folder}/**/*"
+    browser_name: str = field(default="chromium", repr=False)
+    browser_folder: Path = field(
+        default=Path(".config") / browser_name.default, repr=False  # noqa
+    )
+    browser_pattern: str = field(
+        default=f"{browser_folder.default}/**/*", repr=False  # noqa
+    )
 
     def __post_init__(self):
         if self.source is None:
@@ -57,6 +61,8 @@ class PathEntry:
         if self.source.is_relative_to(Path.profiles):
             check_key = self.source.relative_to(Path.profiles)
             check_key = check_key.relative_to(check_key.parts[0])
+        elif self.source.is_relative_to(Path.HOME):  # noqa
+            check_key = self.source.relative_to(Path.HOME)  # noqa
         else:
             check_key = self.relative
         return check_key

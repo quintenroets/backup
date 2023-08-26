@@ -4,8 +4,9 @@ import subprocess
 import cli
 
 
-def generate_output_lines(*args):
-    process = cli.run(*args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, wait=False)
+def generate_output_lines(*args, **kwargs):
+    pipe = subprocess.PIPE
+    process = cli.run(*args, stdout=pipe, stderr=pipe, wait=False, **kwargs)
 
     output_generated = False
     outputs = [process.stdout, process.stderr]

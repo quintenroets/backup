@@ -8,7 +8,7 @@ from ..utils import Path, setup
 
 @dataclass
 class Rclone:
-    source: Path | str = Path.HOME
+    source: Path | str = Path("/")
     dest: Path | str = Path.remote
     filter_rules: list[str] = field(default_factory=list)
     options: list[str | set | dict] = field(default_factory=list)
@@ -18,6 +18,7 @@ class Rclone:
     retries_sleep: str = "30s"
     order_by: str = "size,desc"  # handle largest files first
     runner: Callable = None
+    root: bool = False
 
     def __post_init__(self):
         setup.check_setup()
@@ -41,7 +42,7 @@ class Rclone:
         filters_path = self.create_filters_path()
         with filters_path:
             args = "rclone", *args, "--filter-from", filters_path, *self.options
-            result = self.runner(*args)
+            result = self.runner(*args, root=self.root)
 
         self.reset_runner()
         return result

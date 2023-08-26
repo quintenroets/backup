@@ -8,6 +8,8 @@ from . import rclone
 class Rclone(rclone.Rclone):
     folder: Path = None
     paths: list[Path] | tuple[Path] | set[Path] = field(default_factory=list)
+    sub_check: bool = False
+    path_separator: str = field(default="/", repr=False)
 
     def create_filters_path(self):
         if not self.filter_rules:
@@ -15,6 +17,8 @@ class Rclone(rclone.Rclone):
         return super().create_filters_path()
 
     def create_filters(self):
+        if self.sub_check:
+            self.folder = Path.cwd()
         if self.folder is not None:
             self.paths = (self.folder / "**",)
         if self.paths:
@@ -35,7 +39,14 @@ class Rclone(rclone.Rclone):
         # backslash character needs to be first in sequence
         # or otherwise each escape gets escaped again
         reserved_characters = "\\", "[", "]", "*", "**", "?", "{", "}"
-        path = str(path)
+        recursive_symbol = "**"
+        recursive = path.name == recursive_symbol
+        if recursive:
+            path = path.parent
+        path_str = cls.path_separator.join(path.parts)
         for character in reserved_characters:
-            path = path.replace(character, f"\\{character}")
-        return path
+            path_str = path_str.replace(character, f"\\{character}")
+        if recursive:
+            path_str += cls.path_separator + recursive_symbol
+
+        return path_str

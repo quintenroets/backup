@@ -5,7 +5,6 @@ from enum import Enum
 
 import cli
 
-from . import parser
 from .path import Path
 
 
@@ -85,10 +84,6 @@ class Change:
     def print(self):
         cli.console.print(self.message, end="")
 
-    @property
-    def path_str(self):
-        return parser.escape(self.path)
-
 
 @dataclass
 class PrintChange:
@@ -118,6 +113,8 @@ class PrintChange:
         color = self.type.color if self.type else "black"
 
         message = str(self.path)
+        home_path_str = str(Path.HOME.relative_to(Path("/")))
+        message = message.replace(home_path_str, "HOME")
         available_width = cli.console.width - len(whitespace + symbol + " " + "-")
         message_chunks = [
             message[start : start + available_width]

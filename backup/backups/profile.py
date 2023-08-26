@@ -1,15 +1,17 @@
 from dataclasses import dataclass
 
 from .. import backup
-from ..utils import Path
+from ..utils import Path, parser
 
 
 @dataclass
 class Backup(backup.Backup):
+    source: Path = Path.HOME
     quiet: bool = True
 
     def __post_init__(self):
-        self.paths = Path.profile_paths.parsed_paths
+        rules = parser.Rules(Path.profile_paths.yaml, root=Path.HOME)  # noqa
+        self.paths = rules.get_paths()
         super().__post_init__()
         self.set_dest(self.profile_name)
 

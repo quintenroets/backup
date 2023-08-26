@@ -39,12 +39,15 @@ def filter_sections(path: Path, ignore_sections=(), ignore_lines=()):
         if section[0] not in ignore_sections:
             non_volatile_sections.append(section)
 
-    return [
+    reduction = [
         line
         for section in non_volatile_sections
         for line in section
         if not any(word in line for word in ignore_lines)
     ]
+    if not path.exists():
+        reduction = None
+    return reduction
 
 
 def remove_comments(path: Path):

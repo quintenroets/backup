@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+import os
 import typing
 
 from plib import Path as BasePath
-
-from . import parser
 
 if typing.TYPE_CHECKING:
     from datetime import datetime  # noqa: autoimport
@@ -39,7 +38,7 @@ class BasePath2(BasePath):
     @classmethod
     @property
     def backup_cache(cls) -> BasePath2:  # noqa
-        return cls.HOME.parent / "backup"
+        return cls.assets / "cache"
 
     @property
     def hash_path(self):
@@ -54,7 +53,7 @@ class BasePath2(BasePath):
 
     @property
     def date(self):
-        from datetime import datetime, timezone  # noqa: autoimport
+        from datetime import datetime, timezone  # noqa: autoimport, E402
 
         date = datetime.fromtimestamp(self.mtime)
         return date.astimezone(timezone.utc)
@@ -67,9 +66,8 @@ class BasePath2(BasePath):
         # drive remote only minute precision and month range
         return date.month, date.day, date.hour, date.minute
 
-    @property
-    def parsed_paths(self):
-        return parser.parse_paths(self.yaml)
+    def is_root(self):
+        return not os.access(self, os.W_OK)
 
 
 class Path(BasePath2):
@@ -83,14 +81,14 @@ class Path(BasePath2):
     harddrive_paths = config / "harddrive.yaml"
     profile_paths = config / "profiles.yaml"
 
-    number_of_paths = assets / "cache" / "number_of_paths"
+    number_of_paths = assets / "volatile" / "number_of_paths"
 
     profiles = assets / "profiles"
     active_profile = profiles / "active.txt"
 
     resume = BasePath2.docs / "Drive" / "resume" / "Resume"
 
-    remote = BasePath2("backup:Home")
+    remote = BasePath2("backup:")
     harddrive = BasePath2(f"/media/{BasePath2.HOME.name}/Backup")
 
     rclone_config = BasePath2.HOME / ".config" / "rclone" / "rclone.conf"

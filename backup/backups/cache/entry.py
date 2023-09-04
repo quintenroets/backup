@@ -21,6 +21,10 @@ class Entry:
     browser_pattern: str = field(
         default=f"{browser_folder.default}/**/*", repr=False  # noqa
     )
+    relative_browser_path: Path = field(
+        default=(Path.HOME / browser_folder.default).relative_to(Backup.source),
+        repr=False,
+    )
 
     def __post_init__(self):
         if self.source is None:
@@ -33,7 +37,7 @@ class Entry:
             self.dest = Backup.dest / self.relative
 
     def is_browser_config(self):
-        return self.relative.is_relative_to(self.browser_folder)
+        return self.relative.is_relative_to(self.relative_browser_path)
 
     def is_changed(self):
         return (

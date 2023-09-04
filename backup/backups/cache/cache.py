@@ -85,8 +85,7 @@ class Backup(raw.Backup):
     def ignore_patterns(self):
         ignore_patterns = Path.ignore_patterns.yaml
         if not self.include_browser:
-            browser_pattern = f".config/{Entry.browser_name}/**/*"
-            ignore_patterns.append(browser_pattern)
+            ignore_patterns.append(Entry.browser_pattern)
         return ignore_patterns
 
     @cached_property

@@ -8,6 +8,8 @@ checkers = custom_checker.custom_checkers
 
 @dataclass
 class Entry:
+    source_root: Path
+    dest_root: Path
     source: Path = None
     relative: Path = None
     dest: Path = None
@@ -29,12 +31,12 @@ class Entry:
     def __post_init__(self):
         if self.source is None:
             self.existing = self.dest
-            self.relative = self.dest.relative_to(Backup.dest)
-            self.source = Backup.source / self.relative
+            self.relative = self.dest.relative_to(self.dest_root)
+            self.source = self.source_root / self.relative
         else:
             self.existing = self.source
-            self.relative = self.source.relative_to(Backup.source)
-            self.dest = Backup.dest / self.relative
+            self.relative = self.source.relative_to(self.source_root)
+            self.dest = self.dest_root / self.relative
 
     def is_browser_config(self):
         return self.relative.is_relative_to(self.relative_browser_path)

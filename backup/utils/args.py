@@ -1,4 +1,11 @@
 import argparse
+from enum import Enum
+
+
+class Action(Enum):
+    status = "status"
+    push = "push"
+    pull = "pull"
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -19,14 +26,17 @@ class ArgumentParser(argparse.ArgumentParser):
 
 def get_args():
     parser = ArgumentParser()
+    actions_string = ", ".join(action.name for action in Action)
     parser.add_argument(
         "action",
+        type=Action,
         nargs="?",
-        help="The action to do [status, push, pull]",
-        default="push",
+        help=f"The action to do [{actions_string}]",
+        default=Action.push,
     )
     parser.add_option("subcheck", "only check subpath of current working directory")
     parser.add_option("include-browser", "check browser config")
     parser.add_option("configure", "open configuration")
     parser.add_option("no-sync", "don't sync remote changes when pulling from remote")
+    parser.add_option("export-resume", "export remote resume changes")
     return parser.parse_args()

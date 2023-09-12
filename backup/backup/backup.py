@@ -21,8 +21,8 @@ class Backup(paths.Rclone):
     def push(self):
         return self.move()
 
-    def copy(self):
-        return self.start("copy", "--progress")
+    def copy(self, *args):
+        return self.start("copy", "--progress", *args)
 
     def pull(self):
         self.reverse = True
@@ -60,13 +60,17 @@ class Backup(paths.Rclone):
             self.update_paths_without_change(no_change_results)
         return changes
 
-    @classmethod
-    def update_paths_without_change(cls, results):
+    def update_paths_without_change(self, results):
         """
         Update modified times to avoid checking again in the future.
         """
         paths_without_change = [result.path for result in results]
-        cls(paths=paths_without_change, quiet=True).push()
+        backup = self.__class__(
+            paths=paths_without_change,  # noqa
+            quiet=True,  # noqa
+            sub_check_path=self.sub_check_path,  # noqa
+        )
+        backup.push()
 
     def generate_change_results(self, *args, **kwargs):
         status_lines = generate_output_lines(*args, **kwargs)
@@ -93,6 +97,14 @@ class Backup(paths.Rclone):
         if message is None:
             tree = self.tree()
         else:
+            if self.sub_check_path:
+                full_path = Backup.source / self.sub_check_path
+                path_message = (
+                    full_path.relative_to(Path.HOME)
+                    if full_path.is_relative_to(Path.HOME)
+                    else full_path
+                )
+                message += f" from {path_message }"
             with cli.status(message):
                 tree = self.tree()
         yield from self.parse_tree(tree)

@@ -8,8 +8,15 @@ from . import rclone
 class Rclone(rclone.Rclone):
     folder: Path = None
     paths: list[Path] | tuple[Path] | set[Path] = field(default_factory=list)
-    sub_check: bool = False
+    path: Path = None
+    sub_check_path: Path = None
     path_separator: str = field(default="/", repr=False)
+
+    def __post_init__(self):
+        if self.sub_check_path is not None:
+            self.source /= self.sub_check_path
+            self.dest /= self.sub_check_path
+        super().__post_init__()
 
     def create_filters_path(self):
         if not self.filter_rules:
@@ -17,17 +24,17 @@ class Rclone(rclone.Rclone):
         return super().create_filters_path()
 
     def create_filters(self):
-        if self.sub_check:
-            self.folder = Path.cwd()
         if self.folder is not None:
-            self.paths = (self.folder / "**",)
+            self.path = self.folder / "**"
+        if self.path is not None:
+            self.paths = (self.path,)
         if self.paths:
             filter_rules = self.generate_path_rules()
             self.filter_rules = list(filter_rules)
 
     def generate_path_rules(self):
         for path in self.paths:
-            if path.is_absolute():
+            if path.is_relative_to(self.source):
                 path = path.relative_to(self.source)
             path_str = self.escape(path)
             yield f"+ /{path_str}"

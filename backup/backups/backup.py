@@ -23,20 +23,30 @@ class Backup(backup.Backup):
         status.print()
 
     def push(self):
-        paths = self.get_changed_paths()
-        if paths:
+        self.paths = self.get_changed_paths()
+        if self.paths:
             if self.reverse:
-                self.check_root_paths(paths)
-            backup.Backup(paths=paths, reverse=self.reverse).push()
-            cache.Backup(paths=paths).push()
+                self.check_root_paths()
+            self.start_push()
 
-    def check_root_paths(self, paths):
+    def start_push(self):
+        kwargs = dict(
+            path=self.path, paths=self.paths, sub_check_path=self.sub_check_path
+        )
+        backups = (
+            backup.Backup(reverse=self.reverse, quiet=self.quiet, **kwargs),
+            cache.Backup(**kwargs),
+        )
+        for push_backup in backups:
+            push_backup.push()
+
+    def check_root_paths(self):
         root_paths = []
-        for path in paths:
+        for path in self.paths:
             source_parent = self.source / path.parent
             if source_parent.parent.is_root():
                 root_paths.append(path)
-                paths.remove(path)
+                self.paths.remove(path)
 
         if root_paths:
             self.process_root_paths(root_paths)
@@ -47,8 +57,9 @@ class Backup(backup.Backup):
             self.copy_with_intermediate(paths, temp_dest)
 
     def copy_with_intermediate(self, paths: list[Path], temp_dest: Path):
-        backup.Backup(source=self.dest, dest=temp_dest, paths=paths).push()
-        backup.Backup(source=temp_dest, dest=self.source, root=True, paths=paths).copy()
+        kwargs = dict(paths=paths, sub_check_path=self.sub_check_path)
+        backup.Backup(source=self.dest, dest=temp_dest, **kwargs).push()
+        backup.Backup(source=temp_dest, dest=self.source, root=True, **kwargs).copy()
 
     def get_changed_paths(self):
         changes: Changes = self.cache_status()
@@ -57,11 +68,13 @@ class Backup(backup.Backup):
         return changes.paths
 
     def cache_status(self) -> Changes:
-        profile.Backup().copy()
+        if profile.Backup.source.is_relative_to(self.source):
+            profile.Backup().copy()
         cache_backup = cache.Backup(
             quiet=self.quiet_cache,
             reverse=self.reverse,
             include_browser=self.include_browser,
+            sub_check_path=self.sub_check_path,
         )
         return cache_backup.status()
 
@@ -77,15 +90,31 @@ class Backup(backup.Backup):
         if self.sync_remote:
             self.start_sync_remote()
         reverse_backup = Backup(
-            reverse=True, include_browser=self.include_browser, confirm=self.confirm
+            reverse=True,
+            include_browser=self.include_browser,
+            confirm=self.confirm,
+            sub_check_path=self.sub_check_path,
         )
         reverse_backup.push()
-        self.after_pull()
+        if reverse_backup.paths:
+            self.paths = reverse_backup.paths
+            self.after_pull()
 
-    @classmethod
-    def after_pull(cls):
-        profile.Backup().reload()
-        exporter.export_changes()
+    def after_pull(self):
+        if self.contains_change(Path.resume):
+            if exporter.export_changes():
+                path = Path.main_resume_pdf.relative_to(Backup.source)
+                with cli.status("Uploading new resume pdf"):
+                    Backup(path=path, confirm=False, quiet=True).start_push()
+        if self.contains_change(Path.profiles):
+            profile.Backup().reload()
+
+    def contains_change(self, path: Path):
+        change = False
+        if path.is_relative_to(self.source):
+            relative_path = path.relative_to(self.source)
+            change = any(path.is_relative_to(relative_path) for path in self.paths)
+        return change
 
     def start_sync_remote(self):
         self.create_filters()
@@ -93,6 +122,6 @@ class Backup(backup.Backup):
             self.filter_rules.append(f"- {cache.Entry.browser_pattern}")
         info = self.get_dest_info()
         cache_backup = cache.Backup(
-            sub_check=self.sub_check, filter_rules=self.filter_rules
+            sub_check_path=self.sub_check_path, filter_rules=self.filter_rules
         )
         cache_backup.update_dest(info)

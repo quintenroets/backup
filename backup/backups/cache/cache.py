@@ -52,18 +52,31 @@ class Backup(raw.Backup):
             path = self.source / rule.path
             if rule.include:
                 for source_path in path.find(exclude=self.exclude_root):
-                    yield Entry(
-                        source=source_path, include_browser=self.include_browser
-                    )
+                    yield self.create_entry(source=source_path)
             self.visited.add(path)
 
     def generate_dest_entries(self):
         for dest_path in self.dest.rglob("*"):
-            yield Entry(dest=dest_path, include_browser=self.include_browser)
+            yield self.create_entry(dest=dest_path)
+
+    def create_entry(self, **kwargs):
+        return Entry(
+            self.source, self.dest, include_browser=self.include_browser, **kwargs
+        )
 
     def path_rules(self):
         self.check_config_path()
-        return parser.Rules(self.include_dict, Path.paths_exclude.yaml, self.source)
+        rules = parser.Rules(
+            self.include_dict, Path.paths_exclude.yaml, root=Backup.source
+        )
+        if self.sub_check_path is not None:
+            relative_source = self.source.relative_to(Backup.source)
+            for rule in rules:
+                if rule.path.is_relative_to(relative_source):
+                    rule.path = rule.path.relative_to(relative_source)
+                    yield rule
+        else:
+            yield from rules
 
     @classmethod
     def check_config_path(cls):

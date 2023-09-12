@@ -1,27 +1,32 @@
 import cli
 
+from backup.backups.remote import Backup
+
 from .path import Path
 
 
 def export_changes():
-    export_resume()
+    return export_resume()
 
 
 def export_resume():
     for path in Path.resume.rglob("*.docx"):
         if path.export.mtime < path.mtime:
-            with cli.status(f"Exporting {path}"):
+            message_path = path.relative_to(Path.resume)
+            with cli.status(f"Exporting {message_path}"):
                 export_path(path)
-    resume_name = "Resume Quinten Roets.pdf"
-    selected_resume = Path.resume / "Main" / resume_name
-    main_resume = Path.resume.parent / resume_name
-    selected_resume.copy_to(main_resume, only_if_newer=True, include_properties=False)
-    if main_resume.mtime > selected_resume.mtime:
-        main_resume.mtime = selected_resume.mtime
+
+    selected_resume = Path.resume / "Main" / Path.main_resume_pdf.name
+    main_resume_updated = selected_resume.mtime > Path.main_resume_pdf.mtime
+    if main_resume_updated:
+        selected_resume.copy_to(Path.main_resume_pdf, include_properties=False)
+        Path.main_resume_pdf.mtime = selected_resume.mtime
+    return main_resume_updated
 
 
 def export_path(path: Path):
-    remote_path = Path.remote / path.export.relative_to(Path.HOME)
-    cli.run("rclone --drive-export-formats pdf copy", remote_path, path.parent)
+    relative_path = path.export.relative_to(Backup.source)
+    backup = Backup(path=relative_path, reverse=True, quiet=True)
+    backup.copy("--drive-export-formats", "pdf")
     path.export.mtime = path.mtime
     path.export.tag = "exported"

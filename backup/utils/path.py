@@ -3,13 +3,13 @@ from __future__ import annotations
 import os
 import typing
 
-from plib import Path as BasePath
+import plib
 
 if typing.TYPE_CHECKING:
     from datetime import datetime  # noqa: autoimport
 
 
-class BasePath2(BasePath):
+class BasePath(plib.Path):
     # define here to make sure that all folders have this method
 
     @property
@@ -19,25 +19,25 @@ class BasePath2(BasePath):
         be too precise to avoid false positives remote filesystem also has limited
         precision.
         """
-        return int(super().mtime)
+        return round(super().mtime)
 
     @mtime.setter
     def mtime(self, time):
-        BasePath.mtime.fset(self, time)
+        plib.Path.mtime.fset(self, time)
 
     @classmethod
     @property
-    def assets(cls) -> BasePath2:  # noqa
+    def assets(cls) -> BasePath:  # noqa
         return cls.script_assets / "backup"
 
     @classmethod
     @property
-    def hashes(cls) -> BasePath2:  # noqa
+    def hashes(cls) -> BasePath:  # noqa
         return cls.assets / "hashes"
 
     @classmethod
     @property
-    def backup_cache(cls) -> BasePath2:  # noqa
+    def backup_cache(cls) -> BasePath:  # noqa
         return cls.assets / "cache"
 
     @property
@@ -70,8 +70,8 @@ class BasePath2(BasePath):
         return not os.access(self, os.W_OK)
 
 
-class Path(BasePath2):
-    assets = BasePath2.assets
+class Path(BasePath):
+    assets = BasePath.assets
     config = assets / "config"
     ignore_names = config / "ignore_names.yaml"
     ignore_patterns = config / "ignore_patterns.yaml"
@@ -86,9 +86,10 @@ class Path(BasePath2):
     profiles = assets / "profiles"
     active_profile = profiles / "active.txt"
 
-    resume = BasePath2.docs / "Drive" / "resume" / "Resume"
+    resume = BasePath.docs / "Drive" / "resume" / "Resume"
+    main_resume_pdf = resume.parent / "Resume Quinten Roets.pdf"
 
-    remote = BasePath2("backup:")
-    harddrive = BasePath2(f"/media/{BasePath2.HOME.name}/Backup")
+    remote = BasePath("backup:")
+    harddrive = BasePath(f"/media/{BasePath.HOME.name}/Backup")
 
-    rclone_config = BasePath2.HOME / ".config" / "rclone" / "rclone.conf"
+    rclone_config = BasePath.HOME / ".config" / "rclone" / "rclone.conf"

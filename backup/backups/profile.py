@@ -10,7 +10,7 @@ class Backup(backup.Backup):
     quiet: bool = True
 
     def __post_init__(self):
-        rules = parser.Rules(Path.profile_paths.yaml, root=Path.HOME)  # noqa
+        rules = parser.Rules(Path.profile_paths.yaml, root=Backup.source)
         self.paths = rules.get_paths()
         super().__post_init__()
         self.set_dest(self.profile_name)

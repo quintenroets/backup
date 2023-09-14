@@ -16,8 +16,11 @@ class Starter:
             cli.urlopen(Path.config)
         else:
             sub_check_path = self.get_sub_check_path()
+            paths = [Path(path) for path in self.args.items]
             backup = Backup(
-                include_browser=self.args.include_browser, sub_check_path=sub_check_path
+                include_browser=self.args.include_browser,
+                sub_check_path=sub_check_path,
+                paths=paths,
             )
             self.run_backup(backup)
 

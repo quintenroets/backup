@@ -48,7 +48,12 @@ class Backup(raw.Backup):
         yield from self.generate_dest_entries()
 
     def generate_source_entries(self):
-        for rule in self.path_rules():
+        rules = self.path_rules()
+        rules = list(rules)
+        if not rules:
+            # include everything if no rules
+            rules = [parser.PathRule(self.source, True)]
+        for rule in rules:
             path = self.source / rule.path
             if rule.include:
                 for source_path in path.find(exclude=self.exclude_root):
@@ -73,7 +78,6 @@ class Backup(raw.Backup):
             relative_source = self.source.relative_to(Backup.source)
             for rule in rules:
                 if rule.path.is_relative_to(relative_source):
-                    rule.path = rule.path.relative_to(relative_source)
                     yield rule
         else:
             yield from rules

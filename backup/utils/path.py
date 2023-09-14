@@ -19,7 +19,7 @@ class BasePath(plib.Path):
         be too precise to avoid false positives remote filesystem also has limited
         precision.
         """
-        return round(super().mtime)
+        return int(super().mtime)
 
     @mtime.setter
     def mtime(self, time):
@@ -68,6 +68,10 @@ class BasePath(plib.Path):
 
     def is_root(self):
         return not os.access(self, os.W_OK)
+
+    @property
+    def short_notation(self):
+        return self.relative_to(Path.HOME) if self.is_relative_to(Path.HOME) else self
 
 
 class Path(BasePath):

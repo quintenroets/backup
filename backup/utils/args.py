@@ -34,6 +34,11 @@ def get_args():
         help=f"The action to do [{actions_string}]",
         default=Action.push,
     )
+    parser.add_argument(
+        "items",
+        nargs="*",
+        help="The items to run the action on",
+    )
     parser.add_option("subcheck", "only check subpath of current working directory")
     parser.add_option("include-browser", "check browser config")
     parser.add_option("configure", "open configuration")

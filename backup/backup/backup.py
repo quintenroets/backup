@@ -62,15 +62,30 @@ class Backup(paths.Rclone):
 
     def update_paths_without_change(self, results):
         """
-        Update modified times to avoid checking again in the future.
+        Reset modified times to avoid checking again in the future.
         """
         paths_without_change = [result.path for result in results]
-        backup = self.__class__(
-            paths=paths_without_change,  # noqa
-            quiet=True,  # noqa
-            sub_check_path=self.sub_check_path,  # noqa
+        self.show_paths_without_change(paths_without_change)
+        backup = Backup(
+            source=self.dest,
+            dest=self.source,
+            paths=paths_without_change,
+            quiet=True,
         )
-        backup.push()
+        backup.pull_root_paths()
+        if backup.paths:
+            backup.copy()
+
+    def show_paths_without_change(self, paths: list[Path]):
+        message_parts = self.get_message_parts(paths)
+        message = "\n\t".join(message_parts)
+        print(message)
+
+    def get_message_parts(self, paths: list[Path]):
+        yield "Updated modified times:"
+        for path in paths:
+            full_path = self.source / path
+            yield str(full_path.short_notation)
 
     def generate_change_results(self, *args, **kwargs):
         status_lines = generate_output_lines(*args, **kwargs)
@@ -99,12 +114,7 @@ class Backup(paths.Rclone):
         else:
             if self.sub_check_path:
                 full_path = Backup.source / self.sub_check_path
-                path_message = (
-                    full_path.relative_to(Path.HOME)
-                    if full_path.is_relative_to(Path.HOME)
-                    else full_path
-                )
-                message += f" from {path_message }"
+                message += f" from {full_path.short_notation}"
             with cli.status(message):
                 tree = self.tree()
         yield from self.parse_tree(tree)
@@ -147,3 +157,25 @@ class Backup(paths.Rclone):
         source_path = self.source / path.relative_to(self.dest)
         path.text = "" if source_path.size else " "
         path.touch(mtime=path.mtime + 1)
+
+    def pull_root_paths(self):
+        root_paths = []
+        for path in self.paths:
+            source_path = self.source / path
+            if source_path.is_root():
+                root_paths.append(path)
+                self.paths.remove(path)
+
+        if root_paths:
+            self.start_pull_root_paths(root_paths)
+
+    def start_pull_root_paths(self, paths: list[Path]):
+        with Path.tempfile() as temp_dest:
+            temp_dest.unlink()
+            self.copy_with_intermediate(paths, temp_dest)
+
+    def copy_with_intermediate(self, copy_paths: list[Path], temp_dest: Path):
+        kwargs = dict(paths=copy_paths, sub_check_path=self.sub_check_path, quiet=True)
+        Backup(source=self.dest, dest=temp_dest, **kwargs).push()
+        # need local source and dest for root operation
+        Backup(source=temp_dest, dest=self.source, root=True, **kwargs).copy()

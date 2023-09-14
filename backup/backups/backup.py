@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import cli
 
 from .. import backup
-from ..utils import Changes, Path, exporter
+from ..utils import Changes, Path, exporter, piper
 from . import cache, profile
 
 
@@ -18,15 +18,27 @@ class Backup(backup.Backup):
 
     def status(self):
         self.quiet_cache = True
-        self.paths = self.cache_status().paths
-        status = super().status() if self.paths else Changes()
-        status.print()
+        if not self.paths:
+            self.paths = self.cache_status().paths
+            status = super().status() if self.paths else Changes()
+            status.print()
+        else:
+            for path in self.paths:
+                self.differ(path)
+
+    def differ(self, path):
+        cli.console.rule(str(path))
+        source = self.source / path
+        dest = cache.Backup.dest / self.sub_check_path / path
+        commands = (("diff", "-u", dest, source), ("colordiff",), ("grep", "-v", path))
+        return piper.run(commands)
 
     def push(self):
-        self.paths = self.get_changed_paths()
+        if not self.paths:
+            self.paths = self.get_changed_paths()
         if self.paths:
             if self.reverse:
-                self.check_root_paths()
+                self.pull_root_paths()
             self.start_push()
 
     def start_push(self):
@@ -39,27 +51,6 @@ class Backup(backup.Backup):
         )
         for push_backup in backups:
             push_backup.push()
-
-    def check_root_paths(self):
-        root_paths = []
-        for path in self.paths:
-            source_parent = self.source / path.parent
-            if source_parent.parent.is_root():
-                root_paths.append(path)
-                self.paths.remove(path)
-
-        if root_paths:
-            self.process_root_paths(root_paths)
-
-    def process_root_paths(self, paths: list[Path]):
-        with Path.tempfile() as temp_dest:
-            temp_dest.unlink()
-            self.copy_with_intermediate(paths, temp_dest)
-
-    def copy_with_intermediate(self, paths: list[Path], temp_dest: Path):
-        kwargs = dict(paths=paths, sub_check_path=self.sub_check_path)
-        backup.Backup(source=self.dest, dest=temp_dest, **kwargs).push()
-        backup.Backup(source=temp_dest, dest=self.source, root=True, **kwargs).copy()
 
     def get_changed_paths(self):
         changes: Changes = self.cache_status()

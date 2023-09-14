@@ -5,4 +5,5 @@ from .. import backup
 
 @dataclass
 class Backup(backup.Backup):
-    pass
+    def export_pdfs(self):
+        return self.start("copy", "--drive-export-formats", "pdf")

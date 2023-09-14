@@ -46,3 +46,5 @@ class Starter:
             case Action.pull:
                 backup.sync_remote = not self.args.no_sync
                 backup.pull()
+            case Action.diff:
+                backup.diff(diff_all=self.args.all)

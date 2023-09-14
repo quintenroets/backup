@@ -4,9 +4,9 @@ from backup.backup import Backup
 from backup.utils import Path
 from backup.utils.changes import Change, ChangeType
 
-single_test_settings = settings(
+slow_test_settings = settings(
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
-    max_examples=1,
+    max_examples=3,
     deadline=7000,
 )
 
@@ -26,7 +26,7 @@ def fill_folders(folder: Path, folder2: Path, content: bytes, content2: bytes):
     fill(folder2, content, number=3)
 
 
-@single_test_settings
+@slow_test_settings
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
 def test_status(folder: Path, folder2: Path, content: bytes, content2: bytes):
     fill_folders(folder, folder2, content, content2)
@@ -38,7 +38,7 @@ def test_status(folder: Path, folder2: Path, content: bytes, content2: bytes):
     assert Change(Path("3"), ChangeType.modified) in status
 
 
-@single_test_settings
+@slow_test_settings
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
 def test_push(folder: Path, folder2: Path, content: bytes, content2: bytes):
     fill_folders(folder, folder2, content, content2)
@@ -47,7 +47,7 @@ def test_push(folder: Path, folder2: Path, content: bytes, content2: bytes):
     assert not backup.status().paths
 
 
-@single_test_settings
+@slow_test_settings
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
 def test_pull(folder: Path, folder2: Path, content: bytes, content2: bytes):
     fill_folders(folder, folder2, content, content2)

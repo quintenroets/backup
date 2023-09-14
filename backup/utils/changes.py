@@ -136,12 +136,13 @@ class PrintStructure:
     root: PrintChange | None
     changes: list[PrintChange]
     substructures: list[PrintStructure]
+    max_show: int = 1000
 
     @classmethod
     def from_changes(cls, changes: list[Change]):
         print_changes = [
             PrintChange(change.path, change.type)
-            for change in changes
+            for change in changes[: cls.max_show]
             if not change.skip_print
         ]
         return cls.from_print_changes(print_changes)
@@ -249,3 +250,10 @@ class Changes:
             else:
                 print(f"{tab}{name}: ")
                 self.print_paths(paths, indent + 1)
+
+    def ask_confirm(self, message: str, show=True):
+        if show:
+            cli.console.clear()
+            cli.console.rule("Backup")
+            self.print()
+        return cli.confirm(message, default=True)

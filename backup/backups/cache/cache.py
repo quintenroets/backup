@@ -48,11 +48,7 @@ class Backup(raw.Backup):
         yield from self.generate_dest_entries()
 
     def generate_source_entries(self):
-        rules = self.path_rules()
-        rules = list(rules)
-        if not rules:
-            # include everything if no rules
-            rules = [parser.PathRule(self.source, True)]
+        rules = self.entry_rules()
         for rule in rules:
             path = self.source / rule.path
             if rule.include:
@@ -69,15 +65,27 @@ class Backup(raw.Backup):
             self.source, self.dest, include_browser=self.include_browser, **kwargs
         )
 
-    def path_rules(self):
+    def entry_rules(self):
+        rules = self.generate_entry_rules()
+        rules = list(rules)
+        if not any(rule.include for rule in rules):
+            # include everything else if no include rules
+            root = Path()
+            rule = parser.PathRule(root, True)
+            rules.append(rule)
+        return rules
+
+    def generate_entry_rules(self):
         self.check_config_path()
+        config_root = Backup.source
         rules = parser.Rules(
-            self.include_dict, Path.paths_exclude.yaml, root=Backup.source
+            self.include_dict, Path.paths_exclude.yaml, root=config_root
         )
         if self.sub_check_path is not None:
-            relative_source = self.source.relative_to(Backup.source)
+            relative_source = self.source.relative_to(config_root)
             for rule in rules:
                 if rule.path.is_relative_to(relative_source):
+                    rule.path = rule.path.relative_to(relative_source)
                     yield rule
         else:
             yield from rules

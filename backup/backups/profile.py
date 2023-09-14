@@ -29,14 +29,10 @@ class Backup(backup.Backup):
 
     def apply_profile(self, value):
         if value != self.profile_name:
-            self.copy()
+            self.push()
             self.profile_name = value
             self.pull()
 
     def reload(self):
         if Path.active_profile.exists():
             self.pull()
-
-    def pull(self):
-        self.reverse = True
-        self.copy()

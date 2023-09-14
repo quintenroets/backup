@@ -67,7 +67,10 @@ class BasePath(plib.Path):
         return date.month, date.day, date.hour, date.minute
 
     def is_root(self):
-        return not os.access(self, os.W_OK)
+        path = self
+        while not path.exists():
+            path = path.parent
+        return not os.access(path, os.W_OK)
 
     @property
     def short_notation(self):

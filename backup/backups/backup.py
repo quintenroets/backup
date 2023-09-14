@@ -16,29 +16,18 @@ class Backup(backup.Backup):
     include_browser: bool = False
     confirm: bool = True
 
-    def status(self):
+    def status(self, show=True):
         self.quiet_cache = True
-        if not self.paths:
-            self.paths = self.cache_status().paths
-            status = super().status() if self.paths else Changes()
+        self.paths = self.cache_status().paths
+        status = super().status() if self.paths else Changes()
+        if show:
             status.print()
-        else:
-            for path in self.paths:
-                self.differ(path)
-
-    def differ(self, path):
-        cli.console.rule(str(path))
-        source = self.source / path
-        dest = cache.Backup.dest / self.sub_check_path / path
-        commands = (("diff", "-u", dest, source), ("colordiff",), ("grep", "-v", path))
-        return piper.run(commands)
+        return status
 
     def push(self):
         if not self.paths:
             self.paths = self.get_changed_paths()
         if self.paths:
-            if self.reverse:
-                self.pull_root_paths()
             self.start_push()
 
     def start_push(self):
@@ -58,9 +47,22 @@ class Backup(backup.Backup):
             self.check_confirm(changes)
         return changes.paths
 
+    def check_confirm(self, changes: Changes):
+        message = "Pull?" if self.reverse else "Push?"
+        response = changes.ask_confirm(message)
+        if not response:
+            if cli.confirm("Compare?", default=True):
+                print("\n")
+                self.paths = [change.path for change in changes]
+                self.diff()
+                response = changes.ask_confirm("\n" + message, show=False)
+
+        if not response:
+            changes.changes = []
+
     def cache_status(self) -> Changes:
         if profile.Backup.source.is_relative_to(self.source):
-            profile.Backup().copy()
+            profile.Backup().push()
         cache_backup = cache.Backup(
             quiet=self.quiet_cache,
             reverse=self.reverse,
@@ -69,25 +71,30 @@ class Backup(backup.Backup):
         )
         return cache_backup.status()
 
-    def check_confirm(self, changes: Changes):
-        cli.console.clear()
-        cli.console.rule("Backup")
-        changes.print()
-        message = "Pull?" if self.reverse else "Push?"
-        if not cli.confirm(message, default=True):
-            changes.changes = []
-
     def pull(self):
         if self.sync_remote:
             self.start_remote_sync()
-        super().pull()
+        self.start_pull()
         if self.paths:
             self.after_pull()
+
+    def start_pull(self):
+        backuper = Backup(
+            paths=self.paths,
+            quiet=self.quiet,
+            quiet_cache=self.quiet_cache,
+            sub_check_path=self.sub_check_path,
+            reverse=True,
+            include_browser=self.include_browser,
+            confirm=self.confirm,
+        )
+        backuper.push()
+        self.paths = backuper.paths
 
     def after_pull(self):
         if self.contains_change(Path.resume):
             if exporter.export_changes():
-                path = Path.main_resume_pdf.relative_to(Backup.source)
+                path = Path.main_resume_pdf
                 with cli.status("Uploading new resume pdf"):
                     Backup(path=path, confirm=False, quiet=True).start_push()
         if self.contains_change(Path.profiles):
@@ -120,3 +127,24 @@ class Backup(backup.Backup):
             sub_check_path=self.sub_check_path, filter_rules=self.filter_rules
         )
         cache_backup.update_dest(info)
+
+    def diff(self, diff_all=False):
+        if not self.paths:
+            status = self.status()
+            self.paths = [
+                change.path
+                for change in status
+                if diff_all
+                or cli.confirm(f"Compare {change.message[2:-1]}?", default=True)
+            ]
+        if self.paths:
+            for path in self.paths:
+                self.differ(path)
+
+    def differ(self, path):
+        cli.console.rule(str(path))
+        source = self.source / path
+        sub_check_path = self.sub_check_path or ""
+        dest = cache.Backup.dest / sub_check_path / path
+        commands = (("diff", "-u", dest, source), ("colordiff",), ("grep", "-v", path))
+        return piper.run(commands)

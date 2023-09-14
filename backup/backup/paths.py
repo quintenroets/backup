@@ -11,11 +11,14 @@ class Rclone(rclone.Rclone):
     path: Path = None
     sub_check_path: Path = None
     path_separator: str = field(default="/", repr=False)
+    reverse: bool = False
 
     def __post_init__(self):
         if self.sub_check_path is not None:
             self.source /= self.sub_check_path
             self.dest /= self.sub_check_path
+        if self.reverse:
+            self.source, self.dest = self.dest, self.source
         super().__post_init__()
 
     def create_filters_path(self):
@@ -34,8 +37,9 @@ class Rclone(rclone.Rclone):
 
     def generate_path_rules(self):
         for path in self.paths:
-            if path.is_relative_to(self.source):
-                path = path.relative_to(self.source)
+            source = self.dest if self.reverse else self.source
+            if path.is_relative_to(source):
+                path = path.relative_to(source)
             path_str = self.escape(path)
             yield f"+ /{path_str}"
 

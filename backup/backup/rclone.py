@@ -17,6 +17,7 @@ class Rclone:
     retries: int = 5
     retries_sleep: str = "30s"
     order_by: str = "size,desc"  # handle largest files first
+    drive_import_formats = "docx, xlsx"
     runner: Callable = None
     root: bool = False
 
@@ -35,6 +36,7 @@ class Rclone:
             "retries": self.retries,
             "retries-sleep": self.retries_sleep,
             "order-by": self.order_by,
+            "drive-import-formats": self.drive_import_formats,
         }
         yield options_dict
 

@@ -27,6 +27,6 @@ def export_resume():
 def export_path(path: Path):
     relative_path = path.export.relative_to(Backup.source)
     backup = Backup(path=relative_path, reverse=True, quiet=True)
-    backup.copy("--drive-export-formats", "pdf")
+    backup.export_pdfs()
     path.export.mtime = path.mtime
     path.export.tag = "exported"

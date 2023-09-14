@@ -11,6 +11,8 @@ from . import paths
 @dataclass
 class Backup(paths.Rclone):
     reverse: bool = False
+    date_start: str = "── ["
+    date_end: str = "]  /"
 
     def compare(self):
         return self.status()
@@ -108,26 +110,13 @@ class Backup(paths.Rclone):
         args = "tree", "--all", "--modtime", "--noreport", "--full-path", path
         return self.run(*args)
 
-    def get_dest_info(self, message: str | None = "Getting remote info"):
-        if message is None:
-            tree = self.tree()
-        else:
-            if self.sub_check_path:
-                full_path = Backup.source / self.sub_check_path
-                message += f" from {full_path.short_notation}"
-            with cli.status(message):
-                tree = self.tree()
-        yield from self.parse_tree(tree)
-
-    @classmethod
-    def parse_tree(cls, tree: list[str]):
-        date_start = "── ["
-        date_end = "]  /"
-
+    def get_dest_info(self):
+        tree = self.tree()
         for line in tree:
-            contains_date = date_start in line
+            contains_date = self.date_start in line
             if contains_date:
-                date_str, path_str = line.split(date_start)[1].split(date_end)
+                info = line.split(self.date_start)[1]
+                date_str, path_str = info.split(self.date_end)
                 date = datetime.strptime(date_str, "%b %d %H:%M")
                 path = Path(path_str)
                 yield path, date
@@ -138,7 +127,7 @@ class Backup(paths.Rclone):
 
     def delete_missing(self, to_keep: Iterable[Path]):
         to_keep = set(to_keep)
-        dest_info = self.get_dest_info(message=None)
+        dest_info = self.get_dest_info()
         for path, _ in dest_info:
             if path not in to_keep:
                 dest_path = self.dest / path

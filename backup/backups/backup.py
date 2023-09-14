@@ -79,16 +79,9 @@ class Backup(backup.Backup):
 
     def pull(self):
         if self.sync_remote:
-            self.start_sync_remote()
-        reverse_backup = Backup(
-            reverse=True,
-            include_browser=self.include_browser,
-            confirm=self.confirm,
-            sub_check_path=self.sub_check_path,
-        )
-        reverse_backup.push()
-        if reverse_backup.paths:
-            self.paths = reverse_backup.paths
+            self.start_remote_sync()
+        super().pull()
+        if self.paths:
             self.after_pull()
 
     def after_pull(self):
@@ -107,7 +100,18 @@ class Backup(backup.Backup):
             change = any(path.is_relative_to(relative_path) for path in self.paths)
         return change
 
-    def start_sync_remote(self):
+    def start_remote_sync(self):
+        message = self.get_sync_message()
+        with cli.status(message):
+            self.run_remote_sync()
+
+    def get_sync_message(self) -> str:
+        message = "Reading remote filesystem"
+        if self.sub_check_path is not None:
+            message += f" at {self.sub_check_path.short_notation}"
+        return message
+
+    def run_remote_sync(self):
         self.create_filters()
         if not self.include_browser:
             self.filter_rules.append(f"- {cache.Entry.browser_pattern}")

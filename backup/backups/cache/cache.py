@@ -48,22 +48,24 @@ class Backup(raw.Backup):
         yield from self.generate_dest_entries()
 
     def generate_source_entries(self):
+        source = self.dest if self.reverse else self.source
         rules = self.entry_rules()
         for rule in rules:
-            path = self.source / rule.path
+            path = source / rule.path
             if rule.include:
                 for source_path in path.find(exclude=self.exclude_root):
                     yield self.create_entry(source=source_path)
             self.visited.add(path)
 
     def generate_dest_entries(self):
-        for dest_path in self.dest.rglob("*"):
+        dest = self.source if self.reverse else self.dest
+        for dest_path in dest.rglob("*"):
             yield self.create_entry(dest=dest_path)
 
     def create_entry(self, **kwargs):
-        return Entry(
-            self.source, self.dest, include_browser=self.include_browser, **kwargs
-        )
+        source = self.dest if self.reverse else self.source
+        dest = self.source if self.reverse else self.dest
+        return Entry(source, dest, include_browser=self.include_browser, **kwargs)
 
     def entry_rules(self):
         rules = self.generate_entry_rules()

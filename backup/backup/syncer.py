@@ -48,6 +48,8 @@ class Backup(commands.Backup):
             path = self.dest / relative_path
             changed = not path.exists() or not path.has_date(date)
             if changed:
+                changed = not path.has_date(date, check_tag=True)
+            if changed:
                 self.change_path(path)
             yield relative_path
 

@@ -51,15 +51,21 @@ class BasePath(plib.Path):
     def export(self):
         return self.with_suffix(".pdf")
 
-    @property
-    def date(self):
+    def get_date(self, check_tag=False):
         from datetime import datetime, timezone  # noqa: autoimport, E402
 
-        date = datetime.fromtimestamp(self.mtime)
+        mtime = self.mtime
+        if check_tag and self.is_relative_to(Path.backup_cache):  # noqa
+            tag = self.tag
+            if tag:
+                mtime = int(tag)
+
+        date = datetime.fromtimestamp(mtime)
         return date.astimezone(timezone.utc)
 
-    def has_date(self, date: datetime):
-        return self.extract_date_tuple(date) == self.extract_date_tuple(self.date)
+    def has_date(self, date: datetime, check_tag=False):
+        path_date = self.get_date(check_tag=check_tag)
+        return self.extract_date_tuple(date) == self.extract_date_tuple(path_date)
 
     @classmethod
     def extract_date_tuple(cls, date: datetime):

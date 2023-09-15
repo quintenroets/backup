@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import cli
 
-from ..utils import Change, Changes, ChangeType, generate_output_lines
+from ..utils import Change, Changes, ChangeType, Path, generate_output_lines
 from . import paths
 
 
@@ -56,15 +56,22 @@ class Backup(paths.Rclone):
 
     def update_paths_without_change(self, results):
         """
-        Reset modified times to avoid checking again in the future.
+        Update modified times to avoid checking again in the future.
         """
         no_change_paths = [result.path for result in results]
+        if self.dest.is_relative_to(Path.backup_cache):  # noqa
+            for path in no_change_paths:
+                dest = self.dest / path
+                if dest.tag is None:
+                    dest.tag = dest.mtime  # save original mtime for remote syncing
+
         backup = Backup(
-            sub_check_path=self.sub_check_path,
+            source=self.source,
+            dest=self.dest,
             paths=no_change_paths,
             quiet=True,
         )
-        backup.pull()
+        backup.push()
 
     def generate_change_results(self, *args, **kwargs):
         status_lines = generate_output_lines(*args, **kwargs)
@@ -78,4 +85,4 @@ class Backup(paths.Rclone):
                 cleanup=True,
             )
         for line in status_lines:
-            yield Change.from_pattern(line)
+            yield Change.from_pattern(line, self.source, self.dest)

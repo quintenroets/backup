@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import cli
 
 from .. import backup
-from ..utils import Changes, Path, exporter, piper
+from ..utils import Changes, ChangeType, Path, exporter, piper
 from . import cache, profile
 
 
@@ -53,8 +53,12 @@ class Backup(backup.Backup):
         if not response:
             if cli.confirm("Compare?", default=True):
                 print("\n")
-                self.paths = [change.path for change in changes]
-                self.diff()
+                paths = [
+                    change.path
+                    for change in changes
+                    if change.type == ChangeType.modified
+                ]
+                self.diff(paths)
                 response = changes.ask_confirm("\n" + message, show=False)
 
         if not response:
@@ -128,23 +132,26 @@ class Backup(backup.Backup):
         )
         cache_backup.update_dest(info)
 
-    def diff(self, diff_all=False):
-        if not self.paths:
+    def diff(self, paths=None, diff_all=False):
+        if paths is None:
             status = self.status()
-            self.paths = [
+            paths = [
                 change.path
                 for change in status
-                if diff_all
-                or cli.confirm(f"Compare {change.message[2:-1]}?", default=True)
+                if change.type == ChangeType.modified
+                and (
+                    diff_all
+                    or cli.confirm(f"Compare {change.message[2:-1]}?", default=True)
+                )
             ]
-        if self.paths:
-            for path in self.paths:
+        if paths:
+            for path in paths:
                 self.differ(path)
 
     def differ(self, path):
-        cli.console.rule(str(path))
         source = self.source / path
         sub_check_path = self.sub_check_path or ""
         dest = cache.Backup.dest / sub_check_path / path
+        cli.console.rule(str(path))
         commands = (("diff", "-u", dest, source), ("colordiff",), ("grep", "-v", path))
         return piper.run(commands)

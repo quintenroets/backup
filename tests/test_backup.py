@@ -33,9 +33,15 @@ def test_status(folder: Path, folder2: Path, content: bytes, content2: bytes):
     backup = Backup(folder, folder2, quiet=True)
     status = backup.status()
 
-    assert Change(Path("1"), ChangeType.created) in status
-    assert Change(Path("2"), ChangeType.deleted) in status
-    assert Change(Path("3"), ChangeType.modified) in status
+    expected_changes = (
+        Change(Path("1"), ChangeType.created),
+        Change(Path("2"), ChangeType.deleted),
+        Change(Path("3"), ChangeType.modified),
+    )
+    for change in status:
+        change.source = change.dest = None
+    for change in expected_changes:
+        assert change in status
 
 
 @slow_test_settings

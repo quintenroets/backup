@@ -5,6 +5,7 @@ from enum import Enum
 
 import cli
 
+from ..utils import piper
 from .path import Path
 
 
@@ -27,7 +28,7 @@ class ChangeType(Enum):
     @classmethod
     @property
     def color_mapper(cls):
-        return {"+": "green", "*": "blue", "-": "red"}
+        return {"+": "green", "*": "blue", "-": "red", "=": "black"}
 
     @classmethod
     @property
@@ -62,12 +63,15 @@ class ChangeType(Enum):
 class Change:
     path: Path
     type: ChangeType
+    source: Path = None
+    dest: Path = None
+    diff_lines_per_file: int = 20
 
     @classmethod
-    def from_pattern(cls, pattern: str):
+    def from_pattern(cls, pattern: str, source: Path = None, dest: Path = None):
         type_ = ChangeType.from_symbol(pattern[0])
         path = Path(pattern[2:])
-        return Change(path, type_)
+        return Change(path, type_, source, dest)
 
     @property
     def message(self):
@@ -79,17 +83,32 @@ class Change:
 
     @property
     def skip_print(self):
-        return (Path.HOME / self.path).is_relative_to(Path.hashes)
+        return (self.source / self.path).is_relative_to(Path.hashes)  # noqa
 
     def print(self):
         cli.console.print(self.message, end="")
+
+    def get_diff_lines(self, color=True):
+        source = self.source / self.path
+        dest = self.dest / self.path
+        diff_command = "diff", "-u", dest, source
+        if color:
+            diff_command = *diff_command, "--color=always"
+        commands = (
+            diff_command,
+            ("head", "-n", self.diff_lines_per_file),
+            ("grep", "-v", source),
+        )
+        return piper.run(commands).splitlines()
 
 
 @dataclass
 class PrintChange:
     path: Path
-    type: ChangeType | None
+    change: Change | None = None
     indent_count: int = 0
+    show_diff: bool = True
+    indent = "  "
 
     @property
     def root(self):
@@ -101,34 +120,92 @@ class PrintChange:
 
     @property
     def child(self):
-        return PrintChange(self.path_from_root, self.type, self.indent_count + 1)
+        return PrintChange(
+            self.path_from_root,
+            self.change,
+            self.indent_count + 1,
+        )
 
     def __hash__(self):
         attributes = tuple(asdict(self).values())
         return hash(attributes)
 
     def print(self):
-        whitespace = "  " * self.indent_count
-        symbol = self.type.symbol if self.type else "\u2022"
-        color = self.type.color if self.type else "black"
+        whitespace = self.indent * self.indent_count
+        symbol = self.change.type.symbol if self.change else "\u2022"
+        color = self.change.type.color if self.change else "black"
 
-        message = str(self.path)
-        home_path_str = str(Path.HOME.relative_to(Path("/")))
-        message = message.replace(home_path_str, "HOME")
+        full_path = self.change.source / self.path if self.change else None
+        path = (
+            Path("HOME") / full_path.relative_to(Path.HOME)
+            if full_path and full_path.is_relative_to(Path.HOME)
+            else self.path
+        )
+        message = str(path)
         available_width = cli.console.width - len(whitespace + symbol + " " + "-")
         message_chunks = [
             message[start : start + available_width]
             for start in range(0, len(message), available_width)
         ]
+        last_chunk_index = len(message_chunks) - 1
+        lines = []
         for i, message in enumerate(message_chunks):
             prefix = f"{symbol} " if i == 0 else "  "
-            need_suffix = i + 1 < len(message_chunks) and " " not in (
+            need_suffix = i < last_chunk_index and " " not in (
                 message[-1],
                 message_chunks[i + 1][0],
             )
             suffix = "-" if need_suffix else ""
             formatted_message = f"{whitespace}{prefix}[bold {color}]{message}{suffix}"
-            cli.console.print(formatted_message)
+            lines.append(formatted_message)
+        message = "\n".join(lines)
+        cli.console.print(message)
+        if self.show_diff and self.change:
+            self.print_diff()
+
+    def print_diff(self):
+        if self.change.type == ChangeType.modified:
+            diff_lines = self.change.get_diff_lines(color=False)
+            lines = []
+            for line in diff_lines:
+                match line[0]:
+                    case ChangeType.created.symbol:
+                        change_type = ChangeType.created
+                    case ChangeType.deleted.symbol:
+                        change_type = ChangeType.deleted
+                    case " ":
+                        change_type = ChangeType.preserved
+                    case _:
+                        change_type = None
+
+                if change_type is not None:
+                    line = line[1:].strip()
+                if change_type not in (ChangeType.preserved, None):
+                    line = f"{change_type.symbol} {line}"
+                if change_type is not None:
+                    line = f"[{change_type.color}]{line}"
+                lines.append(line)
+        else:
+            source = (
+                self.change.source
+                if self.change.type == ChangeType.created
+                else self.change.dest
+            )
+            full_path = source / self.change.path
+            try:
+                lines = full_path.lines
+            except UnicodeDecodeError:
+                lines = []
+
+        whitespace = self.indent * (self.indent_count + 1)
+        available_width = cli.console.width - len(whitespace)
+        for line in lines:
+            chunks = [
+                whitespace + line[start : start + available_width]
+                for start in range(0, len(line), available_width)
+            ]
+            line_message = "\n".join(chunks)
+            cli.console.print(line_message, highlight=False)
 
 
 @dataclass
@@ -141,7 +218,7 @@ class PrintStructure:
     @classmethod
     def from_changes(cls, changes: list[Change]):
         print_changes = [
-            PrintChange(change.path, change.type)
+            PrintChange(change.path, change)
             for change in changes[: cls.max_show]
             if not change.skip_print
         ]

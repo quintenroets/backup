@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import cli
 
 from .. import backup
-from ..utils import Changes, ChangeType, Path, exporter, piper
+from ..utils import Changes, Path, differ, exporter
 from . import cache, profile
 
 
@@ -15,6 +15,7 @@ class Backup(backup.Backup):
     reverse: bool = False
     include_browser: bool = False
     confirm: bool = True
+    show_diff: bool = False
 
     def status(self, show=True):
         self.quiet_cache = True
@@ -44,25 +45,16 @@ class Backup(backup.Backup):
     def get_changed_paths(self):
         changes: Changes = self.cache_status()
         if changes and self.confirm and sys.stdin.isatty():
-            self.check_confirm(changes)
+            if not self.ask_confirm(changes):
+                changes.changes = []
         return changes.paths
 
-    def check_confirm(self, changes: Changes):
+    def ask_confirm(self, changes: Changes):
         message = "Pull?" if self.reverse else "Push?"
-        response = changes.ask_confirm(message)
-        if not response:
-            if cli.confirm("Compare?", default=True):
-                print("\n")
-                paths = [
-                    change.path
-                    for change in changes
-                    if change.type == ChangeType.modified
-                ]
-                self.diff(paths)
-                response = changes.ask_confirm("\n" + message, show=False)
-
-        if not response:
-            changes.changes = []
+        response = changes.ask_confirm(message, show_diff=self.show_diff)
+        if not response and not self.show_diff:
+            response = changes.ask_confirm(message, show_diff=True)
+        return response
 
     def cache_status(self) -> Changes:
         if profile.Backup.source.is_relative_to(self.source):
@@ -138,20 +130,11 @@ class Backup(backup.Backup):
             paths = [
                 change.path
                 for change in status
-                if change.type == ChangeType.modified
-                and (
-                    diff_all
-                    or cli.confirm(f"Compare {change.message[2:-1]}?", default=True)
-                )
+                if diff_all
+                or cli.confirm(f"Compare {change.message[2:-1]}?", default=True)
             ]
         if paths:
             for path in paths:
-                self.differ(path)
-
-    def differ(self, path):
-        source = self.source / path
-        sub_check_path = self.sub_check_path or ""
-        dest = cache.Backup.dest / sub_check_path / path
-        cli.console.rule(str(path))
-        commands = (("diff", "-u", dest, source), ("colordiff",), ("grep", "-v", path))
-        return piper.run(commands)
+                cli.console.rule(str(path))
+                sub_check_path = self.sub_check_path or ""
+                differ.run_diff(path, self.source, cache.Backup.dest / sub_check_path)

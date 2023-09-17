@@ -46,4 +46,5 @@ def get_args():
     parser.add_option("no-sync", "don't sync remote changes when pulling from remote")
     parser.add_option("export-resume", "export remote resume changes")
     parser.add_option("all", "diff all files")
+    parser.add_option("show-diff", "show file diffs")
     return parser.parse_args()

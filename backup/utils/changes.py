@@ -5,7 +5,7 @@ from enum import Enum
 
 import cli
 
-from ..utils import piper
+from . import differ
 from .path import Path
 
 
@@ -65,7 +65,7 @@ class Change:
     type: ChangeType
     source: Path = None
     dest: Path = None
-    diff_lines_per_file: int = 20
+    max_diff_lines_per_file: int = 20
 
     @classmethod
     def from_pattern(cls, pattern: str, source: Path = None, dest: Path = None):
@@ -89,17 +89,13 @@ class Change:
         cli.console.print(self.message, end="")
 
     def get_diff_lines(self, color=True):
-        source = self.source / self.path
-        dest = self.dest / self.path
-        diff_command = "diff", "-u", dest, source
-        if color:
-            diff_command = *diff_command, "--color=always"
-        commands = (
-            diff_command,
-            ("head", "-n", self.diff_lines_per_file),
-            ("grep", "-v", source),
+        return differ.get_diff(
+            self.path,
+            self.source,
+            self.dest,
+            color=color,
+            max_lines=self.max_diff_lines_per_file,
         )
-        return piper.run(commands).splitlines()
 
 
 @dataclass
@@ -107,7 +103,6 @@ class PrintChange:
     path: Path
     change: Change | None = None
     indent_count: int = 0
-    show_diff: bool = True
     indent = "  "
 
     @property
@@ -130,7 +125,7 @@ class PrintChange:
         attributes = tuple(asdict(self).values())
         return hash(attributes)
 
-    def print(self):
+    def print(self, show_diff: bool = False):
         whitespace = self.indent * self.indent_count
         symbol = self.change.type.symbol if self.change else "\u2022"
         color = self.change.type.color if self.change else "black"
@@ -160,7 +155,7 @@ class PrintChange:
             lines.append(formatted_message)
         message = "\n".join(lines)
         cli.console.print(message)
-        if self.show_diff and self.change:
+        if show_diff and self.change:
             self.print_diff()
 
     def print_diff(self):
@@ -214,6 +209,7 @@ class PrintStructure:
     changes: list[PrintChange]
     substructures: list[PrintStructure]
     max_show: int = 1000
+    show_diff: bool = False
 
     @classmethod
     def from_changes(cls, changes: list[Change]):
@@ -277,22 +273,24 @@ class PrintStructure:
 
         return PrintStructure(None, changes, substructures)
 
-    def print(self):
+    def print(self, show_diff: bool = False):
         if self.root is not None:
-            self.root.print()
+            self.root.print(show_diff=show_diff)
         for change in self.changes:
-            change.print()
+            change.print(show_diff=show_diff)
         substructures = sorted(self.substructures, key=lambda s: s.closest_nodes())
         for sub_structure in substructures:
-            sub_structure.print()
+            sub_structure.print(show_diff=show_diff)
 
 
 @dataclass
 class Changes:
     changes: list[Change] = field(default_factory=list)
+    print_structure: PrintStructure = None
 
     def __post_init__(self):
         self.changes = sorted(self.changes, key=lambda c: c.sort_index)
+        self.print_structure = PrintStructure.from_changes(self.changes)
 
     def __iter__(self):
         yield from self.changes
@@ -307,11 +305,6 @@ class Changes:
     @classmethod
     def from_patterns(cls, patterns: list[str]):
         return Changes([Change.from_pattern(pattern) for pattern in patterns])
-
-    def print(self):
-        print_structure = PrintStructure.from_changes(self.changes)
-        print_structure.print()
-        print("")
 
     def print_paths(self, paths, indent=0):
         parts_mapper = {}
@@ -328,9 +321,13 @@ class Changes:
                 print(f"{tab}{name}: ")
                 self.print_paths(paths, indent + 1)
 
-    def ask_confirm(self, message: str, show=True):
-        if show:
+    def ask_confirm(self, message: str, show_diff=False):
+        self.print(title="Backup", show_diff=show_diff)
+        message = "\n" + message
+        return cli.confirm(message, default=True)
+
+    def print(self, title=None, show_diff=False):
+        if title is not None:
             cli.console.clear()
             cli.console.rule("Backup")
-            self.print()
-        return cli.confirm(message, default=True)
+        self.print_structure.print(show_diff=show_diff)

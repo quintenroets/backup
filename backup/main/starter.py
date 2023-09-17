@@ -21,6 +21,7 @@ class Starter:
                 include_browser=self.args.include_browser,
                 sub_check_path=sub_check_path,
                 paths=paths,
+                show_diff=self.args.show_diff,
             )
             self.run_backup(backup)
 

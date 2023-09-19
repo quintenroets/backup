@@ -55,7 +55,9 @@ class BasePath(plib.Path):
         from datetime import datetime, timezone  # noqa: autoimport, E402
 
         mtime = self.mtime
-        if check_tag and self.is_relative_to(Path.backup_cache):  # noqa
+
+        use_tag = check_tag and self.exists() and self.is_relative_to(Path.backup_cache)
+        if use_tag:  # noqa
             tag = self.tag
             if tag:
                 mtime = int(tag)

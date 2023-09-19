@@ -1,6 +1,6 @@
 [project]
 name = "backupmaster"
-version = "0.3.4"
+version = "0.3.5"
 description = ""
 authors = [{ name = "Quinten Roets", email = "qdr2104@columbia.edu" }]
 license = { text = "MIT" }
@@ -22,6 +22,10 @@ dev = [
 test = [
     "pytest"
 ]
+
+[project.urls]
+"Source Code" = "https://github.com/quintenroets/backup"
+
 
 [project.scripts]
 backup = "backup:main"

@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/backupmaster.svg)](https://badge.fury.io/py/backupmaster)
+
 # Backup
 
 A package that enables you to back up all your important data automatically

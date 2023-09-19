@@ -130,10 +130,11 @@ class PrintChange:
         symbol = self.change.type.symbol if self.change else "\u2022"
         color = self.change.type.color if self.change else "black"
 
-        full_path = self.change.source / self.path if self.change else None
+        root = Path("/")
+        relative_home = Path.HOME.relative_to(root)
         path = (
-            Path("HOME") / full_path.relative_to(Path.HOME)
-            if full_path and full_path.is_relative_to(Path.HOME)
+            self.path.relative_to(relative_home)
+            if self.path.is_relative_to(relative_home)
             else self.path
         )
         message = str(path)
@@ -286,7 +287,7 @@ class PrintStructure:
 @dataclass
 class Changes:
     changes: list[Change] = field(default_factory=list)
-    print_structure: PrintStructure = None
+    print_structure: PrintStructure = field(default=None, repr=False)
 
     def __post_init__(self):
         self.changes = sorted(self.changes, key=lambda c: c.sort_index)

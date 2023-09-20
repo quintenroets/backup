@@ -133,7 +133,7 @@ class PrintChange:
         root = Path("/")
         relative_home = Path.HOME.relative_to(root)
         path = (
-            self.path.relative_to(relative_home)
+            Path("HOME") / self.path.relative_to(relative_home)
             if self.path.is_relative_to(relative_home)
             else self.path
         )

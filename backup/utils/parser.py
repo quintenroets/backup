@@ -31,6 +31,11 @@ class RuleConfig:
             next(iter(item.items())) if isinstance(item, dict) else (item, [])
         )
         if isinstance(names, str):
+            path = (root / names).resolve()
+            if not path.is_relative_to(root):
+                message = "Currently, only symlinks under the same sub root are allowed"
+                raise Exception(message)
+            names = str(path.relative_to(root))
             names = names.split(RuleConfig.path_separator)
 
         name, *sub_names = names

@@ -48,10 +48,9 @@ class Backup(raw.Backup):
         yield from self.generate_dest_entries()
 
     def generate_source_entries(self):
-        source = self.dest if self.reverse else self.source
         rules = self.entry_rules()
         for rule in rules:
-            path = source / rule.path
+            path = self.original_source / rule.path
             if rule.include:
                 for source_path in path.find(exclude=self.exclude_root):
                     yield self.create_entry(source=source_path)
@@ -84,7 +83,7 @@ class Backup(raw.Backup):
             self.include_dict, Path.paths_exclude.yaml, root=config_root
         )
         if self.sub_check_path is not None:
-            relative_source = self.source.relative_to(config_root)
+            relative_source = self.original_source.relative_to(config_root)
             for rule in rules:
                 if rule.path.is_relative_to(relative_source):
                     rule.path = rule.path.relative_to(relative_source)

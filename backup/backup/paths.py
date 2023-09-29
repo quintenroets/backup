@@ -15,11 +15,21 @@ class Rclone(rclone.Rclone):
 
     def __post_init__(self):
         if self.sub_check_path is not None:
+            if self.sub_check_path.is_relative_to(self.source):
+                self.sub_check_path = self.sub_check_path.relative_to(self.source)
             self.source /= self.sub_check_path
             self.dest /= self.sub_check_path
         if self.reverse:
             self.source, self.dest = self.dest, self.source
         super().__post_init__()
+
+    @property
+    def original_source(self):
+        return self.dest if self.reverse else self.source
+
+    @property
+    def original_dest(self):
+        return self.source if self.reverse else self.dest
 
     def create_filters_path(self):
         if not self.filter_rules:
@@ -31,17 +41,18 @@ class Rclone(rclone.Rclone):
             self.path = self.folder / "**"
         if self.path is not None:
             self.paths = (self.path,)
-        if self.paths:
-            filter_rules = self.generate_path_rules()
-            self.filter_rules = list(filter_rules)
+        filter_rules = self.generate_path_rules()
+        self.filter_rules = list(filter_rules)
 
     def generate_path_rules(self):
         for path in self.paths:
-            source = self.dest if self.reverse else self.source
-            if path.is_relative_to(source):
-                path = path.relative_to(source)
+            if path.is_relative_to(self.original_source):
+                path = path.relative_to(self.original_source)
             path_str = self.escape(path)
             yield f"+ /{path_str}"
+
+        if not self.paths:
+            yield "+ *"
 
         yield "- *"
 

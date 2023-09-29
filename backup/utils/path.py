@@ -82,7 +82,10 @@ class BasePath(plib.Path):
 
     @property
     def short_notation(self):
-        return self.relative_to(Path.HOME) if self.is_relative_to(Path.HOME) else self
+        path = self
+        if not path.is_absolute():
+            path = Path("/") / path
+        return path.relative_to(Path.HOME) if path.is_relative_to(Path.HOME) else path
 
 
 class Path(BasePath):

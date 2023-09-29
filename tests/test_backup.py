@@ -1,3 +1,5 @@
+import json
+
 from hypothesis import HealthCheck, given, settings, strategies
 
 from backup.backup import Backup
@@ -60,3 +62,22 @@ def test_pull(folder: Path, folder2: Path, content: bytes, content2: bytes):
     backup = Backup(folder, folder2, quiet=True)
     backup.pull()
     assert not backup.status().paths
+
+
+@slow_test_settings
+@given(content=strategies.binary(), content2=strategies.binary(min_size=1))
+def test_ls(folder: Path, folder2: Path, content: bytes, content2: bytes):
+    fill_folders(folder, folder2, content, content2)
+    backup = Backup(folder, folder2, quiet=True)
+    path = folder / "0"
+    file_info = backup.run("lsjson", path)
+    parsed_file_info = json.loads(file_info)
+    assert parsed_file_info[0]["Name"] == path.name
+
+
+@slow_test_settings
+@given(content=strategies.binary(), content2=strategies.binary(min_size=1))
+def test_single_file_copy(folder: Path, folder2: Path, content: bytes, content2: bytes):
+    fill_folders(folder, folder2, content, content2)
+    backup = Backup(folder, folder2, quiet=True)
+    backup.run("copyto", folder / "0", folder2 / "0")

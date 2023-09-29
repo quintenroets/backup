@@ -51,10 +51,8 @@ class Rclone(rclone.Rclone):
             path_str = self.escape(path)
             yield f"+ /{path_str}"
 
-        if not self.paths:
-            yield "+ *"
-
-        yield "- *"
+        if self.paths:
+            yield "- *"
 
     @classmethod
     def escape(cls, path: Path):

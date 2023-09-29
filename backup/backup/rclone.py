@@ -40,7 +40,7 @@ class Rclone:
         }
         yield options_dict
 
-    def run(self, *args: str | dict):
+    def run(self, *args: str | dict | Path):
         filters_path = self.create_filters_path()
         with filters_path:
             args = "rclone", *args, "--filter-from", filters_path, *self.options

@@ -13,7 +13,7 @@ def check_setup(install=True):
 
 
 def download_config_file(path: Path):
-    file_id = "13f7p1nTJ3mPhLxvMMmCBLuwYpMmsayvM"
+    file_id = "1apaAlz06Hm37AJLl3CNp3zQoofP7yJu4"
     url = f"https://docs.google.com/uc?export=download&id={file_id}"
     path.create_parent()
     cli.get("wget --no-check-certificate", url, "-O", path)

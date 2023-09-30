@@ -75,10 +75,14 @@ class BasePath(plib.Path):
         return date.month, date.day, date.hour, date.minute
 
     def is_root(self):
+        is_remote = self.parts[0].endswith(":")
+        return not is_remote and not self.user_has_write_access()
+
+    def user_has_write_access(self):
         path = self
         while not path.exists():
             path = path.parent
-        return not os.access(path, os.W_OK)
+        return os.access(path, os.W_OK)
 
     @property
     def short_notation(self):

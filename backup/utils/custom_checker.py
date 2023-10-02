@@ -14,6 +14,20 @@ def check_kglobalshortcutsrc(path: Path):
     )
 
 
+def check_plasmashellrc(path: Path):
+    return filter_sections(
+        path,
+        ignore_sections=("PlasmaTransientsConfig",),
+    )
+
+
+def check_kdeglobals(path: Path):
+    return filter_sections(
+        path,
+        ignore_sections=("DirSelect Dialog",),
+    )
+
+
 def check_ksmserverrc(path: Path):
     return filter_sections(path, ignore_sections=("Session: saved at previous logout",))
 
@@ -126,11 +140,13 @@ def get_custom_checkers() -> dict[Path, FunctionType]:
         ".config/gtkrc": remove_comments,
         ".config/gtkrc-2.0": remove_comments,
         ".config/katerc": check_kate,
+        ".config/kdeglobals": check_kdeglobals,
         ".config/ksmserverrc": check_ksmserverrc,
         ".config/kglobalshortcutsrc": check_kglobalshortcutsrc,
+        ".config/plasmashellrc": check_plasmashellrc,
+        ".config/rclone/rclone.conf": check_rclone,
         ".local/share/user-places.xbel": check_user_places,
         ".local/share/kwalletd/kdewallet.kwl": check_wallet,
-        ".config/rclone/rclone.conf": check_rclone,
     }
     return {Path(k): v for k, v in checkers.items()}
 

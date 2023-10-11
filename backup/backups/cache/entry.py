@@ -18,10 +18,12 @@ class Entry:
     max_backup_size: int = 50e6
     browser_name: str = field(default="chromium", repr=False)
     browser_folder: Path = field(
-        default=Path(".config") / browser_name.default, repr=False  # noqa
+        default=Path(".config") / browser_name.default,
+        repr=False,  # noqa
     )
     browser_pattern: str = field(
-        default=f"{browser_folder.default}/**/*", repr=False  # noqa
+        default=f"{browser_folder.default}/**/*",
+        repr=False,  # noqa
     )
     relative_browser_path: Path = field(
         default=(Path.HOME / browser_folder.default).relative_to(Backup.source),
@@ -77,6 +79,12 @@ class Entry:
         checker = checkers.get(self.check_key)
         if checker:
             if checker(self.source) == checker(self.dest):
+                if (
+                    self.dest.is_relative_to(Path.backup_cache)
+                    and self.dest.tag is None
+                ):
+                    self.dest.tag = self.dest.mtime
+                self.source.copy_to(self.dest, include_properties=False)
                 self.dest.touch(mtime=self.source.mtime)
             else:
                 yield self.relative

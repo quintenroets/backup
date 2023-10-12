@@ -80,7 +80,8 @@ class Entry:
         if checker:
             if checker(self.source) == checker(self.dest):
                 if (
-                    self.dest.is_relative_to(Path.backup_cache)
+                    self.dest.exists()
+                    and self.dest.is_relative_to(Path.backup_cache)
                     and self.dest.tag is None
                 ):
                     self.dest.tag = self.dest.mtime

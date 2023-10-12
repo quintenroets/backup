@@ -7,7 +7,10 @@ license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "beautifulsoup4",
+    "lxml",
     "pyinotify",
+    "PyYAML",
     "quinten-cli",
     "rich",
     "superpathlib",
@@ -17,9 +20,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit"
+    "pre-commit",
+    "bump2version"
 ]
 test = [
+    "hypothesis",
     "pytest"
 ]
 

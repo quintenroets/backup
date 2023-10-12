@@ -55,7 +55,7 @@ class RuleConfig:
             name_start = name.split(cls.VERSION_KEYWORD)[0]
             true_paths = list(root.glob(f"{name_start}*"))
             true_paths = sorted(true_paths, key=lambda path: -path.mtime)
-            name = true_paths[0].name
+            name = true_paths[0].name if true_paths else "__NON_EXISTING__"
         return name
 
 

@@ -77,6 +77,7 @@ class Backup(backup.Backup):
     def start_pull(self):
         backuper = Backup(
             paths=self.paths,
+            filter_rules=self.filter_rules,
             quiet=self.quiet,
             quiet_cache=self.quiet_cache,
             sub_check_path=self.sub_check_path,

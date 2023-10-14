@@ -8,8 +8,13 @@ def check_setup(install=True):
     if not path.exists():
         download_config_file(path)
         if install:
-            command = "sudo -v ; wget -O - https://rclone.org/install.sh | sudo bash"
-            cli.run(command, shell=True)
+            install_rclone()
+
+
+def install_rclone():
+    # curl required inside rclone install.sh script
+    command = "sudo apt install -y curl; curl https://rclone.org/install.sh | sudo bash"
+    cli.run(command, shell=True)
 
 
 def download_config_file(path: Path):

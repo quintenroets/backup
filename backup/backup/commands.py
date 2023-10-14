@@ -27,6 +27,7 @@ class Backup(paths.Rclone):
             paths=self.paths,
             path=self.path,
             folder=self.folder,
+            filter_rules=self.filter_rules,
             source=self.source,
             dest=self.dest,
             quiet=self.quiet,

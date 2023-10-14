@@ -85,7 +85,10 @@ def check_user_places(path: Path):
 
 def kwallet_content():
     def get_folder_info(folder):
-        items = cli.lines("kwallet-query -l kdewallet -f", folder)
+        try:
+            items = cli.lines("kwallet-query -l kdewallet -f", folder)
+        except cli.CalledProcessError:
+            items = []
         return {
             item: cli.get("kwallet-query kdewallet -r", item, "-f", folder)
             for item in items

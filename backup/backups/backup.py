@@ -116,7 +116,8 @@ class Backup(backup.Backup):
         return message
 
     def run_remote_sync(self):
-        self.create_filters()
+        if not self.filter_rules:
+            self.create_filters()
         if not self.include_browser:
             self.filter_rules.append(f"- {cache.Entry.browser_pattern}")
         info = self.get_dest_info()

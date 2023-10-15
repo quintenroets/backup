@@ -10,20 +10,24 @@ class Backup(backup.Backup):
     quiet: bool = True
 
     def __post_init__(self):
+        self.set_dest(self.profile_name)
         paths = self.generate_paths()
         self.paths = list(paths)
         super().__post_init__()
-        self.set_dest(self.profile_name)
 
     def generate_paths(self):
         rules = parser.Rules(Path.profile_paths.yaml, root=Backup.source)
         for rule in rules:
-            full_path = self.source / rule.path
-            if full_path.is_file():
+            source_path = self.source / rule.path
+            dest_path = self.dest / rule.path
+            is_file = source_path.is_file() or dest_path.is_file()
+            if is_file:
                 yield rule.path
             else:
-                for path in full_path.rglob("*"):
+                for path in source_path.rglob("*"):
                     yield path.relative_to(self.source)
+                for path in dest_path.rglob("*"):
+                    yield path.relative_to(self.dest)
 
     def set_dest(self, profile_name: str):
         self.dest = Path.profiles / profile_name
@@ -44,5 +48,4 @@ class Backup(backup.Backup):
             self.pull()
 
     def reload(self):
-        if Path.active_profile.exists():
-            self.pull()
+        self.pull()

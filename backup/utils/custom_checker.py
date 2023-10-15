@@ -95,7 +95,8 @@ def kwallet_content():
         }
 
     folders = ("Network Management", "Passwords", "ksshaskpass")
-    info = {folder: get_folder_info(folder) for folder in folders}
+    with cli.status("Checking kwallet content"):
+        info = {folder: get_folder_info(folder) for folder in folders}
     info = json.dumps(info)
     return info
 

@@ -42,10 +42,11 @@ class BasePath(plib.Path):
 
     @property
     def hash_path(self):
-        path = self.hashes / self.name
-        if not self.is_relative_to(self.HOME):
-            path = self.backup_cache / path.relative_to(self.HOME)
-        return path
+        hashes = self.hashes
+        if self.is_relative_to(Path.backup_cache):
+            backup_root = Path("/")
+            hashes = Path.backup_cache / self.hashes.relative_to(backup_root)
+        return hashes / self.name
 
     @property
     def export(self):

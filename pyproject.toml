@@ -1,6 +1,6 @@
 [project]
 name = "backupmaster"
-version = "0.4.11"
+version = "0.4.12"
 description = ""
 authors = [{ name = "Quinten Roets", email = "qdr2104@columbia.edu" }]
 license = { text = "MIT" }

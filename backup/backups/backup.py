@@ -26,7 +26,7 @@ class Backup(backup.Backup):
         return status
 
     def push(self):
-        if not self.paths:
+        if not self.paths and not self.filter_rules:
             self.paths = self.get_changed_paths()
         if self.paths:
             self.start_push()

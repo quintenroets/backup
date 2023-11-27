@@ -8,7 +8,7 @@ import cli
 from ...utils import Changes, Path, parser
 from ..backup import backup
 from . import raw
-from .entry import Entry
+from .detailed_entry import Entry
 
 
 @dataclass

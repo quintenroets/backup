@@ -1,9 +1,8 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import ClassVar
 
-from ...utils import Path, custom_checker
+from ...utils import Path
 from .raw import Backup
-
-checkers = custom_checker.custom_checkers
 
 
 @dataclass
@@ -16,18 +15,11 @@ class Entry:
     changed: bool = None
     include_browser: bool = None
     max_backup_size: int = 50e6
-    browser_name: str = field(default="chromium", repr=False)
-    browser_folder: Path = field(
-        default=Path(".config") / browser_name.default,
-        repr=False,  # noqa
-    )
-    browser_pattern: str = field(
-        default=f"{browser_folder.default}/**/*",
-        repr=False,  # noqa
-    )
-    relative_browser_path: Path = field(
-        default=(Path.HOME / browser_folder.default).relative_to(Backup.source),
-        repr=False,
+    browser_name: ClassVar[str] = "chromium"
+    browser_folder: ClassVar[Path] = Path(".config") / browser_name
+    browser_pattern: ClassVar[str] = f"{browser_folder}/**/*"
+    relative_browser_path: ClassVar[Path] = (Path.HOME / browser_folder).relative_to(
+        Backup.source
     )
 
     def __post_init__(self):
@@ -61,35 +53,5 @@ class Entry:
             or self.relative.suffix == ".part"
         )
 
-    def __hash__(self):
-        return hash(self.relative)
-
-    @property
-    def check_key(self):
-        if self.source.is_relative_to(Path.profiles):
-            check_key = self.source.relative_to(Path.profiles)
-            check_key = check_key.relative_to(check_key.parts[0])
-        elif self.source.is_relative_to(Path.HOME):  # noqa
-            check_key = self.source.relative_to(Path.HOME)  # noqa
-        else:
-            check_key = self.relative
-        return check_key
-
     def get_paths(self):
-        checker = checkers.get(self.check_key)
-        if checker:
-            if checker(self.source) == checker(self.dest):
-                if (
-                    self.dest.exists()
-                    and self.dest.is_relative_to(Path.backup_cache)
-                    and self.dest.tag is None
-                ):
-                    self.dest.tag = self.dest.mtime
-                self.source.copy_to(self.dest, include_properties=False)
-                self.dest.touch(mtime=self.source.mtime)
-            else:
-                yield self.relative
-                if self.source.hash_path.exists():
-                    yield self.source.hash_path.relative_to(Backup.source)
-        else:
-            yield self.relative
+        yield self.relative

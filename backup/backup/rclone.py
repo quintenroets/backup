@@ -5,6 +5,8 @@ import cli
 
 from ..utils import Path, setup
 
+# TODO: use separate config dataclass and use .dict() in generate_options
+
 
 @dataclass
 class Rclone:
@@ -15,6 +17,8 @@ class Rclone:
     overwrite_newer: bool = True
     quiet: bool = False
     retries: int = 5
+    n_checkers: int = 100
+    n_parallel_transfers = 100
     retries_sleep: str = "30s"
     order_by: str = "size,desc"  # handle largest files first
     drive_import_formats = "docx, xlsx"
@@ -37,6 +41,8 @@ class Rclone:
             "retries-sleep": self.retries_sleep,
             "order-by": self.order_by,
             "drive-import-formats": self.drive_import_formats,
+            "checkers": self.n_checkers,
+            "transfers": self.n_parallel_transfers,
         }
         yield options_dict
 

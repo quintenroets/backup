@@ -3,13 +3,13 @@ from __future__ import annotations
 import os
 import typing
 
-import plib
+import superpathlib
 
 if typing.TYPE_CHECKING:
-    from datetime import datetime  # noqa: autoimport
+    from datetime import datetime  # noqa: autoimport, E402
 
 
-class BasePath(plib.Path):
+class BasePath(superpathlib.Path):
     # define here to make sure that all folders have this method
 
     @property
@@ -23,7 +23,7 @@ class BasePath(plib.Path):
 
     @mtime.setter
     def mtime(self, time):
-        plib.Path.mtime.fset(self, time)
+        superpathlib.Path.mtime.fset(self, time)
 
     @classmethod
     @property

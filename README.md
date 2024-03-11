@@ -4,7 +4,7 @@
 ![Operating system](https://img.shields.io/badge/os-linux%20%7c%20macOS%20%7c%20windows-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
-Backup import files across entire disk
+Back up import files across entire disk
 - Scale to huge number of files
 - Detailed configuration possibilities to maximize performance
 - Perfect for files that are too volatile for a VCS like GIT and too important to lose

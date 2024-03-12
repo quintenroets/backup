@@ -1,16 +1,14 @@
-import argparse
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import cli
 
+from ...models import Action
 from ..backups import Backup
-from ..utils import Action, Path, get_args
+from ..utils import Path
 
 
 @dataclass
 class Starter:
-    args: argparse.Namespace = field(default_factory=get_args)
-
     def start(self) -> None:
         if self.args.configure:
             cli.urlopen(Path.config)

@@ -1,9 +1,0 @@
-beautifulsoup4
-lxml
-pyinotify
-PyYAML
-quinten-cli
-rich
-superpathlib
-tqdm
-xattr

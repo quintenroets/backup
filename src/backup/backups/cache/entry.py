@@ -1,7 +1,9 @@
-from dataclasses import dataclass
+import typing
+from collections.abc import Iterator
+from dataclasses import dataclass, field
 from typing import ClassVar
 
-from ...utils import Path
+from ...models import Path
 from .raw import Backup
 
 
@@ -9,12 +11,13 @@ from .raw import Backup
 class Entry:
     source_root: Path
     dest_root: Path
-    source: Path = None
-    relative: Path = None
-    dest: Path = None
-    changed: bool = None
-    include_browser: bool = None
-    max_backup_size: int = 50e6
+    source: Path = None  # type: ignore
+    existing: Path = field(init=False)
+    relative: Path = field(init=False)
+    dest: Path = None  # type: ignore
+    changed: bool | None = None
+    include_browser: bool | None = None
+    max_backup_size: int = int(50e6)
     browser_name: ClassVar[str] = "chromium"
     browser_folder: ClassVar[Path] = Path(".config") / browser_name
     browser_pattern: ClassVar[str] = f"{browser_folder}/**/*"
@@ -32,19 +35,19 @@ class Entry:
             self.relative = self.source.relative_to(self.source_root)
             self.dest = self.dest_root / self.relative
 
-    def is_browser_config(self):
+    def is_browser_config(self) -> bool:
         return self.relative.is_relative_to(self.relative_browser_path)
 
-    def is_changed(self):
+    def is_changed(self) -> bool:
         return (
             self.existing.is_file()
             and (self.source.mtime != self.dest.mtime)
             and not self.exclude()
         )
 
-    def exclude(self):
+    def exclude(self) -> bool:
         return (
-            self.existing.tag
+            typing.cast(bool, self.existing.tag)
             or (not self.include_browser and self.is_browser_config())
             or (
                 self.existing.size > self.max_backup_size
@@ -53,5 +56,5 @@ class Entry:
             or self.relative.suffix == ".part"
         )
 
-    def get_paths(self):
+    def get_paths(self) -> Iterator[Path]:
         yield self.relative

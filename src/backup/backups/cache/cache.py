@@ -1,11 +1,14 @@
 import fnmatch
-from collections.abc import Iterable
+import typing
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from functools import cached_property
+from typing import Any
 
 import cli
 
-from ...utils import Changes, Path, parser
+from ...models import Changes, Path
+from ...utils import parser
 from ..backup import backup
 from . import raw
 from .detailed_entry import Entry
@@ -14,22 +17,22 @@ from .detailed_entry import Entry
 @dataclass
 class Backup(raw.Backup):
     quiet: bool = True
-    visited: set = field(default_factory=set)
+    visited: set[Path] = field(default_factory=set)
     include_browser: bool = True
     entry_count: int = 0
 
-    def status(self):
+    def status(self) -> Changes:
         self.paths = self.get_changed_paths()
         return super().status() if self.paths else Changes([])
 
-    def get_changed_paths(self):
+    def get_changed_paths(self) -> list[Path]:
         paths = self.generate_changed_paths()
         return list(paths)
 
-    def generate_changed_paths(self):
+    def generate_changed_paths(self) -> Iterator[Path]:
         generated_entries: Iterable[Entry] = self.generate_entries()
         total = int(Path.number_of_paths.text or 0)
-        generated_entries = cli.progress(
+        generated_entries = cli.progress(  # type: ignore
             generated_entries, description="Checking", unit="Files", total=total
         )
         path_entries = set(generated_entries)
@@ -37,17 +40,17 @@ class Backup(raw.Backup):
             if entry.is_changed():
                 yield from entry.get_paths()
 
-    def generate_entries(self):
-        for path in self.generate_paths():
+    def generate_entries(self) -> Iterator[Entry]:
+        for path in self.generate_path_entries():
             yield path
             self.entry_count += 1
         Path.number_of_paths.text = self.entry_count
 
-    def generate_paths(self):
+    def generate_path_entries(self) -> Iterator[Entry]:
         yield from self.generate_source_entries()
         yield from self.generate_dest_entries()
 
-    def generate_source_entries(self):
+    def generate_source_entries(self) -> Iterator[Entry]:
         rules = self.entry_rules()
         for rule in rules:
             path = self.original_source / rule.path
@@ -56,29 +59,30 @@ class Backup(raw.Backup):
                     yield self.create_entry(source=source_path)
             self.visited.add(path)
 
-    def generate_dest_entries(self):
+    def generate_dest_entries(self) -> Iterator[Entry]:
         dest = self.source if self.reverse else self.dest
         for dest_path in dest.rglob("*"):
             yield self.create_entry(dest=dest_path)
 
-    def create_entry(self, **kwargs):
+    def create_entry(self, **kwargs: Any) -> Entry:
         source = self.dest if self.reverse else self.source
         dest = self.source if self.reverse else self.dest
         return Entry(source, dest, include_browser=self.include_browser, **kwargs)
 
-    def entry_rules(self):
+    def entry_rules(self) -> Iterator[parser.PathRule]:
+        any_include = False
         rules = self.generate_entry_rules()
-        rules = list(rules)
-        if not any(rule.include for rule in rules):
+        for rule in rules:
+            any_include |= rule.include
+            yield rule
+        if not any_include:
             # include everything else if no include rules
             root = Path()
-            rule = parser.PathRule(root, True)
-            rules.append(rule)
-        return rules
+            yield parser.PathRule(root, True)
 
-    def generate_entry_rules(self):
+    def generate_entry_rules(self) -> Iterator[parser.PathRule]:
         self.check_config_path()
-        config_root = Backup.source
+        config_root = Path(Backup.source)
         rules = parser.Rules(
             self.include_dict, Path.paths_exclude.yaml, root=config_root
         )
@@ -96,7 +100,7 @@ class Backup(raw.Backup):
         if not Path.config.exists():
             backup.Backup(folder=Path.config, quiet=True).pull()
 
-    def exclude_root(self, path: Path):
+    def exclude_root(self, path: Path) -> bool:
         return (
             path in self.visited
             or (path / ".git").exists()
@@ -108,24 +112,24 @@ class Backup(raw.Backup):
         )
 
     @cached_property
-    def ignore_patterns(self):
-        ignore_patterns = Path.ignore_patterns.yaml
+    def ignore_patterns(self) -> list[str]:
+        ignore_patterns = typing.cast(list[str], Path.ignore_patterns.yaml)
         if not self.include_browser:
             ignore_patterns.append(Entry.browser_pattern)
         return ignore_patterns
 
     @cached_property
-    def ignore_names(self):
-        return Path.ignore_names.yaml
+    def ignore_names(self) -> list[str]:
+        return typing.cast(list[str], Path.ignore_names.yaml)
 
     @cached_property
-    def include_dict(self):
+    def include_dict(self) -> list[str | dict[str, Any]]:
         includes = Path.paths_include.yaml
         if not self.include_browser:
             self.remove_browser(includes)
-        return includes
+        return typing.cast(list[str | dict[str, Any]], includes)
 
-    def remove_browser(self, includes: list[str | dict]) -> None:
+    def remove_browser(self, includes: list[str | dict[str, Any]]) -> None:
         for include in includes:
             if isinstance(include, dict):
                 key, value = next(iter(include.items()))

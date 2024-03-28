@@ -4,7 +4,9 @@ from dataclasses import dataclass
 import cli
 
 from .. import backup
-from ..utils import Changes, Path, differ, exporter
+from ..context import context
+from ..models import Action, Path
+from ..utils import Changes, differ, exporter
 from . import cache, profile
 
 
@@ -16,6 +18,18 @@ class Backup(backup.Backup):
     include_browser: bool = False
     confirm: bool = True
     show_diff: bool = False
+
+    def run_action(self, action: Action) -> None:
+        match action:
+            case Action.status:
+                self.status()
+            case Action.push:
+                self.push()
+            case Action.pull:
+                self.sync_remote = not context.options.no_sync
+                self.pull()
+            case Action.diff:
+                self.diff(diff_all=context.options.all)
 
     def status(self, show: bool = True):
         self.quiet_cache = True

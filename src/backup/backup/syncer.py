@@ -4,7 +4,7 @@ from datetime import datetime
 
 import cli
 
-from ..utils import Path
+from ..models import Path
 from . import commands
 
 

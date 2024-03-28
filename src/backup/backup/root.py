@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 
-from backup.utils import Path
-
+from ..models import Path
 from . import syncer
 
 

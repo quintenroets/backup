@@ -3,15 +3,16 @@ from dataclasses import dataclass, field
 
 import cli
 
-from ..utils import Path, setup
+from ..models import Path
+from ..utils import setup
 
 # TODO: use separate config dataclass and use .dict() in generate_options
 
 
 @dataclass
 class Rclone:
-    source: Path | str = Path("/")
-    dest: Path | str = Path.remote
+    source: Path = field(default_factory=lambda: Path("/"))
+    dest: Path = Path.remote
     filter_rules: list[str] = field(default_factory=list)
     options: list[str | set | dict] = field(default_factory=list)
     overwrite_newer: bool = True
@@ -46,7 +47,7 @@ class Rclone:
         }
         yield options_dict
 
-    def run(self, *args: str | dict | Path):
+    def run(self, *args: str | dict | Path) -> None:
         filters_path = self.create_filters_path()
         with filters_path:
             args = "rclone", *args, "--filter-from", filters_path, *self.options

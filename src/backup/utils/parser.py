@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from .path import Path
+from ..models import Path
 
 
 @dataclass

@@ -1,28 +1,29 @@
-from dataclasses import dataclass, field
+from collections.abc import Iterator
+from dataclasses import dataclass
 from typing import Any
 
 import cli
 
-from ....utils import Path
+from ....models import Path
 
 
 @dataclass
 class PathChecker:
-    ignore_sections: tuple[str, ...] = field(default_factory=list)
-    ignore_lines: tuple[str, ...] = field(default_factory=list)
+    ignore_sections: tuple[str, ...] = ()
+    ignore_lines: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         self.ignore_sections_str = [f"[{section}]" for section in self.ignore_sections]
 
-    def calculate_relevant_hash(self, path: Path):
-        content = self.get_content(path) if path.exists() else None
+    def calculate_relevant_hash(self, path: Path) -> int:
+        if path.exists():
+            content_items = self.extract_content(path)
+            content = tuple(content_items)
+        else:
+            content = None
         return hash(content)
 
-    def get_content(self, path: Path) -> Any:
-        content = self.generate_content(path)
-        return tuple(content)
-
-    def generate_content(self, path: Path):
+    def extract_content(self, path: Path) -> Iterator[str]:
         content_lines = path.lines
         header_indices = [
             i for i, line in enumerate(content_lines) if line.startswith("[")
@@ -40,17 +41,13 @@ class PathChecker:
 
 
 class CommentsRemovedChecker(PathChecker):
-    ignore_lines: tuple[str, ...] = field(default_factory=lambda: ["#"])
+    ignore_lines: tuple[str, ...] = ("#",)
 
 
 class UserPlaceChecker(PathChecker):
     tag_ignore_names: tuple[str, ...] = ("tags", "kdeconnect")
 
-    def get_content(self, path: Path) -> Any:
-        tags = self.generate_tags(path)
-        return tuple(tags)
-
-    def generate_tags(self, path: Path) -> Any:
+    def extract_content(self, path: Path) -> Iterator[str]:
         from bs4 import BeautifulSoup  # noqa: E402, autoimport
 
         soup = BeautifulSoup(path.text, features="xml")
@@ -61,7 +58,7 @@ class UserPlaceChecker(PathChecker):
 
 
 class RetrievedContentChecker(PathChecker):
-    def get_content(self, path: Path) -> Any:
+    def extract_content(self, path: Path) -> Iterator[str]:
         hash_path = path.hash_path
         # compare generated hash with saved hash
         content_hash = (
@@ -71,9 +68,9 @@ class RetrievedContentChecker(PathChecker):
         )
         if content_hash != hash_path.text:
             hash_path.text = content_hash
-        return content_hash
+        yield content_hash
 
-    def calculate_content_hash(self):
+    def calculate_content_hash(self) -> str:
         import hashlib  # noqa: E402, autoimport
         import json  # noqa: E402, autoimport
 
@@ -82,19 +79,19 @@ class RetrievedContentChecker(PathChecker):
         hash_value = hashlib.new("sha512", data=content_bytes).hexdigest()
         return hash_value
 
-    def retrieve_content(self):
+    def retrieve_content(self) -> Any:
         raise NotImplementedError
 
 
 class KwalletChecker(RetrievedContentChecker):
-    def retrieve_content(self):
+    def retrieve_content(self) -> dict[str, dict[str, str | list[str]]]:
         folders = ("Network Management", "Passwords", "ksshaskpass")
-        with cli.status("Checking kwallet content"):
+        with cli.status("Checking kwallet content"):  # type: ignore
             info = {folder: self.calculate_folder_info(folder) for folder in folders}
         return info
 
     @classmethod
-    def calculate_folder_info(cls, folder) -> dict[str, str]:
+    def calculate_folder_info(cls, folder: str) -> dict[str, str | list[str]]:
         try:
             items = cli.lines("kwallet-query -l kdewallet -f", folder)
         except cli.CalledProcessError:
@@ -106,7 +103,7 @@ class KwalletChecker(RetrievedContentChecker):
 
 
 class RcloneChecker(RetrievedContentChecker):
-    def retrieve_content(self):
+    def retrieve_content(self) -> list[str]:
         config_lines = cli.lines("rclone config show")
         nonvolatile_config_lines = [
             line for line in config_lines if "refresh_token" not in line

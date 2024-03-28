@@ -3,7 +3,8 @@ from dataclasses import dataclass
 
 import cli
 
-from ..utils import Change, Changes, ChangeType, Path, generate_output_lines
+from ..models import Change, Changes, ChangeType, Path
+from ..utils import generate_output_lines
 from . import paths
 
 
@@ -22,7 +23,7 @@ class Backup(paths.Rclone):
     def push(self):
         return self.start("sync", "--create-empty-src-dirs", "--progress")
 
-    def pull(self):
+    def pull(self) -> None:
         backup = Backup(
             paths=self.paths,
             path=self.path,
@@ -35,7 +36,7 @@ class Backup(paths.Rclone):
         )
         return backup.push()
 
-    def start(self, action, *args):
+    def start(self, action, *args) -> None:
         return self.run(action, self.source, self.dest, *args)
 
     def get_changes(self, *args, **kwargs):
@@ -67,10 +68,7 @@ class Backup(paths.Rclone):
                     dest.tag = dest.mtime  # save original mtime for remote syncing
 
         backup = Backup(
-            source=self.source,
-            dest=self.dest,
-            paths=no_change_paths,
-            quiet=True,
+            source=self.source, dest=self.dest, paths=no_change_paths, quiet=True
         )
         backup.push()
 

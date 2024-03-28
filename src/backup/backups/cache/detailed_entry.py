@@ -1,6 +1,7 @@
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from ...utils import Path
+from ...models import Path
 from . import entry
 from .checker.detailed import Checker
 from .raw import Backup
@@ -8,9 +9,9 @@ from .raw import Backup
 
 @dataclass
 class Entry(entry.Entry):
-    hash_path: Path = field(default=None, hash=False)
+    hash_path: Path | None = field(default=None, hash=False)
 
-    def exclude(self):
+    def exclude(self) -> bool:
         return super().exclude() or self.only_volatile_content_changed()
 
     def only_volatile_content_changed(self) -> bool:
@@ -35,12 +36,12 @@ class Entry(entry.Entry):
             and self.dest.tag is None
         )
         if no_original_mtime_present:
-            self.dest.tag = self.dest.mtime
+            self.dest.tag = str(self.dest.mtime)
         self.source.copy_to(self.dest, include_properties=False)
         self.dest.touch(mtime=self.source.mtime)
 
     @property
-    def check_key(self):
+    def check_key(self) -> Path:
         if self.source.is_relative_to(Path.profiles):
             check_key = self.source.relative_to(Path.profiles)
             check_key = check_key.relative_to(check_key.parts[0])
@@ -50,10 +51,10 @@ class Entry(entry.Entry):
             check_key = self.relative
         return check_key
 
-    def get_paths(self):
+    def get_paths(self) -> Iterator[Path]:
         yield from super().get_paths()
         if self.hash_path is not None:
             yield self.hash_path
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.relative)

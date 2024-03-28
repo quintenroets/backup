@@ -1,15 +1,29 @@
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from ..utils import Path
+from ..context import context
+from ..models import Path
 from . import rclone
+
+
+def calculate_sub_check_path() -> Path | None:
+    if context.options.export_resume:
+        sub_check_path = Path.resume
+    elif context.options.subcheck:
+        sub_check_path = Path.cwd()
+    else:
+        sub_check_path = None
+    if sub_check_path is not None:
+        sub_check_path = sub_check_path.relative_to(rclone.Rclone.source)
+    return sub_check_path
 
 
 @dataclass
 class Rclone(rclone.Rclone):
     folder: Path = None
-    paths: list[Path] | tuple[Path] | set[Path] = field(default_factory=list)
+    paths: list[Path] | tuple[Path] | set[Path] = context.options.paths
     path: Path = None
-    sub_check_path: Path = None
+    sub_check_path: Path = field(default_factory=calculate_sub_check_path)
     path_separator: str = field(default="/", repr=False)
     reverse: bool = False
 
@@ -44,7 +58,7 @@ class Rclone(rclone.Rclone):
         filter_rules = self.generate_path_rules()
         self.filter_rules = list(filter_rules)
 
-    def generate_path_rules(self):
+    def generate_path_rules(self) -> Iterator[str]:
         for path in self.paths:
             if path.is_relative_to(self.original_source):
                 path = path.relative_to(self.original_source)

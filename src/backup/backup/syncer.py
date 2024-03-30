@@ -1,3 +1,4 @@
+import typing
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
@@ -13,12 +14,12 @@ class Backup(commands.Backup):
     date_start: str = "── ["
     date_end: str = "]  /"
 
-    def tree(self, path=None):
+    def tree(self, path=None) -> list[str]:
         if path is None:
             path = self.dest
-        self.use_runner(cli.lines)
+        self.use_runner(cli.capture_output_lines)
         args = "tree", "--all", "--modtime", "--noreport", "--full-path", path
-        return self.run(*args)
+        return typing.cast(list[str], self.run(*args))
 
     def get_dest_info(self):
         tree = self.tree()

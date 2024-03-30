@@ -65,4 +65,4 @@ class Rclone:
         self.runner = runner
 
     def reset_runner(self) -> None:
-        self.runner = cli.get if self.quiet else cli.run
+        self.runner = cli.capture_output if self.quiet else cli.run

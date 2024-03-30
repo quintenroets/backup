@@ -1,6 +1,6 @@
 [project]
 name = "backupmaster"
-version = "0.5.1"
+version = "0.5.2"
 description = "Backup import files across entire disk"
 authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
 license = {text = "MIT"}
@@ -11,8 +11,8 @@ dependencies = [
     "lxml >=4.9.3, <5",
     "package-utils[context] >=0.6.4, <1",
     "pyinotify >=0.9.6, <1",
+    "powercli >=0.1.2, <1",
     "PyYAML >=6.0.1, <7",
-    "quinten-cli >=1.1.16, <2",
     "tqdm >=4.66.1, <5",
     "xattr >=0.10.1, <1",
 ]

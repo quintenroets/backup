@@ -74,7 +74,8 @@ class RetrievedContentChecker(PathChecker):
         import hashlib  # noqa: E402, autoimport
         import json  # noqa: E402, autoimport
 
-        content = self.retrieve_content()
+        content_generator = self.retrieve_content()
+        content = tuple(content_generator)
         content_bytes = json.dumps(content).encode()
         hash_value = hashlib.new("sha512", data=content_bytes).hexdigest()
         return hash_value
@@ -84,28 +85,27 @@ class RetrievedContentChecker(PathChecker):
 
 
 class KwalletChecker(RetrievedContentChecker):
-    def retrieve_content(self) -> dict[str, dict[str, str | list[str]]]:
+    def retrieve_content(self) -> Iterator[str, tuple[tuple[str, list[str]]]]:
         folders = ("Network Management", "Passwords", "ksshaskpass")
-        with cli.status("Checking kwallet content"):  # type: ignore
-            info = {folder: self.calculate_folder_info(folder) for folder in folders}
-        return info
+        with cli.status("Checking kwallet content"):
+            for folder in folders:
+                info = self.calculate_folder_info(folder)
+                yield folder, tuple(info)
 
     @classmethod
-    def calculate_folder_info(cls, folder: str) -> dict[str, str | list[str]]:
+    def calculate_folder_info(cls, folder: str) -> Iterator[tuple[str, list[str]]]:
         try:
-            items = cli.lines("kwallet-query -l kdewallet -f", folder)
+            items = cli.capture_output_lines("kwallet-query -l kdewallet -f", folder)
+            command = "kwallet-query kdewallet -r"
+            for item in items:
+                yield item, cli.capture_output_lines(command, item, "-f", folder)
         except cli.CalledProcessError:
-            items = []
-        return {
-            item: cli.get("kwallet-query kdewallet -r", item, "-f", folder)
-            for item in items
-        }
+            pass
 
 
 class RcloneChecker(RetrievedContentChecker):
-    def retrieve_content(self) -> list[str]:
-        config_lines = cli.lines("rclone config show")
-        nonvolatile_config_lines = [
-            line for line in config_lines if "refresh_token" not in line
-        ]
-        return nonvolatile_config_lines
+    def retrieve_content(self) -> Iterator[str]:
+        lines = cli.capture_output_lines("rclone config show")
+        for line in lines:
+            if "refresh_token" not in line:
+                yield line

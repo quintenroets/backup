@@ -32,7 +32,7 @@ class Backup(raw.Backup):
     def generate_changed_paths(self) -> Iterator[Path]:
         generated_entries: Iterable[Entry] = self.generate_entries()
         total = int(Path.number_of_paths.text or 0)
-        generated_entries = cli.progress(  # type: ignore
+        generated_entries = cli.track_progress(
             generated_entries, description="Checking", unit="Files", total=total
         )
         path_entries = set(generated_entries)

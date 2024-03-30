@@ -5,8 +5,8 @@ import cli
 
 from .. import backup
 from ..context import context
-from ..models import Action, Path
-from ..utils import Changes, differ, exporter
+from ..models import Action, Changes, Path
+from ..utils import differ, exporter
 from . import cache, profile
 
 

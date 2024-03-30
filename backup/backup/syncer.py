@@ -16,7 +16,7 @@ class Backup(commands.Backup):
     def tree(self, path=None):
         if path is None:
             path = self.dest
-        self.use_runner(cli.lines)
+        self.use_runner(cli.capture_output_lines)
         args = "tree", "--all", "--modtime", "--noreport", "--full-path", path
         return self.run(*args)
 

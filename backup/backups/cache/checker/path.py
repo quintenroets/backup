@@ -96,18 +96,18 @@ class KwalletChecker(RetrievedContentChecker):
     @classmethod
     def calculate_folder_info(cls, folder) -> dict[str, str]:
         try:
-            items = cli.lines("kwallet-query -l kdewallet -f", folder)
+            items = cli.capture_output_lines("kwallet-query -l kdewallet -f", folder)
         except cli.CalledProcessError:
             items = []
         return {
-            item: cli.get("kwallet-query kdewallet -r", item, "-f", folder)
+            item: cli.capture_output("kwallet-query kdewallet -r", item, "-f", folder)
             for item in items
         }
 
 
 class RcloneChecker(RetrievedContentChecker):
     def retrieve_content(self):
-        config_lines = cli.lines("rclone config show")
+        config_lines = cli.capture_output_lines("rclone config show")
         nonvolatile_config_lines = [
             line for line in config_lines if "refresh_token" not in line
         ]

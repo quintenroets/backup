@@ -13,7 +13,7 @@ class Starter:
 
     def start(self):
         if self.args.configure:
-            cli.urlopen(Path.config)
+            cli.open_urls(Path.config)
         else:
             sub_check_path = self.get_sub_check_path()
             paths = [Path(path) for path in self.args.items]

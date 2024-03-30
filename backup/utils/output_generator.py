@@ -6,7 +6,7 @@ import cli
 
 def generate_output_lines(*args, **kwargs):
     pipe = subprocess.PIPE
-    process = cli.run(*args, stdout=pipe, stderr=pipe, wait=False, **kwargs)
+    process = cli.launch(*args, stdout=pipe, stderr=pipe, **kwargs)
 
     output_generated = False
     outputs = [process.stdout, process.stderr]

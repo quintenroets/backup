@@ -75,15 +75,15 @@ class Backup(paths.Rclone):
         backup.push()
 
     def generate_change_results(self, *args, **kwargs):
-        status_lines = generate_output_lines(*args, **kwargs)
+        status_lines = generate_output_lines(*args, check=False, **kwargs)
         total = len(self.paths) if self.paths else None
         if not self.quiet:
-            status_lines = cli.progress(
+            status_lines = cli.track_progress(
                 status_lines,
                 description="Checking",
                 unit="files",
                 total=total,
-                cleanup=True,
+                cleanup_after_finish=True,
             )
         for line in status_lines:
             yield Change.from_pattern(line, self.source, self.dest)

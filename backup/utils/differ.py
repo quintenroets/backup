@@ -9,7 +9,7 @@ def get_diff(
     diff_command = "diff", "-u", "--new-file", dest_root / path, source_root / path
     if color:
         diff_command = *diff_command, "--color=always"
-    return cli.lines(*diff_command, check=False)[2 : 2 + max_lines]
+    return cli.capture_output_lines(*diff_command, check=False)[2 : 2 + max_lines]
 
 
 def run_diff(*args, **kwargs):

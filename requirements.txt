@@ -1,8 +1,8 @@
 beautifulsoup4
 lxml
 pyinotify
+powercli
 PyYAML
-quinten-cli
 rich
 superpathlib
 tqdm

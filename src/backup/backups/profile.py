@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
 from .. import backup
-from ..utils import Path, parser
+from ..models import Path
+from ..utils import parser
 
 
 @dataclass

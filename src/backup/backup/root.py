@@ -1,3 +1,4 @@
+import subprocess
 from dataclasses import dataclass, field
 
 from ..models import Path
@@ -8,21 +9,21 @@ from . import syncer
 class Backup(syncer.Backup):
     root_paths: list[Path] = field(default_factory=list)
 
-    def push(self) -> None:
-        if self.dest.is_root():
-            self.process_root_dest()
-        else:
-            super().push()
+    def push(self, reverse: bool = False) -> subprocess.CompletedProcess:
+        return (
+            self.process_root_dest() if self.dest.is_root() else super().push(reverse)
+        )
 
     def restore_paths(self) -> None:
         # self.paths expected to be unmodified
         self.paths += self.root_paths
 
-    def process_root_dest(self) -> None:
+    def process_root_dest(self) -> subprocess.CompletedProcess:
         self.process_root_paths()
         if self.paths:
-            super().push()
+            output = super().push()
         self.restore_paths()
+        return output
 
     def process_root_paths(self) -> None:
         root_paths = self.extract_root_paths()
@@ -45,14 +46,10 @@ class Backup(syncer.Backup):
 
     def push_root_paths_with_intermediate(self, temp_dest: Path) -> None:
         paths = self.root_paths
-        backups = (
+        (syncer.Backup(source=self.source, dest=temp_dest, paths=paths).push(),)
+        # need local source and dest for root operation
+        (
             syncer.Backup(
-                source=self.source, dest=temp_dest, paths=paths, quiet=self.quiet
-            ),
-            # need local source and dest for root operation
-            syncer.Backup(
-                source=temp_dest, dest=self.dest, root=True, quiet=True, paths=paths
-            ),
+                source=temp_dest, dest=self.dest, root=True, paths=paths
+            ).push(),
         )
-        for backup in backups:
-            backup.push()

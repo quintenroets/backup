@@ -6,7 +6,6 @@ from enum import Enum
 import cli
 from simple_classproperty import classproperty
 
-from ..utils import differ
 from .path import Path
 
 
@@ -91,6 +90,25 @@ class Change:
 
     def get_diff_lines(self, color: bool = True):
         max_lines = self.max_diff_lines_per_file
-        return differ.get_diff(
+        return calculate_diff(
             self.path, self.source, self.dest, color=color, max_lines=max_lines
         )
+
+
+def calculate_diff(
+    path: Path,
+    source_root: Path,
+    dest_root: Path,
+    color: bool = True,
+    max_lines: int = 20,
+):
+    diff_command = "diff", "-u", "--new-file", dest_root / path, source_root / path
+    if color:
+        diff_command = *diff_command, "--color=always"
+    return cli.capture_output_lines(*diff_command, check=False)[2 : 2 + max_lines]
+
+
+def run_diff(*args, **kwargs) -> None:
+    diff_lines = calculate_diff(*args, **kwargs)
+    message = "\n".join(diff_lines)
+    print(message)

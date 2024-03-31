@@ -1,5 +1,5 @@
 import pytest
-from backup.utils import Path
+from backup.models import Path
 
 
 def provision_path():
@@ -8,12 +8,10 @@ def provision_path():
     assert not path.exists()
 
 
-def provision_folder(path):
-    path.unlink()
-    path.mkdir()
-    yield path
-    path.rmtree()
-    path.touch()
+def provision_directory():
+    with Path.tempdir() as path:
+        yield path
+    assert not path.exists()
 
 
 @pytest.fixture()
@@ -28,12 +26,12 @@ def path2():
 
 @pytest.fixture()
 def folder(path):
-    yield from provision_folder(path)
+    yield from provision_directory()
 
 
 @pytest.fixture()
 def folder2(path2):
-    yield from provision_folder(path2)
+    yield from provision_directory()
 
 
 @pytest.fixture()

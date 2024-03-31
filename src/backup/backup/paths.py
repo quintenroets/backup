@@ -7,9 +7,9 @@ from . import rclone
 
 
 def calculate_sub_check_path() -> Path | None:
-    if context.options.export_resume:
+    if context.options.export_resume_changes:
         sub_check_path = Path.resume
-    elif context.options.subcheck:
+    elif context.options.sub_check:
         sub_check_path = Path.cwd()
     else:
         sub_check_path = None
@@ -21,7 +21,9 @@ def calculate_sub_check_path() -> Path | None:
 @dataclass
 class Rclone(rclone.Rclone):
     folder: Path = None
-    paths: list[Path] | tuple[Path] | set[Path] = context.options.paths
+    paths: list[Path] | tuple[Path] | set[Path] = field(
+        default_factory=lambda: context.options.paths
+    )
     path: Path = None
     sub_check_path: Path = field(default_factory=calculate_sub_check_path)
     path_separator: str = field(default="/", repr=False)

@@ -2,14 +2,14 @@ import cli
 
 from backup.backups.remote import Backup
 
-from .path import Path
+from ..models import Path
 
 
-def export_changes():
+def export_changes() -> bool:
     return export_resume()
 
 
-def export_resume():
+def export_resume() -> bool:
     for path in Path.resume.rglob("*.docx"):
         if path.export.mtime < path.mtime:
             message_path = path.relative_to(Path.resume)
@@ -25,8 +25,8 @@ def export_resume():
 
 
 def export_path(path: Path) -> None:
-    relative_path = path.export.relative_to(Backup.source)
-    backup = Backup(path=relative_path, reverse=True, quiet=True)
+    relative_path = path.with_export_suffix.relative_to(Backup.source)
+    backup = Backup(path=relative_path)
     backup.export_pdfs()
-    path.export.mtime = path.mtime
-    path.export.tag = "exported"
+    path.with_export_suffix.mtime = path.mtime
+    path.with_export_suffix.tag = "exported"

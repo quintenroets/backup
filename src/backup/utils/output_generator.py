@@ -1,10 +1,12 @@
 import select
 import subprocess
+from typing import Any
 
 import cli
+from cli.commands.commands import CommandItem
 
 
-def generate_output_lines(*args, **kwargs):
+def generate_output_lines(*args: CommandItem, **kwargs: Any) -> str:
     pipe = subprocess.PIPE
     process = cli.run(*args, stdout=pipe, stderr=pipe, wait=False, **kwargs)
 

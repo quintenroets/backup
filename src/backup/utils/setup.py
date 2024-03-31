@@ -1,6 +1,6 @@
 import cli
 
-from .path import Path
+from ..models import Path
 
 
 def check_setup(install: bool = True) -> None:
@@ -21,4 +21,4 @@ def download_config_file(path: Path) -> None:
     file_id = "1apaAlz06Hm37AJLl3CNp3zQoofP7yJu4"
     url = f"https://docs.google.com/uc?export=download&id={file_id}"
     path.create_parent()
-    cli.get("wget --no-check-certificate", url, "-O", path)
+    cli.capture_output("wget --no-check-certificate", url, "-O", path)

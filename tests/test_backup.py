@@ -1,8 +1,7 @@
 import json
 
 from backup.backup import Backup
-from backup.utils import Path
-from backup.utils.changes import Change, ChangeType
+from backup.models import Change, ChangeType, Path
 from hypothesis import HealthCheck, given, settings, strategies
 
 slow_test_settings = settings(
@@ -31,8 +30,8 @@ def fill_folders(folder: Path, folder2: Path, content: bytes, content2: bytes) -
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
 def test_status(folder: Path, folder2: Path, content: bytes, content2: bytes) -> None:
     fill_folders(folder, folder2, content, content2)
-    backup = Backup(folder, folder2, quiet=True)
-    status = backup.status()
+    backup = Backup(folder, folder2)
+    status = backup.capture_status(quiet=True)
 
     expected_changes = (
         Change(Path("1"), ChangeType.created),
@@ -49,27 +48,27 @@ def test_status(folder: Path, folder2: Path, content: bytes, content2: bytes) ->
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
 def test_push(folder: Path, folder2: Path, content: bytes, content2: bytes) -> None:
     fill_folders(folder, folder2, content, content2)
-    backup = Backup(folder, folder2, quiet=True)
-    backup.push()
-    assert not backup.status().paths
+    backup = Backup(folder, folder2)
+    backup.capture_push()
+    assert not backup.capture_status().paths
 
 
 @slow_test_settings
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
 def test_pull(folder: Path, folder2: Path, content: bytes, content2: bytes) -> None:
     fill_folders(folder, folder2, content, content2)
-    backup = Backup(folder, folder2, quiet=True)
-    backup.pull()
-    assert not backup.status().paths
+    backup = Backup(folder, folder2)
+    backup.capture_pull()
+    assert not backup.capture_status().paths
 
 
 @slow_test_settings
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
 def test_ls(folder: Path, folder2: Path, content: bytes, content2: bytes) -> None:
     fill_folders(folder, folder2, content, content2)
-    backup = Backup(folder, folder2, quiet=True)
+    backup = Backup(folder, folder2)
     path = folder / "0"
-    file_info = backup.run("lsjson", path)
+    file_info = backup.capture_output("lsjson", path)
     parsed_file_info = json.loads(file_info)
     assert parsed_file_info[0]["Name"] == path.name
 
@@ -80,5 +79,5 @@ def test_single_file_copy(
     folder: Path, folder2: Path, content: bytes, content2: bytes
 ) -> None:
     fill_folders(folder, folder2, content, content2)
-    backup = Backup(folder, folder2, quiet=True)
-    backup.run("copyto", folder / "0", folder2 / "0")
+    backup = Backup(folder, folder2)
+    backup.capture_output("copyto", folder / "0", folder2 / "0")

@@ -211,11 +211,11 @@ class Changes:
         return bool(self.changes)
 
     @property
-    def paths(self):
+    def paths(self) -> list[Path]:
         return [change.path for change in self.changes]
 
     @classmethod
-    def from_patterns(cls, patterns: list[str]):
+    def from_patterns(cls, patterns: list[str]) -> Changes:
         return Changes([Change.from_pattern(pattern) for pattern in patterns])
 
     def print_paths(self, paths, indent: int = 0) -> None:
@@ -233,7 +233,7 @@ class Changes:
                 print(f"{tab}{name}: ")
                 self.print_paths(paths, indent + 1)
 
-    def ask_confirm(self, message: str, show_diff: bool = False):
+    def ask_confirm(self, message: str, show_diff: bool = False) -> bool:
         self.print(title="Backup", show_diff=show_diff)
         message = "\n" + message
         return cli.confirm(message, default=True)

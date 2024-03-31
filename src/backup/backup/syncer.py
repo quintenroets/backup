@@ -1,5 +1,4 @@
-import typing
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -17,11 +16,11 @@ class Backup(commands.Backup):
     def tree(self, path=None) -> list[str]:
         if path is None:
             path = self.dest
-        self.use_runner(cli.capture_output_lines)
-        args = "tree", "--all", "--modtime", "--noreport", "--full-path", path
-        return typing.cast(list[str], self.run(*args))
+        options = "tree", "--all", "--modtime", "--noreport", "--full-path", path
+        with self.prepared_cli_command(options) as command:
+            return cli.capture_output_lines(command)
 
-    def get_dest_info(self):
+    def get_dest_info(self) -> Iterator[tuple[Path, datetime]]:
         tree = self.tree()
         for line in tree:
             contains_date = self.date_start in line
@@ -44,7 +43,7 @@ class Backup(commands.Backup):
                 dest_path = self.dest / path
                 dest_path.unlink()
 
-    def process_dest_info(self, dest_info):
+    def process_dest_info(self, dest_info) -> Iterator[Path]:
         for relative_path, date in dest_info:
             path = self.dest / relative_path
             changed = not path.exists() or not path.has_date(date)

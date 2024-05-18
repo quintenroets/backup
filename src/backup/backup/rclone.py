@@ -2,16 +2,13 @@ import subprocess
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import TypeVar
 
 import cli
 from cli.commands.commands import CommandItem
 
+from ..context import context
 from ..models import Path
 from ..utils import setup
-
-# TODO: use separate config dataclass and use .dict() in generate_options
-T = TypeVar("T")
 
 
 @dataclass
@@ -19,14 +16,7 @@ class Rclone:
     source: Path = Path("/")
     dest: Path = Path.remote
     filter_rules: list[str] = field(default_factory=list)
-    options: list[str | set | dict] = field(default_factory=list)
-    overwrite_newer: bool = True
-    retries: int = 5
-    n_checkers: int = 100
-    n_parallel_transfers = 100
-    retries_sleep: str = "30s"
-    order_by: str = "size,desc"  # handle largest files first
-    drive_import_formats = "docx, xlsx"
+    options: list[CommandItem] = field(default_factory=list)
     runner: Callable = None
     root: bool = False
 
@@ -39,7 +29,8 @@ class Rclone:
 
     def run(self, *args: CommandItem) -> subprocess.CompletedProcess:
         with self.prepared_command(*args) as command:
-            return cli.run(command)
+            env = {"RCLONE_CONFIG_PASS": context.secrets.rclone}
+            return cli.run(command, env=env)
 
     @contextmanager
     def prepared_command(self, *args: CommandItem) -> Iterator[list[CommandItem]]:
@@ -60,16 +51,18 @@ class Rclone:
         path.lines = self.filter_rules
         return path
 
-    def generate_options(self):
+    @classmethod
+    def generate_options(cls) -> Iterator[CommandItem]:
+        config = context.config
         yield "--skip-links"
-        if not self.overwrite_newer:
+        if not config.overwrite_newer:
             yield "--update"
 
         yield {
-            "retries": self.retries,
-            "retries-sleep": self.retries_sleep,
-            "order-by": self.order_by,
-            "drive-import-formats": self.drive_import_formats,
-            "checkers": self.n_checkers,
-            "transfers": self.n_parallel_transfers,
+            "retries": config.retries,
+            "retries-sleep": config.retries_sleep,
+            "order-by": config.order_by,
+            "drive-import-formats": config.drive_import_formats,
+            "checkers": config.n_checkers,
+            "transfers": config.n_parallel_transfers,
         }

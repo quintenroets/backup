@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import typing
-from typing import TypeVar
+from typing import TypeVar, cast
 
 import superpathlib
 from simple_classproperty import classproperty
@@ -14,8 +14,8 @@ T = TypeVar("T", bound="Path")
 
 
 class Path(superpathlib.Path):
-    @property
-    def mtime(self) -> int:
+    @property  # type : ignore
+    def mtime(self) -> int:  # type: ignore[override]
         """
         Remote filesystem is only precise up to one second and mtime is used to compare
         files.
@@ -24,7 +24,7 @@ class Path(superpathlib.Path):
 
     @mtime.setter
     def mtime(self, value: int) -> None:
-        superpathlib.Path.mtime.fset(self, value)
+        superpathlib.Path.mtime.fset(self, value)  # type: ignore[attr-defined]
 
     @property
     def hash_path(self: T) -> T:
@@ -32,13 +32,14 @@ class Path(superpathlib.Path):
         if self.is_relative_to(self.backup_cache):
             backup_root = Path("/")
             hashes = self.backup_cache / self.hashes.relative_to(backup_root)
-        return hashes / self.name
+        path = hashes / self.name
+        return cast(T, path)
 
     @property
     def with_export_suffix(self: T) -> T:
         return self.with_suffix(".pdf")
 
-    def extract_date(self, check_tag: bool = False):
+    def extract_date(self, check_tag: bool = False) -> datetime:
         from datetime import datetime, timezone
 
         mtime = self.mtime
@@ -73,10 +74,14 @@ class Path(superpathlib.Path):
 
     @property
     def short_notation(self: T) -> T:
-        path = self
+        path = cast(Path, self)
         if not path.is_absolute():
-            path = Path("/") / path
-        return path.relative_to(Path.HOME) if path.is_relative_to(Path.HOME) else path
+            untyped_path = Path("/") / path
+            path = cast(T, untyped_path)
+        short_path = (
+            path.relative_to(Path.HOME) if path.is_relative_to(Path.HOME) else path
+        )
+        return cast(T, short_path)
 
     @classmethod
     @classproperty
@@ -92,90 +97,92 @@ class Path(superpathlib.Path):
     @classmethod
     @classproperty
     def hashes(cls: type[T]) -> T:
-        return cls.assets / "hashes"
+        path = cls.assets / "hashes"
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def backup_cache(cls: type[T]) -> T:
-        return cls.assets / "cache"
+        path = cls.assets / "cache"
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def config(cls: type[T]) -> T:
         path = cls.assets / "config"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def ignore_names(cls: type[T]) -> T:
         path = cls.config / "ignore_names.yaml"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def ignore_patterns(cls: type[T]) -> T:
         path = cls.config / "ignore_patterns.yaml"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def paths_include(cls: type[T]) -> T:
         path = cls.config / "include.yaml"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def paths_include_pull(cls: type[T]) -> T:
         path = cls.config / "pull_include.yaml"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def paths_exclude(cls: type[T]) -> T:
         path = cls.config / "exclude.yaml"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def harddrive_paths(cls: type[T]) -> T:
         path = cls.config / "harddrive.yaml"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def profile_paths(cls: type[T]) -> T:
         path = cls.config / "profiles.yaml"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def number_of_paths(cls: type[T]) -> T:
         path = cls.assets / "volatile" / "number_of_paths"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def profiles(cls: type[T]) -> T:
         path = cls.assets / "profiles"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def active_profile(cls: type[T]) -> T:
         path = cls.profiles / "active.txt"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def resume(cls: type[T]) -> T:
         path = cls.docs / "Drive" / "resume" / "Resume"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def main_resume_pdf(cls: type[T]) -> T:
         path = cls.resume / "Resume Quinten Roets.pdf"
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty

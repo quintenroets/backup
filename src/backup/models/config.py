@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 
-from superpathlib import Path
-
 
 @dataclass
 class Config:
-    output_path: Path | None = None
-    secrets_path: Path | None = None
+    overwrite_newer: bool = True
+    retries: int = 5
+    n_checkers: int = 100
+    n_parallel_transfers = 100
+    retries_sleep: str = "30s"
+    order_by: str = "size,desc"  # handle largest files first
+    drive_import_formats = "docx, xlsx"

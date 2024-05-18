@@ -1,9 +1,9 @@
 import cli
 
-from .path import Path
+from ..models import Path
 
 
-def check(subpaths: str):
+def check(subpaths: str) -> None:
     if not Path.harddrive.exists():
         raise Exception("Connect harddrive first")
 
@@ -18,7 +18,7 @@ def check(subpaths: str):
 
 
 def diff(source: Path, dest: Path) -> None:
-    items = cli.progress(
+    items = cli.track_progress(
         source.find(),
         description=f"Checking changes ({source})",
         unit="files",

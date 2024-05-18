@@ -26,29 +26,31 @@ class Backup(backup.Backup):
             case Action.status:
                 self.status()
             case Action.push:
-                self.push()
+                self.run_push()
             case Action.pull:
                 self.sync_remote = not context.options.no_sync
-                self.pull()
+                self.run_pull()
             case Action.diff:
                 self.diff()
 
     def status(self, show: bool = True) -> Changes:
         self.quiet_cache = True
         self.paths = self.cache_status().paths
-        status = super().status() if self.paths else Changes()
+        status = super().capture_status() if self.paths else Changes()
         if show:
             status.print()
         return status
 
-    def push(self) -> None:
+    def run_push(self) -> None:
         any_include = any(rule.startswith("+") for rule in self.filter_rules)
         if not self.paths and not any_include:
             self.paths = self.get_changed_paths()
         if self.paths:
             self.start_push()
 
-    def start_push(self, reverse: bool = False) -> subprocess.CompletedProcess:
+    def start_push(
+        self, reverse: bool = False
+    ) -> subprocess.CompletedProcess[str] | None:
         backup.Backup(
             path=self.path, paths=self.paths, sub_check_path=self.sub_check_path
         ).push(reverse=reverse)
@@ -81,7 +83,7 @@ class Backup(backup.Backup):
         )
         return cache_backup.status()
 
-    def pull(self) -> subprocess.CompletedProcess:
+    def run_pull(self) -> subprocess.CompletedProcess[str] | None:
         if self.sync_remote:
             self.start_remote_sync()
         output = self.start_pull()
@@ -89,8 +91,8 @@ class Backup(backup.Backup):
             self.after_pull()
         return output
 
-    def start_pull(self) -> subprocess.CompletedProcess:
-        self.start_push(reverse=True)
+    def start_pull(self) -> subprocess.CompletedProcess[str] | None:
+        return self.start_push(reverse=True)
 
     def after_pull(self) -> None:
         if self.contains_change(Path.resume):

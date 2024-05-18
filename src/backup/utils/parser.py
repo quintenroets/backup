@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from typing import Any
 
 from ..models import Path
 
@@ -20,14 +21,16 @@ class RuleConfig:
     VERSION_KEYWORD: str = field(repr=False, default="__VERSION__")
 
     @classmethod
-    def from_list(cls, items: list | None, root: Path):
+    def from_list(cls, items: list[dict[Any, Any]] | None, root: Path) -> RuleConfig:
         rules = RuleConfig()
         if items is not None:
             for item in items:
                 rules.add_item(item, root)
         return rules
 
-    def add_item(self, item: dict | str | tuple, root: Path):
+    def add_item(
+        self, item: dict[Any, Any] | str | tuple[str, ...], root: Path
+    ) -> None:
         names, content = (
             next(iter(item.items())) if isinstance(item, dict) else (item, [])
         )
@@ -49,7 +52,7 @@ class RuleConfig:
             self.items.append(name)
 
     @classmethod
-    def parse_name(cls, name: str, root: Path):
+    def parse_name(cls, name: str, root: Path) -> str:
         if name == "HOME":
             name = str(Path.HOME.relative_to(root))
         if cls.VERSION_KEYWORD in name:
@@ -62,23 +65,25 @@ class RuleConfig:
 
 @dataclass
 class Rules:
-    include_rules: list | None = None
-    exclude_rules: list | None = None
+    include_rules: list[Any] | None = None
+    exclude_rules: list[Any] | None = None
     root: Path = Path()
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[PathRule]:
         yield from self.parse()
 
-    def get_paths(self):
+    def get_paths(self) -> Iterator[Path]:
         for rule in self.parse():
             yield rule.path
 
-    def parse(self):
+    def parse(self) -> Iterator[PathRule]:
         include_rules = RuleConfig.from_list(self.include_rules, self.root)
         exclude_rules = RuleConfig.from_list(self.exclude_rules, self.root)
         yield from self.generate_rules(include_rules, exclude_rules)
 
-    def generate_rules(self, include: RuleConfig, exclude: RuleConfig):
+    def generate_rules(
+        self, include: RuleConfig, exclude: RuleConfig
+    ) -> Iterator[PathRule]:
         sub_names = include.sub_rules.keys() | exclude.sub_rules.keys()
         for name in sub_names:
             sub_include = include.sub_rules.get(name, RuleConfig())
@@ -88,7 +93,7 @@ class Rules:
                 yield PathRule(path, rule.include)
 
         rules_dict = {True: include, False: exclude}
-        for include, rules in rules_dict.items():
+        for rule_include, rules in rules_dict.items():
             for name in rules.items:
                 path = Path(name)
-                yield PathRule(path, include)
+                yield PathRule(path, rule_include)

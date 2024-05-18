@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 from .. import backup
@@ -16,7 +17,7 @@ class Backup(backup.Backup):
         self.paths = list(paths)
         super().__post_init__()
 
-    def generate_paths(self):
+    def generate_paths(self) -> Iterator[Path]:
         rules = parser.Rules(Path.profile_paths.yaml, root=Backup.source)
         for rule in rules:
             source_path = self.source / rule.path
@@ -34,15 +35,15 @@ class Backup(backup.Backup):
         self.dest = Path.profiles / profile_name
 
     @property
-    def profile_name(self):
+    def profile_name(self) -> str:
         return Path.active_profile.text.strip() or "light"
 
     @profile_name.setter
-    def profile_name(self, value) -> None:
+    def profile_name(self, value: str) -> None:
         Path.active_profile.text = value
         self.set_dest(value)
 
-    def apply_profile(self, value) -> None:
+    def apply_profile(self, value: str) -> None:
         if value != self.profile_name:
             self.push()
             self.profile_name = value

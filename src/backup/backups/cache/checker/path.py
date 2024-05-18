@@ -85,7 +85,9 @@ class RetrievedContentChecker(PathChecker):
 
 
 class KwalletChecker(RetrievedContentChecker):
-    def retrieve_content(self) -> Iterator[str, tuple[tuple[str, list[str]]]]:
+    def retrieve_content(
+        self,
+    ) -> Iterator[tuple[str, tuple[tuple[str, list[str]], ...]]]:
         folders = ("Network Management", "Passwords", "ksshaskpass")
         with cli.status("Checking kwallet content"):
             for folder in folders:

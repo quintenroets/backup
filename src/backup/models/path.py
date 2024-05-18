@@ -14,8 +14,9 @@ T = TypeVar("T", bound="Path")
 
 
 class Path(superpathlib.Path):
-    @property  # type : ignore
-    def mtime(self) -> int:  # type: ignore[override]
+    @property  # type: ignore
+    # type : ignore
+    def mtime(self) -> int:
         """
         Remote filesystem is only precise up to one second and mtime is used to compare
         files.
@@ -62,6 +63,7 @@ class Path(superpathlib.Path):
         # drive remote only minute precision and month range
         return date.month, date.day, date.hour, date.minute
 
+    @property
     def is_root(self) -> bool:
         is_remote = self.parts[0].endswith(":")
         return not is_remote and not self.user_has_write_access()
@@ -192,9 +194,11 @@ class Path(superpathlib.Path):
     @classmethod
     @classproperty
     def harddrive(cls: type[T]) -> T:
-        return cls("/") / "media" / cls.HOME.name / "Backup"
+        path = cls("/") / "media" / cls.HOME.name / "Backup"
+        return cast(T, path)
 
     @classmethod
     @classproperty
     def rclone_config(cls: type[T]) -> T:
-        return cls.HOME / ".config" / "rclone" / "rclone.conf"
+        path = cls.HOME / ".config" / "rclone" / "rclone.conf"
+        return cast(T, path)

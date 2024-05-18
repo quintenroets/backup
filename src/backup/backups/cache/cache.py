@@ -23,7 +23,7 @@ class Backup(raw.Backup):
 
     def status(self) -> Changes:
         self.paths = self.get_changed_paths()
-        return super().status() if self.paths else Changes([])
+        return super().capture_status() if self.paths else Changes([])
 
     def get_changed_paths(self) -> list[Path]:
         paths = self.generate_changed_paths()

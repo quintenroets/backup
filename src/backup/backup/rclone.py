@@ -1,5 +1,5 @@
 import subprocess
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
@@ -17,7 +17,6 @@ class Rclone:
     dest: Path = Path.remote
     filter_rules: list[str] = field(default_factory=list)
     options: list[CommandItem] = field(default_factory=list)
-    runner: Callable = None
     root: bool = False
 
     def __post_init__(self) -> None:
@@ -27,7 +26,7 @@ class Rclone:
         with self.prepared_command(*args) as command:
             return cli.capture_output(command)
 
-    def run(self, *args: CommandItem) -> subprocess.CompletedProcess:
+    def run(self, *args: CommandItem) -> subprocess.CompletedProcess[str]:
         with self.prepared_command(*args) as command:
             env = {"RCLONE_CONFIG_PASS": context.secrets.rclone}
             return cli.run(command, env=env)
@@ -46,7 +45,7 @@ class Rclone:
         yield from self.options
         yield from self.generate_options()
 
-    def create_filters_path(self):
+    def create_filters_path(self) -> Path:
         path = Path.tempfile()
         path.lines = self.filter_rules
         return path

@@ -1,11 +1,13 @@
 import os
+from collections.abc import Iterator
 
 import cli
 import pytest
 from backup.backup import Backup
-from backup.utils import Path
+from backup.models import Path
 from hypothesis import given, strategies
-from test_backup import fill, slow_test_settings
+
+from tests.test_backup import fill, slow_test_settings
 
 
 def fill_root(folder: Path, content: bytes, number: int = 0) -> None:
@@ -15,7 +17,7 @@ def fill_root(folder: Path, content: bytes, number: int = 0) -> None:
 
 
 @pytest.fixture()
-def root_folder(folder2):
+def root_folder(folder2: Path) -> Iterator[Path]:
     cli.run("sudo chown root:root", folder2)
     yield folder2
     user = os.getlogin()
@@ -27,6 +29,6 @@ def root_folder(folder2):
 def test_push(folder: Path, root_folder: Path, content: bytes, content2: bytes) -> None:
     fill(folder, content)
     fill_root(root_folder, content2)
-    backup = Backup(folder, root_folder, quiet=True)
+    backup = Backup(folder, root_folder)
     backup.push()
-    assert not backup.status().paths
+    assert not backup.capture_status().paths

@@ -8,7 +8,7 @@ from .. import backup
 @dataclass
 class Backup(backup.Backup):
     def export_pdfs(self) -> str:
-        command = self.create_cli_command(
+        with self.prepared_command_with_locations(
             "copy", "--drive-export-formats", "pdf", reverse=True
-        )
-        return cli.capture_output(command)
+        ) as command:
+            return cli.capture_output(command)

@@ -1,4 +1,5 @@
-from backup.utils import Path, exporter
+from backup.models import Path
+from backup.utils import exporter
 
 
 def test_export() -> None:

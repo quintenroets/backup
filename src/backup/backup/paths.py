@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from typing import cast
 
 from ..context import context
 from ..models import Path
@@ -15,17 +16,17 @@ def calculate_sub_check_path() -> Path | None:
         sub_check_path = None
     if sub_check_path is not None:
         sub_check_path = sub_check_path.relative_to(rclone.Rclone.source)
-    return sub_check_path
+    return cast(Path | None, sub_check_path)
 
 
 @dataclass
 class Rclone(rclone.Rclone):
-    folder: Path = None
+    folder: Path | None = None
     paths: list[Path] | tuple[Path] | set[Path] = field(
         default_factory=lambda: context.options.paths
     )
-    path: Path = None
-    sub_check_path: Path = field(default_factory=calculate_sub_check_path)
+    path: Path | None = None
+    sub_check_path: Path | None = field(default_factory=calculate_sub_check_path)
     path_separator: str = field(default="/", repr=False)
     reverse: bool = False
 
@@ -40,14 +41,14 @@ class Rclone(rclone.Rclone):
         super().__post_init__()
 
     @property
-    def original_source(self):
+    def original_source(self) -> Path:
         return self.dest if self.reverse else self.source
 
     @property
-    def original_dest(self):
+    def original_dest(self) -> Path:
         return self.source if self.reverse else self.dest
 
-    def create_filters_path(self):
+    def create_filters_path(self) -> Path:
         if not self.filter_rules:
             self.create_filters()
         return super().create_filters_path()
@@ -71,7 +72,7 @@ class Rclone(rclone.Rclone):
             yield "- *"
 
     @classmethod
-    def escape(cls, path: Path):
+    def escape(cls, path: Path) -> str:
         # backslash character needs to be first in sequence
         # or otherwise each escape gets escaped again
         reserved_characters = "\\", "[", "]", "*", "**", "?", "{", "}"

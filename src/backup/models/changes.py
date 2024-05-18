@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import asdict, dataclass, field
+from typing import cast
 
 import cli
 
@@ -12,27 +13,27 @@ from .path import Path
 @dataclass
 class PrintChange:
     path: Path
-    change: Change | None = None
+    change: Change
     indent_count: int = 0
     indent = "  "
 
     @property
-    def root(self):
+    def root(self) -> str:
         return self.path.parts[0]
 
     @property
-    def path_from_root(self):
+    def path_from_root(self) -> Path:
         return self.path.relative_to(self.root)
 
     @property
-    def child(self):
+    def child(self) -> PrintChange:
         return PrintChange(
             self.path_from_root,
             self.change,
             self.indent_count + 1,
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         attributes = tuple(asdict(self).values())
         return hash(attributes)
 
@@ -71,39 +72,7 @@ class PrintChange:
             self.print_diff()
 
     def print_diff(self) -> None:
-        if self.change.type == ChangeType.modified:
-            diff_lines = self.change.get_diff_lines(color=False)
-            lines = []
-            for line in diff_lines:
-                match line[0]:
-                    case ChangeType.created.symbol:
-                        change_type = ChangeType.created
-                    case ChangeType.deleted.symbol:
-                        change_type = ChangeType.deleted
-                    case " ":
-                        change_type = ChangeType.preserved
-                    case _:
-                        change_type = None
-
-                if change_type is not None:
-                    line = line[1:].strip()
-                if change_type not in (ChangeType.preserved, None):
-                    line = f"{change_type.symbol} {line}"
-                if change_type is not None:
-                    line = f"[{change_type.color}]{line}"
-                lines.append(line)
-        else:
-            source = (
-                self.change.source
-                if self.change.type == ChangeType.created
-                else self.change.dest
-            )
-            full_path = source / self.change.path
-            try:
-                lines = full_path.lines
-            except UnicodeDecodeError:
-                lines = []
-
+        lines = self.generate_print_lines()
         whitespace = self.indent * (self.indent_count + 1)
         available_width = cli.console.width - len(whitespace)
         for line in lines:
@@ -113,6 +82,47 @@ class PrintChange:
             ]
             line_message = "\n".join(chunks)
             cli.console.print(line_message, highlight=False)
+
+    def generate_print_lines(self) -> Iterator[str]:
+        return (
+            self.generate_diff_lines()
+            if self.change.type == ChangeType.modified
+            else self.generate_path_lines()
+        )
+
+    def generate_diff_lines(self) -> Iterator[str]:
+        diff_lines = self.change.get_diff_lines(color=False)
+        for line in diff_lines:
+            change_type: ChangeType | None
+            match line[0]:
+                case ChangeType.created.symbol:
+                    change_type = ChangeType.created
+                case ChangeType.deleted.symbol:
+                    change_type = ChangeType.deleted
+                case " ":
+                    change_type = ChangeType.preserved
+                case _:
+                    change_type = None
+
+            if change_type is not None:
+                line = line[1:].strip()
+                if change_type != ChangeType.preserved:
+                    line = f"{change_type.symbol} {line}"
+                yield f"[{change_type.color}]{line}"
+
+    def generate_path_lines(self) -> Iterator[str]:
+        assert self.change.source is not None
+        assert self.change.dest is not None
+        source = (
+            self.change.source
+            if self.change.type == ChangeType.created
+            else self.change.dest
+        )
+        full_path = source / self.change.path
+        try:
+            yield from full_path.lines
+        except UnicodeDecodeError:
+            pass
 
 
 @dataclass
@@ -124,7 +134,7 @@ class PrintStructure:
     show_diff: bool = False
 
     @classmethod
-    def from_changes(cls, changes: list[Change]):
+    def from_changes(cls, changes: list[Change]) -> PrintStructure:
         print_changes = [
             PrintChange(change.path, change)
             for change in changes[: cls.max_show]
@@ -140,7 +150,7 @@ class PrintStructure:
         for substructure in self.substructures:
             substructure.un_indent()
 
-    def closest_nodes(self):
+    def closest_nodes(self) -> int:
         closest = (
             0
             if self.changes
@@ -148,12 +158,12 @@ class PrintStructure:
         )
         return closest
 
-    def current_level_empty(self):
+    def current_level_empty(self) -> bool:
         return not self.changes and len(self.substructures) == 1
 
     @classmethod
-    def from_print_changes(cls, changes: list[PrintChange]):
-        changes_per_root = {}
+    def from_print_changes(cls, changes: list[PrintChange]) -> PrintStructure:
+        changes_per_root: dict[str, list[PrintChange]] = {}
         for change in changes:
             if change.root not in changes_per_root:
                 changes_per_root[change.root] = []
@@ -161,29 +171,35 @@ class PrintStructure:
 
         substructures = []
         changes = []
-
         for root_name, sub_print_changes in changes_per_root.items():
             if len(sub_print_changes) == 1:
                 changes += sub_print_changes
             else:
-                root_path = Path(root_name)
-                children = [c.child for c in sub_print_changes]
-                sub_structure = PrintStructure.from_print_changes(children)
-
-                if sub_structure.current_level_empty():
-                    if sub_structure.root is None:
-                        sub_structure.root = sub_structure.substructures[0].root
-
-                    root_path /= sub_structure.root.path
-                    sub_structure = sub_structure.substructures[0]
-                    sub_structure.un_indent()
-
-                sub_structure.root = PrintChange(
-                    root_path, None, sub_print_changes[0].indent_count
-                )
+                sub_structure = cls.create_sub_structure(root_name, sub_print_changes)
                 substructures.append(sub_structure)
 
         return PrintStructure(None, changes, substructures)
+
+    @classmethod
+    def create_sub_structure(
+        cls, root_name: str, sub_print_changes: list[PrintChange]
+    ) -> PrintStructure:
+        root_path = Path(root_name)
+        children = [c.child for c in sub_print_changes]
+        sub_structure = PrintStructure.from_print_changes(children)
+
+        if sub_structure.current_level_empty():
+            if sub_structure.root is None:
+                sub_structure.root = sub_structure.substructures[0].root
+            root = cast(PrintChange, sub_structure.root)
+            root_path /= root.path
+            sub_structure = sub_structure.substructures[0]
+            sub_structure.un_indent()
+
+        sub_structure.root = PrintChange(
+            root_path, Change(Path()), sub_print_changes[0].indent_count
+        )
+        return sub_structure
 
     def print(self, show_diff: bool = False) -> None:
         if self.root is not None:
@@ -198,13 +214,13 @@ class PrintStructure:
 @dataclass
 class Changes:
     changes: list[Change] = field(default_factory=list)
-    print_structure: PrintStructure = field(default=None, repr=False)
+    print_structure: PrintStructure = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.changes = sorted(self.changes, key=lambda c: c.sort_index)
         self.print_structure = PrintStructure.from_changes(self.changes)
 
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[Change]:
         yield from self.changes
 
     def __bool__(self) -> bool:
@@ -218,8 +234,8 @@ class Changes:
     def from_patterns(cls, patterns: list[str]) -> Changes:
         return Changes([Change.from_pattern(pattern) for pattern in patterns])
 
-    def print_paths(self, paths, indent: int = 0) -> None:
-        parts_mapper = {}
+    def print_paths(self, paths: list[Path], indent: int = 0) -> None:
+        parts_mapper: dict[str, list[Path]] = {}
         for p in paths:
             parts_mapper[p.parts[0]] = parts_mapper.get(p.parts[0], []) + [
                 p.relative_to(p.parts[0])
@@ -238,8 +254,8 @@ class Changes:
         message = "\n" + message
         return cli.confirm(message, default=True)
 
-    def print(self, title=None, show_diff: bool = False) -> None:
+    def print(self, title: str | None = None, show_diff: bool = False) -> None:
         if title is not None:
             cli.console.clear()
-            cli.console.rule("Backup")
+            cli.console.rule(title)
         self.print_structure.print(show_diff=show_diff)

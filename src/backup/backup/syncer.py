@@ -13,11 +13,11 @@ class Backup(commands.Backup):
     date_start: str = "── ["
     date_end: str = "]  /"
 
-    def tree(self, path=None) -> list[str]:
+    def tree(self, path: Path | None = None) -> list[str]:
         if path is None:
             path = self.dest
         options = "tree", "--all", "--modtime", "--noreport", "--full-path", path
-        with self.prepared_cli_command(options) as command:
+        with self.prepared_command(options) as command:
             return cli.capture_output_lines(command)
 
     def get_dest_info(self) -> Iterator[tuple[Path, datetime]]:
@@ -31,7 +31,7 @@ class Backup(commands.Backup):
                 path = Path(path_str)
                 yield path, date
 
-    def update_dest(self, dest_info) -> None:
+    def update_dest(self, dest_info: Iterator[tuple[Path, datetime]]) -> None:
         dest_files = self.process_dest_info(dest_info)
         self.delete_missing(dest_files)
 
@@ -43,7 +43,9 @@ class Backup(commands.Backup):
                 dest_path = self.dest / path
                 dest_path.unlink()
 
-    def process_dest_info(self, dest_info) -> Iterator[Path]:
+    def process_dest_info(
+        self, dest_info: Iterator[tuple[Path, datetime]]
+    ) -> Iterator[Path]:
         for relative_path, date in dest_info:
             path = self.dest / relative_path
             changed = not path.exists() or not path.has_date(date)

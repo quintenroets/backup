@@ -1,5 +1,7 @@
 import subprocess
+from collections.abc import Iterator
 from dataclasses import dataclass, field
+from typing import cast
 
 from ..models import Path
 from . import syncer
@@ -9,19 +11,17 @@ from . import syncer
 class Backup(syncer.Backup):
     root_paths: list[Path] = field(default_factory=list)
 
-    def push(self, reverse: bool = False) -> subprocess.CompletedProcess:
-        return (
-            self.process_root_dest() if self.dest.is_root() else super().push(reverse)
-        )
+    def push(self, reverse: bool = False) -> subprocess.CompletedProcess[str] | None:  # type: ignore[override]
+        return self.process_root_dest() if self.dest.is_root else super().push(reverse)
 
     def restore_paths(self) -> None:
+        self.paths = cast(list[Path], self.paths)
         # self.paths expected to be unmodified
         self.paths += self.root_paths
 
-    def process_root_dest(self) -> subprocess.CompletedProcess:
+    def process_root_dest(self) -> subprocess.CompletedProcess[str] | None:
         self.process_root_paths()
-        if self.paths:
-            output = super().push()
+        output = super().push() if self.path else None
         self.restore_paths()
         return output
 
@@ -31,11 +31,11 @@ class Backup(syncer.Backup):
         if self.root_paths or not self.paths:
             self.push_root_paths()
 
-    def extract_root_paths(self):
+    def extract_root_paths(self) -> Iterator[Path]:
         self.paths = list(self.paths)
         for path in self.paths:
             dest = self.dest / path
-            if dest.is_root():
+            if dest.is_root:
                 self.paths.remove(path)
                 yield path
 

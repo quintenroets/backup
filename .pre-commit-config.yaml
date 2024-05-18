@@ -5,24 +5,24 @@ repos:
       - id: docformatter
         args: [--in-place, --make-summary-multi-line, --close-quotes-on-newline, --wrap-summaries, "88"]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.4
+    rev: v0.4.4
     hooks:
       - id: ruff
       - id: ruff-format
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: end-of-file-fixer
   - repo: https://github.com/psf/black
-    rev: 24.3.0
+    rev: 24.4.2
     hooks:
       - id: black
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
   - repo: https://github.com/quintenroets/package-dev-tools
-    rev: v0.5.17
+    rev: v0.6.0
     hooks:
       - id: infer-missing-annotations
   - repo: local
@@ -43,15 +43,15 @@ repos:
         always_run: true
         fail_fast: true
   - repo: https://github.com/quintenroets/package-dev-tools
-    rev: v0.5.17
+    rev: v0.6.0
     hooks:
       - id: check-coverage
   - repo: https://github.com/quintenroets/package-dev-tools
-    rev: v0.5.17
+    rev: v0.6.0
     hooks:
       - id: check-shields
   - repo: https://github.com/quintenroets/package-dev-tools
-    rev: v0.5.17
+    rev: v0.6.0
     hooks:
       - id: check-version
 

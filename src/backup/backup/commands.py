@@ -2,10 +2,10 @@ import subprocess
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any
 
 import cli
 from cli.commands.commands import CommandItem
+from cli.commands.runner import Runner
 
 from ..models import Change, Changes, ChangeType, Path
 from ..utils import generate_output_lines
@@ -16,9 +16,9 @@ from . import paths
 class Backup(paths.Rclone):
     def capture_status(self, quiet: bool = False) -> Changes:
         options = "check", "--combined", "-"
-        with self.prepared_command_with_locations(*options, reverse=False) as command:
-            print("prepared")
-            return self.get_changes(*command, quiet=quiet)
+        with self.prepared_runner_with_locations(*options, reverse=False) as runner:
+            runner.quiet = quiet
+            return self.get_changes(runner)
 
     def pull(self) -> subprocess.CompletedProcess[str]:
         return self.push(reverse=True)
@@ -27,35 +27,33 @@ class Backup(paths.Rclone):
         return self.capture_push(reverse=True)
 
     @contextmanager
-    def prepared_push_command(
-        self, reverse: bool = False
-    ) -> Iterator[Iterator[CommandItem]]:
+    def prepared_push_runner(self, reverse: bool = False) -> Iterator[Runner[str]]:
         options = "sync", "--create-empty-src-dirs", "--progress"
-        with self.prepared_command_with_locations(*options, reverse=reverse) as command:
-            yield command
+        with self.prepared_runner_with_locations(*options, reverse=reverse) as runner:
+            yield runner
 
     def push(self, reverse: bool = False) -> subprocess.CompletedProcess[str]:
-        with self.prepared_push_command(reverse=reverse) as command:
-            return cli.run(*command)
+        with self.prepared_push_runner(reverse=reverse) as runner:
+            return runner.run()
 
     def capture_push(self, reverse: bool = False) -> str:
-        with self.prepared_push_command(reverse=reverse) as command:
-            return cli.capture_output(*command)
+        with self.prepared_push_runner(reverse=reverse) as runner:
+            return runner.capture_output()
 
     @contextmanager
-    def prepared_command_with_locations(
-        self, action: str, *args: CommandItem, reverse: bool = False, **kwargs: Any
-    ) -> Iterator[Iterator[CommandItem]]:
+    def prepared_runner_with_locations(
+        self, action: str, *args: CommandItem, reverse: bool = False
+    ) -> Iterator[Runner[str]]:
         if reverse:
             source, dest = self.dest, self.source
         else:
             source, dest = self.source, self.dest
         args = action, source, dest, *args
-        with super().prepared_command(*args, **kwargs) as command:
-            yield command
+        with super().prepared_runner(*args) as runner:
+            yield runner
 
-    def get_changes(self, *args: Any, **kwargs: Any) -> Changes:
-        change_results = self.generate_change_results(*args, **kwargs)
+    def get_changes(self, runner: Runner[str]) -> Changes:
+        change_results = self.generate_change_results(runner)
         changes = self.extract_changes(change_results)
         return Changes(list(changes))
 
@@ -84,11 +82,9 @@ class Backup(paths.Rclone):
         backup = Backup(source=self.source, dest=self.dest, paths=no_change_paths)
         backup.push()
 
-    def generate_change_results(
-        self, *args: CommandItem, quiet: bool = False, **kwargs: Any
-    ) -> Iterator[Change]:
-        status_lines: Iterable[str] = generate_output_lines(*args, **kwargs)
-        if not quiet:
+    def generate_change_results(self, runner: Runner[str]) -> Iterator[Change]:
+        status_lines: Iterable[str] = generate_output_lines(runner)
+        if not runner.quiet:
             status_lines = cli.track_progress(
                 status_lines,
                 description="Checking",

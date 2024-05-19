@@ -53,10 +53,6 @@ class Backup(syncer.Backup):
 
     def push_root_paths_with_intermediate(self, temp_dest: Path) -> None:
         paths = self.root_paths
-        (syncer.Backup(source=self.source, dest=temp_dest, paths=paths).push(),)
+        syncer.Backup(source=self.source, dest=temp_dest, paths=paths).push()
         # need local source and dest for root operation
-        (
-            syncer.Backup(
-                source=temp_dest, dest=self.dest, root=True, paths=paths
-            ).push(),
-        )
+        syncer.Backup(source=temp_dest, dest=self.dest, root=True, paths=paths).push()

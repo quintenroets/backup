@@ -3,8 +3,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
-import cli
 from cli.commands.commands import CommandItem
+from cli.commands.runner import Runner
 
 from ..context import context
 from ..models import Path
@@ -23,20 +23,21 @@ class Rclone:
         setup.check_setup()
 
     def capture_output(self, *args: CommandItem) -> str:
-        with self.prepared_command(*args) as command:
-            return cli.capture_output(*command)
+        with self.prepared_runner(*args) as runner:
+            return runner.capture_output()
 
     def run(self, *args: CommandItem) -> subprocess.CompletedProcess[str]:
-        with self.prepared_command(*args) as command:
-            env = {"RCLONE_CONFIG_PASS": context.secrets.rclone}
-            return cli.run(*command, env=env)
+        with self.prepared_runner(*args) as runner:
+            return runner.run()
 
     @contextmanager
-    def prepared_command(self, *args: CommandItem) -> Iterator[Iterator[CommandItem]]:
+    def prepared_runner(self, *args: CommandItem) -> Iterator[Runner[str]]:
         filters_path = self.create_filters_path()
         command = self.generate_cli_command_parts(*args, filters_path=filters_path)
+        env = {"RCLONE_CONFIG_PASS": context.secrets.rclone}
+        kwargs = {"env": env}
         with filters_path:
-            yield command
+            yield Runner(tuple(command), root=self.root, kwargs=kwargs)
 
     def generate_cli_command_parts(
         self, *args: CommandItem, filters_path: Path

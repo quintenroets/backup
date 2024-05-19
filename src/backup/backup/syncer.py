@@ -2,8 +2,6 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import datetime
 
-import cli
-
 from ..models import Path
 from . import commands
 
@@ -17,8 +15,9 @@ class Backup(commands.Backup):
         if path is None:
             path = self.dest
         options = "tree", "--all", "--modtime", "--noreport", "--full-path", path
-        with self.prepared_command(options) as command:
-            return cli.capture_output_lines(*command)
+        with self.prepared_runner(options) as runner:
+            output = runner.capture_output()
+        return [line for line in output.splitlines() if line]
 
     def get_dest_info(self) -> Iterator[tuple[Path, datetime]]:
         tree = self.tree()

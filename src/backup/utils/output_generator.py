@@ -1,15 +1,15 @@
 import select
 import subprocess
 from collections.abc import Iterator
-from typing import Any
 
 import cli
-from cli.commands.commands import CommandItem
+from cli.commands.runner import Runner
 
 
-def generate_output_lines(*args: CommandItem, **kwargs: Any) -> Iterator[str]:
-    pipe = subprocess.PIPE
-    process = cli.launch(*args, stdout=pipe, stderr=pipe, wait=False, **kwargs)
+def generate_output_lines(runner: Runner[str]) -> Iterator[str]:
+    runner.stdout = subprocess.PIPE
+    runner.stderr = subprocess.PIPE
+    process = runner.launch()
     extracted_outputs = extract_output_lines(process)
     error_lines = []
     output_generated = False

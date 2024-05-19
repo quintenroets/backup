@@ -31,4 +31,4 @@ class Options:
     diff_all: Annotated[bool, typer.Option(help=Help.diff_all)] = False
     export_resume_changes: bool = False
     no_sync: Annotated[bool, typer.Option(help=Help.no_sync)] = False
-    config_path: Path = Path.config
+    config_path: Path = Path.rclone_command_config

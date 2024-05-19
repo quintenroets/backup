@@ -7,6 +7,7 @@ from typing import Any
 
 import cli
 
+from ...context import context
 from ...models import Changes, Path
 from ...utils import parser
 from ..backup import backup
@@ -19,23 +20,24 @@ class Backup(raw.Backup):
     quiet: bool = True
     visited: set[Path] = field(default_factory=set)
     include_browser: bool = True
-    entry_count: int = 0
+    number_of_entries: int = 0
 
     def status(self) -> Changes:
-        self.paths = self.get_changed_paths()
+        self.paths = list(self.generate_changed_paths())
         return super().capture_status() if self.paths else Changes([])
 
-    def get_changed_paths(self) -> list[Path]:
-        paths = self.generate_changed_paths()
-        return list(paths)
-
     def generate_changed_paths(self) -> Iterator[Path]:
-        generated_entries: Iterable[Entry] = self.generate_entries()
-        total = int(Path.number_of_paths.text or 0)
-        generated_entries = cli.track_progress(
-            generated_entries, description="Checking", unit="Files", total=total
+        entries: Iterable[Entry] = self.generate_entries()
+        total = context.storage.number_of_paths
+        entries = cli.track_progress(
+            entries,
+            description="Checking",
+            unit="Files",
+            total=total,
+            cleanup_after_finish=True,
         )
-        path_entries = set(generated_entries)
+
+        path_entries = set(entries)
         for entry in path_entries:
             if entry.is_changed():
                 yield from entry.get_paths()
@@ -43,8 +45,8 @@ class Backup(raw.Backup):
     def generate_entries(self) -> Iterator[Entry]:
         for path in self.generate_path_entries():
             yield path
-            self.entry_count += 1
-        Path.number_of_paths.text = self.entry_count
+            self.number_of_entries += 1
+        context.storage.number_of_paths = self.number_of_entries
 
     def generate_path_entries(self) -> Iterator[Entry]:
         yield from self.generate_source_entries()

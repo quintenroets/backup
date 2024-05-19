@@ -11,6 +11,13 @@ from . import syncer
 class Backup(syncer.Backup):
     root_paths: list[Path] = field(default_factory=list)
 
+    def __post_init__(self) -> None:
+        if self.sub_check_path is not None:
+            if self.sub_check_path.is_relative_to(self.source):
+                self.sub_check_path = self.sub_check_path.relative_to(self.source)
+            self.source /= self.sub_check_path
+            self.dest /= self.sub_check_path
+
     def push(self, reverse: bool = False) -> subprocess.CompletedProcess[str] | None:  # type: ignore[override]
         return self.process_root_dest() if self.dest.is_root else super().push(reverse)
 

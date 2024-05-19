@@ -15,19 +15,20 @@ class Entry(entry.Entry):
         return super().exclude() or self.only_volatile_content_changed()
 
     def only_volatile_content_changed(self) -> bool:
-        if self.check_key in Checker.checkers:
-            checker = Checker.checkers[self.check_key]
-            source_hash = checker.calculate_relevant_hash(self.source)
-            dest_hash = checker.calculate_relevant_hash(self.dest)
-            only_volatile_content_changed = source_hash == dest_hash
-        else:
-            only_volatile_content_changed = False
-
+        only_volatile_content_changed = (
+            self.check_key in Checker.checkers and self.relevant_content_unchanged()
+        )
         if only_volatile_content_changed:
             self.update_cached_dest()
         elif self.source.hash_path.exists():
             self.hash_path = self.source.hash_path.relative_to(Backup.source)
         return only_volatile_content_changed
+
+    def relevant_content_unchanged(self) -> bool:
+        checker = Checker.checkers[self.check_key]
+        source_hash = checker.calculate_relevant_hash(self.source)
+        dest_hash = checker.calculate_relevant_hash(self.dest)
+        return source_hash == dest_hash
 
     def update_cached_dest(self) -> None:
         no_original_mtime_present = (

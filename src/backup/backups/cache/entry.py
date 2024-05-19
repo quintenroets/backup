@@ -47,8 +47,8 @@ class Entry:
 
     def exclude(self) -> bool:
         return (
-            typing.cast(bool, self.existing.tag)
-            or (not self.include_browser and self.is_browser_config())
+            (not self.include_browser and self.is_browser_config())
+            or typing.cast(bool, self.existing.tag)
             or (
                 self.existing.size > self.max_backup_size
                 and self.relative.suffix != ".zip"

@@ -9,23 +9,28 @@ from cli.commands.commands import CommandItem
 
 def generate_output_lines(*args: CommandItem, **kwargs: Any) -> Iterator[str]:
     pipe = subprocess.PIPE
-    process = cli.run(*args, stdout=pipe, stderr=pipe, wait=False, **kwargs)
-
-    output_generated = False
-    outputs = [process.stdout, process.stderr]
+    process = cli.launch(*args, stdout=pipe, stderr=pipe, wait=False, **kwargs)
+    extracted_outputs = extract_output_lines(process)
     error_lines = []
-    while outputs:
-        readable_outputs, _, _ = select.select(outputs, [], [])
-        for output in readable_outputs:
-            line = output.readline()
-            if not line:
-                outputs.remove(output)
-            elif output is process.stdout:
-                output_generated = True
-                yield line.strip()
-            elif not output_generated:
-                error_lines.append(line.strip())
-
+    output_generated = False
+    for line, is_stdout in extracted_outputs:
+        if is_stdout:
+            output_generated = True
+            yield line
+        else:
+            error_lines.append(line)
     if not output_generated and error_lines:
         message = "\n".join(error_lines)
         raise cli.CalledProcessError(message)
+
+
+def extract_output_lines(process: subprocess.Popen[str]) -> Iterator[tuple[str, bool]]:
+    outputs = [process.stdout, process.stderr]
+    while outputs:
+        readable_outputs, _, _ = select.select(outputs, [], [])
+        for output in readable_outputs:
+            line = output.readline().strip()
+            if line:
+                yield line, output is process.stdout
+            else:
+                outputs.remove(output)

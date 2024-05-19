@@ -81,7 +81,7 @@ class Backup(paths.Rclone):
                     dest.tag = str(dest.mtime)  # save original mtime for remote syncing
 
         backup = Backup(source=self.source, dest=self.dest, paths=no_change_paths)
-        backup.capture_push()
+        backup.push()
 
     def generate_change_results(
         self, *args: CommandItem, quiet: bool = False, **kwargs: Any

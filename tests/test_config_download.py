@@ -44,7 +44,7 @@ def restore_rclone_config_path(
 
 
 def test_config_download(restore_config_path: None) -> None:
-    Path.config.rmtree()
+    Path.config.rmtree(missing_ok=True)
     cache.Backup.check_config_path()
     assert Path.config.exists()
 

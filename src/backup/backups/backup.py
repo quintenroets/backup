@@ -15,7 +15,6 @@ from . import cache, profile
 @dataclass
 class Backup(backup.Backup):
     quiet_cache: bool = False
-    sync_remote: bool = True
     reverse: bool = False
     include_browser: bool = False
     confirm: bool = True
@@ -28,7 +27,6 @@ class Backup(backup.Backup):
             case Action.push:
                 self.run_push()
             case Action.pull:
-                self.sync_remote = not context.options.no_sync
                 self.run_pull()
             case Action.diff:
                 self.diff()
@@ -44,7 +42,7 @@ class Backup(backup.Backup):
     def run_push(self) -> None:
         any_include = any(rule.startswith("+") for rule in self.filter_rules)
         if not self.paths and not any_include:
-            self.paths = self.get_changed_paths()
+            self.paths = self.check_changed_paths()
         if self.paths:
             self.start_push()
 
@@ -58,7 +56,7 @@ class Backup(backup.Backup):
             path=self.path, paths=self.paths, sub_check_path=self.sub_check_path
         ).push()
 
-    def get_changed_paths(self) -> list[Path]:
+    def check_changed_paths(self) -> list[Path]:
         changes: Changes = self.cache_status()
         if changes and self.confirm and sys.stdin.isatty():
             if not self.ask_confirm(changes):
@@ -74,7 +72,7 @@ class Backup(backup.Backup):
 
     def cache_status(self) -> Changes:
         if profile.Backup.source.is_relative_to(self.source):
-            profile.Backup().push()
+            profile.Backup().capture_push()
         cache_backup = cache.Backup(
             quiet=self.quiet_cache,
             reverse=self.reverse,
@@ -84,7 +82,7 @@ class Backup(backup.Backup):
         return cache_backup.status()
 
     def run_pull(self) -> subprocess.CompletedProcess[str] | None:
-        if self.sync_remote:
+        if not context.options.no_sync:
             self.start_remote_sync()
         output = self.start_pull()
         if self.paths:

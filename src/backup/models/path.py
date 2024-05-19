@@ -116,6 +116,12 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
+    def rclone_command_config(cls: type[T]) -> T:
+        path = cls.config / "rclone_commands.yaml"
+        return cast(T, path)
+
+    @classmethod
+    @classproperty
     def ignore_names(cls: type[T]) -> T:
         path = cls.config / "ignore_names.yaml"
         return cast(T, path)

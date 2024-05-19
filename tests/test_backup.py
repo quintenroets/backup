@@ -26,13 +26,9 @@ def fill_folders(folder: Path, folder2: Path, content: bytes, content2: bytes) -
     fill(folder2, content, number=3)
 
 
-# @slow_test_settings
-# @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
-def test_status(
-    folder: Path, folder2: Path
-) -> None:  # , content: bytes, content2: bytes) -> None:
-    content = b""
-    content2 = b"a"
+@slow_test_settings
+@given(content=strategies.binary(), content2=strategies.binary(min_size=1))
+def test_status(folder: Path, folder2: Path, content: bytes, content2: bytes) -> None:
     fill_folders(folder, folder2, content, content2)
     backup = Backup(folder, folder2)
     status = backup.capture_status(quiet=True)

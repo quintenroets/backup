@@ -13,7 +13,7 @@ def export_changes() -> bool:
 
 def export_resume() -> bool:
     for path in Path.resume.rglob("*.docx"):
-        if path.export.mtime < path.mtime:
+        if path.with_export_suffix.mtime < path.mtime:
             message_path = path.relative_to(Path.resume)
             with cli.status(f"Exporting {message_path}"):
                 export_path(path)

@@ -11,4 +11,4 @@ class Backup(backup.Backup):
         with self.prepared_command_with_locations(
             "copy", "--drive-export-formats", "pdf", reverse=True
         ) as command:
-            return cli.capture_output(command)
+            return cli.capture_output(*command)

@@ -28,7 +28,7 @@ class Backup(paths.Rclone):
     @contextmanager
     def prepared_push_command(
         self, reverse: bool = False
-    ) -> Iterator[list[CommandItem]]:
+    ) -> Iterator[Iterator[CommandItem]]:
         options = "sync", "--create-empty-src-dirs", "--progress"
         with self.prepared_command_with_locations(*options, reverse=reverse) as command:
             yield command
@@ -44,7 +44,7 @@ class Backup(paths.Rclone):
     @contextmanager
     def prepared_command_with_locations(
         self, action: str, *args: CommandItem, reverse: bool = True, **kwargs: Any
-    ) -> Iterator[list[CommandItem]]:
+    ) -> Iterator[Iterator[CommandItem]]:
         if reverse:
             source, dest = self.dest, self.source
         else:

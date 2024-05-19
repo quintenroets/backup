@@ -18,7 +18,7 @@ class Backup(commands.Backup):
             path = self.dest
         options = "tree", "--all", "--modtime", "--noreport", "--full-path", path
         with self.prepared_command(options) as command:
-            return cli.capture_output_lines(command)
+            return cli.capture_output_lines(*command)
 
     def get_dest_info(self) -> Iterator[tuple[Path, datetime]]:
         tree = self.tree()

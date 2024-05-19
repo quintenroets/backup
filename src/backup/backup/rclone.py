@@ -24,19 +24,19 @@ class Rclone:
 
     def capture_output(self, *args: CommandItem) -> str:
         with self.prepared_command(*args) as command:
-            return cli.capture_output(command)
+            return cli.capture_output(*command)
 
     def run(self, *args: CommandItem) -> subprocess.CompletedProcess[str]:
         with self.prepared_command(*args) as command:
             env = {"RCLONE_CONFIG_PASS": context.secrets.rclone}
-            return cli.run(command, env=env)
+            return cli.run(*command, env=env)
 
     @contextmanager
-    def prepared_command(self, *args: CommandItem) -> Iterator[list[CommandItem]]:
+    def prepared_command(self, *args: CommandItem) -> Iterator[Iterator[CommandItem]]:
         filters_path = self.create_filters_path()
         command = self.generate_cli_command_parts(*args, filters_path=filters_path)
         with filters_path:
-            yield list(command)
+            yield command
 
     def generate_cli_command_parts(
         self, *args: CommandItem, filters_path: Path

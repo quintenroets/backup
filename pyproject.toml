@@ -18,8 +18,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = [
-    "dirhash >=0.2.1, <1",
+dev = [
+    "package-dev-tools >=0.6.0, <1",
     "hypothesis >=6.97.1, <7",
 ]
 

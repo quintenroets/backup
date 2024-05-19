@@ -16,7 +16,8 @@ from . import paths
 class Backup(paths.Rclone):
     def capture_status(self, quiet: bool = False) -> Changes:
         options = "check", "--combined", "-"
-        with self.prepared_command_with_locations(*options) as command:
+        with self.prepared_command_with_locations(*options, reverse=False) as command:
+            print("prepared")
             return self.get_changes(*command, quiet=quiet)
 
     def pull(self) -> subprocess.CompletedProcess[str]:
@@ -43,7 +44,7 @@ class Backup(paths.Rclone):
 
     @contextmanager
     def prepared_command_with_locations(
-        self, action: str, *args: CommandItem, reverse: bool = True, **kwargs: Any
+        self, action: str, *args: CommandItem, reverse: bool = False, **kwargs: Any
     ) -> Iterator[Iterator[CommandItem]]:
         if reverse:
             source, dest = self.dest, self.source

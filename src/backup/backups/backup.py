@@ -75,7 +75,6 @@ class Backup(backup.Backup):
             profile.Backup().capture_push()
         cache_backup = cache.Backup(
             quiet=self.quiet_cache,
-            reverse=self.reverse,
             include_browser=self.include_browser,
             sub_check_path=self.sub_check_path,
         )

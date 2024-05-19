@@ -55,21 +55,20 @@ class Backup(raw.Backup):
     def generate_source_entries(self) -> Iterator[Entry]:
         rules = self.entry_rules()
         for rule in rules:
-            path = self.original_source / rule.path
+            path = self.source / rule.path
             if rule.include:
                 for source_path in path.find(exclude=self.exclude_root):
                     yield self.create_entry(source=source_path)
             self.visited.add(path)
 
     def generate_dest_entries(self) -> Iterator[Entry]:
-        dest = self.source if self.reverse else self.dest
-        for dest_path in dest.rglob("*"):
+        for dest_path in self.dest.rglob("*"):
             yield self.create_entry(dest=dest_path)
 
     def create_entry(self, **kwargs: Any) -> Entry:
-        source = self.dest if self.reverse else self.source
-        dest = self.source if self.reverse else self.dest
-        return Entry(source, dest, include_browser=self.include_browser, **kwargs)
+        return Entry(
+            self.source, self.dest, include_browser=self.include_browser, **kwargs
+        )
 
     def entry_rules(self) -> Iterator[parser.PathRule]:
         any_include = False
@@ -89,7 +88,7 @@ class Backup(raw.Backup):
             self.include_dict, Path.paths_exclude.yaml, root=config_root
         )
         if self.sub_check_path is not None:
-            relative_source = self.original_source.relative_to(config_root)
+            relative_source = self.source.relative_to(config_root)
             for rule in rules:
                 if rule.path.is_relative_to(relative_source):
                     rule.path = rule.path.relative_to(relative_source)

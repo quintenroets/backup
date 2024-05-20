@@ -1,9 +1,11 @@
+import os
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
 
 import cli
 
+from ....context import context
 from ....models import Path
 
 
@@ -107,7 +109,8 @@ class KwalletChecker(RetrievedContentChecker):
 
 class RcloneChecker(RetrievedContentChecker):
     def retrieve_content(self) -> Iterator[str]:
-        lines = cli.capture_output_lines("rclone config show")
+        env = os.environ | {"RCLONE_CONFIG_PASS": context.secrets.rclone}
+        lines = cli.capture_output_lines("rclone config show", env=env)
         for line in lines:
             if "refresh_token" not in line:
                 yield line

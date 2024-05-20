@@ -43,6 +43,8 @@ class Rclone:
     def generate_cli_command_parts(
         self, *args: CommandItem, filters_path: Path
     ) -> Iterator[CommandItem]:
+        if self.root:
+            yield "-E"
         yield from ("rclone", *args, "--filter-from", filters_path)
         yield from self.options
         yield from self.generate_options()

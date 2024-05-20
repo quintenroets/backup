@@ -19,7 +19,6 @@ from .detailed_entry import Entry
 class Backup(raw.Backup):
     quiet: bool = True
     visited: set[Path] = field(default_factory=set)
-    include_browser: bool = True
     number_of_entries: int = 0
 
     def status(self) -> Changes:
@@ -66,9 +65,7 @@ class Backup(raw.Backup):
             yield self.create_entry(dest=dest_path)
 
     def create_entry(self, **kwargs: Any) -> Entry:
-        return Entry(
-            self.source, self.dest, include_browser=self.include_browser, **kwargs
-        )
+        return Entry(self.source, self.dest, **kwargs)
 
     def entry_rules(self) -> Iterator[parser.PathRule]:
         any_include = False
@@ -115,8 +112,8 @@ class Backup(raw.Backup):
     @cached_property
     def ignore_patterns(self) -> list[str]:
         ignore_patterns = typing.cast(list[str], Path.ignore_patterns.yaml)
-        if not self.include_browser:
-            ignore_patterns.append(Entry.browser_pattern)
+        if not context.options.include_browser:
+            ignore_patterns.append(context.config.browser_pattern)
         return ignore_patterns
 
     @cached_property
@@ -126,7 +123,7 @@ class Backup(raw.Backup):
     @cached_property
     def include_dict(self) -> list[str | dict[str, Any]]:
         includes = Path.paths_include.yaml
-        if not self.include_browser:
+        if not context.options.include_browser:
             self.remove_browser(includes)
         return typing.cast(list[str | dict[str, Any]], includes)
 
@@ -135,5 +132,5 @@ class Backup(raw.Backup):
             if isinstance(include, dict):
                 key, value = next(iter(include.items()))
                 self.remove_browser(value)
-                if Entry.browser_name in key:
+                if context.config.browser_name in key:
                     includes.remove(include)

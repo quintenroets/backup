@@ -18,41 +18,46 @@ class Backup(syncer.Backup):
             self.source /= self.sub_check_path
             self.dest /= self.sub_check_path
 
-    def push(self, reverse: bool = False) -> subprocess.CompletedProcess[str] | None:  # type: ignore[override]
-        return self.process_root_dest() if self.dest.is_root else super().push(reverse)
+    def push(self, reverse: bool = False) -> subprocess.CompletedProcess[str]:
+        dest = self.source if reverse else self.dest
+        return (
+            self.process_root_dest(reverse) if dest.is_root else super().push(reverse)
+        )
 
     def restore_paths(self) -> None:
         self.paths = cast(list[Path], self.paths)
         # self.paths expected to be unmodified
         self.paths += self.root_paths
 
-    def process_root_dest(self) -> subprocess.CompletedProcess[str] | None:
-        self.process_root_paths()
-        output = super().push() if self.path else None
+    def process_root_dest(self, reverse: bool) -> subprocess.CompletedProcess[str]:
+        root_output = self.process_root_paths(reverse)
+        output = (
+            super().push()
+            if self.paths
+            else cast(subprocess.CompletedProcess[str], root_output)
+        )
         self.restore_paths()
         return output
 
-    def process_root_paths(self) -> None:
-        root_paths = self.extract_root_paths()
+    def process_root_paths(
+        self, reverse: bool
+    ) -> subprocess.CompletedProcess[str] | None:
+        root_paths = self.extract_root_paths(reverse)
         self.root_paths = list(root_paths)
         if self.root_paths or not self.paths:
-            self.push_root_paths()
+            backup = syncer.Backup(
+                source=self.source, dest=self.dest, root=True, paths=self.root_paths
+            )
+            result = backup.push(reverse=reverse)
+        else:
+            result = None
+        return result
 
-    def extract_root_paths(self) -> Iterator[Path]:
+    def extract_root_paths(self, reverse: bool) -> Iterator[Path]:
+        self_dest = self.source if reverse else self.dest
         self.paths = list(self.paths)
         for path in self.paths:
-            dest = self.dest / path
+            dest = self_dest / path
             if dest.is_root:
                 self.paths.remove(path)
                 yield path
-
-    def push_root_paths(self) -> None:
-        with Path.tempfile() as temp_dest:
-            temp_dest.unlink()
-            self.push_root_paths_with_intermediate(temp_dest)
-
-    def push_root_paths_with_intermediate(self, temp_dest: Path) -> None:
-        paths = self.root_paths
-        syncer.Backup(source=self.source, dest=temp_dest, paths=paths).push()
-        # need local source and dest for root operation
-        syncer.Backup(source=temp_dest, dest=self.dest, root=True, paths=paths).push()

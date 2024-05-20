@@ -3,6 +3,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import ClassVar
 
+from ...context import context
 from ...models import Path
 from .raw import Backup
 
@@ -16,14 +17,9 @@ class Entry:
     relative: Path = field(init=False)
     dest: Path = None  # type: ignore
     changed: bool | None = None
-    include_browser: bool | None = None
-    max_backup_size: int = int(50e6)
-    browser_name: ClassVar[str] = "chromium"
-    browser_folder: ClassVar[Path] = Path(".config") / browser_name
-    browser_pattern: ClassVar[str] = f"{browser_folder}/**/*"
-    relative_browser_path: ClassVar[Path] = (Path.HOME / browser_folder).relative_to(
-        Backup.source
-    )
+    relative_browser_path: ClassVar[Path] = (
+        Path.HOME / context.config.browser_folder
+    ).relative_to(Backup.source)
 
     def __post_init__(self) -> None:
         if self.source is None:
@@ -47,10 +43,10 @@ class Entry:
 
     def exclude(self) -> bool:
         return (
-            (not self.include_browser and self.is_browser_config())
+            (not context.options.include_browser and self.is_browser_config())
             or typing.cast(bool, self.existing.tag)
             or (
-                self.existing.size > self.max_backup_size
+                self.existing.size > context.config.max_backup_size
                 and self.relative.suffix != ".zip"
             )
             or self.relative.suffix == ".part"

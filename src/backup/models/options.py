@@ -11,6 +11,7 @@ from .path import Path
 class Help:
     action: str = "The action to do"
     configure: str = "Open configuration"
+    confirm_push: str = "Ask confirmation before pushing"
     sub_check: str = "only check subpath of current working directory"
     include_browser: str = "Include browser config files"
     diff_all: str = "diff all files"
@@ -25,6 +26,7 @@ class Options:
         default_factory=list
     )
     configure: Annotated[bool, typer.Option(help=Help.configure)] = False
+    confirm_push: Annotated[bool, typer.Option(help=Help.configure)] = True
     sub_check: Annotated[bool, typer.Option(help=Help.sub_check)] = False
     include_browser: Annotated[bool, typer.Option(help=Help.include_browser)] = False
     show_file_diffs: bool = False

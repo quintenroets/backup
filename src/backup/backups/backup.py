@@ -1,6 +1,6 @@
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import cli
 
@@ -16,9 +16,7 @@ from . import cache, profile
 class Backup(backup.Backup):
     quiet_cache: bool = False
     reverse: bool = False
-    include_browser: bool = False
-    confirm: bool = True
-    show_diff: bool = False
+    confirm: bool = field(default_factory=lambda: context.options.confirm_push)
 
     def run_action(self, action: Action) -> None:
         match action:
@@ -39,12 +37,12 @@ class Backup(backup.Backup):
             status.print()
         return status
 
-    def run_push(self) -> None:
+    def run_push(self, reverse: bool = False) -> None:
         any_include = any(rule.startswith("+") for rule in self.filter_rules)
         if not self.paths and not any_include:
             self.paths = self.check_changed_paths()
         if self.paths:
-            self.start_push()
+            self.start_push(reverse=reverse)
 
     def start_push(
         self, reverse: bool = False
@@ -58,15 +56,17 @@ class Backup(backup.Backup):
 
     def check_changed_paths(self) -> list[Path]:
         changes: Changes = self.cache_status()
-        if changes and self.confirm and sys.stdin.isatty():
+        if changes and context.options.confirm_push and sys.stdin.isatty():
             if not self.ask_confirm(changes):
                 changes.changes = []
         return changes.paths
 
     def ask_confirm(self, changes: Changes) -> bool:
         message = "Pull?" if self.reverse else "Push?"
-        response = changes.ask_confirm(message, show_diff=self.show_diff)
-        if not response and not self.show_diff:
+        response = changes.ask_confirm(
+            message, show_diff=context.options.show_file_diffs
+        )
+        if not response and not context.options.show_file_diffs:
             response = changes.ask_confirm(message, show_diff=True)
         return response
 
@@ -74,22 +74,16 @@ class Backup(backup.Backup):
         if profile.Backup.source.is_relative_to(self.source):
             profile.Backup().capture_push()
         cache_backup = cache.Backup(
-            quiet=self.quiet_cache,
-            include_browser=self.include_browser,
-            sub_check_path=self.sub_check_path,
+            quiet=self.quiet_cache, sub_check_path=self.sub_check_path
         )
         return cache_backup.status()
 
-    def run_pull(self) -> subprocess.CompletedProcess[str] | None:
+    def run_pull(self) -> None:
         if not context.options.no_sync:
             self.start_remote_sync()
-        output = self.start_pull()
+        self.run_push(reverse=True)
         if self.paths:
             self.after_pull()
-        return output
-
-    def start_pull(self) -> subprocess.CompletedProcess[str] | None:
-        return self.start_push(reverse=True)
 
     def after_pull(self) -> None:
         if self.contains_change(Path.resume):
@@ -121,8 +115,8 @@ class Backup(backup.Backup):
     def run_remote_sync(self) -> None:
         if not self.filter_rules:
             self.create_filters()
-        if not self.include_browser:
-            self.filter_rules.append(f"- {cache.Entry.browser_pattern}")
+        if not context.options.include_browser:
+            self.filter_rules.append(f"- {context.config.browser_pattern}")
         info = self.get_dest_info()
         cache_backup = cache.Backup(
             sub_check_path=self.sub_check_path, filter_rules=self.filter_rules

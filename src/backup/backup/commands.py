@@ -9,6 +9,7 @@ from cli.commands.runner import Runner
 
 from ..models import Change, Changes, ChangeType, Path
 from ..utils import generate_output_lines
+from ..utils.error_handling import create_malformed_filters_error
 from . import paths
 
 
@@ -18,7 +19,10 @@ class Backup(paths.Rclone):
         options = "check", "--combined", "-"
         with self.prepared_runner_with_locations(*options, reverse=False) as runner:
             runner.quiet = quiet
-            return self.get_changes(runner)
+            try:
+                return self.get_changes(runner)
+            except cli.CalledProcessError:
+                raise create_malformed_filters_error(self.filter_rules)
 
     def pull(self) -> subprocess.CompletedProcess[str]:
         return self.push(reverse=True)

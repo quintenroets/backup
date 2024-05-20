@@ -17,7 +17,7 @@ def fill_root(folder: Path, content: bytes, number: int = 0) -> None:
 
 @pytest.fixture()
 def root_folder(folder2: Path) -> Iterator[Path]:
-    folder2.unlink()
+    folder2.rmdir()
     cli.run("sudo mkdir", folder2)
     yield folder2
     cli.run("sudo rm -r", folder2)

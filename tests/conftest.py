@@ -2,6 +2,7 @@ from collections.abc import Iterator
 
 import pytest
 from backup.models import Path
+from backup.utils.setup import check_setup
 from superpathlib.encryption import EncryptedPath
 
 
@@ -42,3 +43,8 @@ def encryption_path(path: Path) -> Iterator[EncryptedPath]:
     with path.encrypted as encryption_path:
         yield encryption_path
     assert not encryption_path.exists()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def setup_rclone() -> None:
+    check_setup()

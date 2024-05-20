@@ -40,7 +40,7 @@ class PrintChange:
     def print(self, show_diff: bool = False) -> None:
         whitespace = self.indent * self.indent_count
         symbol = self.change.type.symbol if self.change else "\u2022"
-        color = self.change.type.color if self.change else "black"
+        color = self.change.type.color if self.change.path.parts else "black"
 
         root = Path("/")
         relative_home = Path.HOME.relative_to(root)
@@ -68,7 +68,7 @@ class PrintChange:
             lines.append(formatted_message)
         message = "\n".join(lines)
         cli.console.print(message)
-        if show_diff and self.change:
+        if show_diff and self.change.path.parts:
             self.print_diff()
 
     def print_diff(self) -> None:

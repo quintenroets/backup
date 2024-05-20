@@ -1,4 +1,3 @@
-import os
 from collections.abc import Iterator
 
 import cli
@@ -18,10 +17,10 @@ def fill_root(folder: Path, content: bytes, number: int = 0) -> None:
 
 @pytest.fixture()
 def root_folder(folder2: Path) -> Iterator[Path]:
-    cli.run("sudo chown root:root", folder2)
+    folder2.unlink()
+    cli.run("sudo mkdir", folder2)
     yield folder2
-    user = os.getlogin()
-    cli.run(f"sudo chown {user}:{user}", folder2)
+    cli.run("sudo rm -r", folder2)
 
 
 @slow_test_settings

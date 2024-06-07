@@ -14,7 +14,7 @@ class Backup(commands.Backup):
     def tree(self, path: Path | None = None) -> list[str]:
         if path is None:
             path = self.dest
-        options = "tree", "--all", "--modtime", "--noreport", "--full-path", path
+        options = "lsl", path
         with self.prepared_runner(options) as runner:
             output = runner.capture_output()
         return [line for line in output.splitlines() if line]
@@ -22,13 +22,12 @@ class Backup(commands.Backup):
     def get_dest_info(self) -> Iterator[tuple[Path, datetime]]:
         tree = self.tree()
         for line in tree:
-            contains_date = self.date_start in line
-            if contains_date:
-                info = line.split(self.date_start)[1]
-                date_str, path_str = info.split(self.date_end)
-                date = datetime.strptime(date_str, "%b %d %H:%M")
-                path = Path(path_str)
-                yield path, date
+            parts = line.split()
+            date_str = " ".join(parts[1:3]).split(".")[0]
+            path_str = " ".join(parts[4:])
+            date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+            path = Path(path_str)
+            yield path, date
 
     def update_dest(self, dest_info: Iterator[tuple[Path, datetime]]) -> None:
         dest_files = self.process_dest_info(dest_info)

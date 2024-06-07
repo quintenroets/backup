@@ -51,7 +51,8 @@ def setup_rclone() -> None:
 
 
 @pytest.fixture(scope="session")
-def context() -> Context:
+def context(directory: Path) -> Context:
+    Path.profiles = directory  # type: ignore
     return context_
 
 

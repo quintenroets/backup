@@ -7,7 +7,7 @@ from ..models import Path
 from . import rclone
 
 
-def calculate_sub_check_path() -> Path | None:
+def calculate_sub_check_path() -> Path | None:  # pragma: no cover
     if context.options.export_resume_changes:
         sub_check_path = Path.resume
     elif context.options.sub_check:

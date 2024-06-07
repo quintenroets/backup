@@ -2,6 +2,8 @@ from collections.abc import Iterator
 
 import pytest
 from backup.backups.backup import Backup
+from backup.context import context as context_
+from backup.context.context import Context
 from backup.models import Path
 from backup.utils.setup import check_setup
 
@@ -46,3 +48,14 @@ def mocked_backup(directory: Path, directory2: Path) -> Iterator[Backup]:
 @pytest.fixture(autouse=True, scope="session")
 def setup_rclone() -> None:
     check_setup()
+
+
+@pytest.fixture(scope="session")
+def context() -> Context:
+    return context_
+
+
+@pytest.fixture(scope="session", autouse=True)
+def test_context(context: Context) -> Context:
+    context.config.overwrite_newer = True
+    return context

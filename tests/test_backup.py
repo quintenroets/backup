@@ -57,6 +57,7 @@ def test_push(
     fill_directories(directory, directory2, content, content2)
     backup = Backup(directory, directory2)
     backup.capture_push()
+    backup.push()
     assert not backup.capture_status().paths
 
 

@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class Action(Enum):
+class Action(str, Enum):
     status = "status"
     push = "push"
     pull = "pull"

@@ -7,7 +7,6 @@ from .action import Action
 from .path import Path
 
 
-@dataclass
 class Help:
     action: str = "The action to do"
     configure: str = "Open configuration"

@@ -45,15 +45,16 @@ def mocked_backup(directory: Path, directory2: Path) -> Iterator[Backup]:
     yield Backup(source=directory, dest=directory2)
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def setup_rclone() -> None:
     check_setup()
 
 
-@pytest.fixture(scope="session")
-def context(directory: Path) -> Context:
-    Path.profiles = directory  # type: ignore
-    return context_
+@pytest.fixture(scope="session", autouse=True)
+def context() -> Iterator[Context]:
+    with Path.tempdir() as directory:
+        Path.profiles = directory  # type: ignore
+        yield context_
 
 
 @pytest.fixture()

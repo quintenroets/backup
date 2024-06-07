@@ -1,5 +1,8 @@
+from unittest.mock import MagicMock, patch
+
 from backup import main
 
 
-def test_main() -> None:
+@patch("backup.backups.backup.Backup.run_action")
+def test_main(_: MagicMock) -> None:
     main()

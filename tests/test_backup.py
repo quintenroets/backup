@@ -12,26 +12,30 @@ slow_test_settings = settings(
 )
 
 
-def fill(folder: Path, content: bytes, number: int = 0) -> None:
-    path = folder / str(number)
+def fill(directory: Path, content: bytes, number: int = 0) -> None:
+    path = directory / str(number)
     path.byte_content = content
 
 
-def fill_folders(folder: Path, folder2: Path, content: bytes, content2: bytes) -> None:
-    fill(folder, content)
-    fill(folder, content, number=1)
-    fill(folder, content + content2, number=3)
+def fill_directories(
+    directory: Path, directory2: Path, content: bytes, content2: bytes
+) -> None:
+    fill(directory, content)
+    fill(directory, content, number=1)
+    fill(directory, content + content2, number=3)
 
-    fill(folder2, content)
-    fill(folder2, content, number=2)
-    fill(folder2, content, number=3)
+    fill(directory2, content)
+    fill(directory2, content, number=2)
+    fill(directory2, content, number=3)
 
 
 @slow_test_settings
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
-def test_status(folder: Path, folder2: Path, content: bytes, content2: bytes) -> None:
-    fill_folders(folder, folder2, content, content2)
-    backup = Backup(folder, folder2)
+def test_status(
+    directory: Path, directory2: Path, content: bytes, content2: bytes
+) -> None:
+    fill_directories(directory, directory2, content, content2)
+    backup = Backup(directory, directory2)
     status = backup.capture_status(quiet=True)
 
     expected_changes = (
@@ -47,28 +51,33 @@ def test_status(folder: Path, folder2: Path, content: bytes, content2: bytes) ->
 
 @slow_test_settings
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
-def test_push(folder: Path, folder2: Path, content: bytes, content2: bytes) -> None:
-    fill_folders(folder, folder2, content, content2)
-    backup = Backup(folder, folder2)
+def test_push(
+    directory: Path, directory2: Path, content: bytes, content2: bytes
+) -> None:
+    fill_directories(directory, directory2, content, content2)
+    backup = Backup(directory, directory2)
     backup.capture_push()
     assert not backup.capture_status().paths
 
 
 @slow_test_settings
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
-def test_pull(folder: Path, folder2: Path, content: bytes, content2: bytes) -> None:
-    fill_folders(folder, folder2, content, content2)
-    backup = Backup(folder, folder2)
+def test_pull(
+    directory: Path, directory2: Path, content: bytes, content2: bytes
+) -> None:
+    fill_directories(directory, directory2, content, content2)
+    backup = Backup(directory, directory2)
     backup.capture_pull()
+    backup.pull()
     assert not backup.capture_status().paths
 
 
 @slow_test_settings
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
-def test_ls(folder: Path, folder2: Path, content: bytes, content2: bytes) -> None:
-    fill_folders(folder, folder2, content, content2)
-    backup = Backup(folder, folder2)
-    path = folder / "0"
+def test_ls(directory: Path, directory2: Path, content: bytes, content2: bytes) -> None:
+    fill_directories(directory, directory2, content, content2)
+    backup = Backup(directory, directory2)
+    path = directory / "0"
     file_info = backup.capture_output("lsjson", path)
     parsed_file_info = json.loads(file_info)
     assert parsed_file_info[0]["Name"] == path.name
@@ -77,8 +86,8 @@ def test_ls(folder: Path, folder2: Path, content: bytes, content2: bytes) -> Non
 @slow_test_settings
 @given(content=strategies.binary(), content2=strategies.binary(min_size=1))
 def test_single_file_copy(
-    folder: Path, folder2: Path, content: bytes, content2: bytes
+    directory: Path, directory2: Path, content: bytes, content2: bytes
 ) -> None:
-    fill_folders(folder, folder2, content, content2)
-    backup = Backup(folder, folder2)
-    backup.capture_output("copyto", folder / "0", folder2 / "0")
+    fill_directories(directory, directory2, content, content2)
+    backup = Backup(directory, directory2)
+    backup.capture_output("copyto", directory / "0", directory2 / "0")

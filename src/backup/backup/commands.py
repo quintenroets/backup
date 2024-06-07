@@ -77,7 +77,7 @@ class Backup(paths.Rclone):
         Update modified times to avoid checking again in the future.
         """
         no_change_paths = [result.path for result in results]
-        if self.dest.is_relative_to(Path.backup_cache):  # noqa
+        if self.dest.is_relative_to(Path.backup_cache):  # noqa  # pragma: no cover
             for path in no_change_paths:
                 dest = self.dest / path
                 if dest.tag is None:

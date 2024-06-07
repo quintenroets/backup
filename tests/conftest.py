@@ -1,9 +1,9 @@
 from collections.abc import Iterator
 
 import pytest
+from backup.backups.backup import Backup
 from backup.models import Path
 from backup.utils.setup import check_setup
-from superpathlib.encryption import EncryptedPath
 
 
 def provision_path() -> Iterator[Path]:
@@ -29,20 +29,18 @@ def path2() -> Iterator[Path]:
 
 
 @pytest.fixture()
-def folder(path: Path) -> Iterator[Path]:
+def directory(path: Path) -> Iterator[Path]:
     yield from provision_directory()
 
 
 @pytest.fixture()
-def folder2(path2: Path) -> Iterator[Path]:
+def directory2(path2: Path) -> Iterator[Path]:
     yield from provision_directory()
 
 
 @pytest.fixture()
-def encryption_path(path: Path) -> Iterator[EncryptedPath]:
-    with path.encrypted as encryption_path:
-        yield encryption_path
-    assert not encryption_path.exists()
+def mocked_backup(directory: Path, directory2: Path) -> Iterator[Backup]:
+    yield Backup(source=directory, dest=directory2)
 
 
 @pytest.fixture(autouse=True, scope="session")

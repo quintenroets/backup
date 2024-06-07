@@ -5,7 +5,7 @@ def create_malformed_filters_error(filters: list[str]) -> Exception:
     delimiter = "\n\t"
     malformed_rules = generate_malformed_rules(filters)
     message = f"Invalid paths:{delimiter}" + delimiter.join(malformed_rules)
-    return Exception(message)
+    return ValueError(message)
 
 
 def generate_malformed_rules(filters: list[str]) -> Iterator[str]:

@@ -2,12 +2,13 @@ import json
 
 from backup.backup import Backup
 from backup.models import Change, ChangeType, Path
-from hypothesis import HealthCheck, given, settings, strategies
+from hypothesis import HealthCheck, Phase, given, settings, strategies
 
 slow_test_settings = settings(
     suppress_health_check=(HealthCheck.function_scoped_fixture,),
     max_examples=3,
     deadline=7000,
+    phases=(Phase.explicit, Phase.generate),
 )
 
 

@@ -36,6 +36,7 @@ class Rclone:
         filters_path = self.create_filters_path()
         command = self.generate_cli_command_parts(*args, filters_path=filters_path)
         env = os.environ | {"RCLONE_CONFIG_PASS": context.secrets.rclone}
+        env.pop("RCLONE_PASSWORD_COMMAND", None)
         kwargs = {"env": env}
         with filters_path:
             yield Runner(tuple(command), root=self.root, kwargs=kwargs)

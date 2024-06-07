@@ -1,5 +1,4 @@
 import fnmatch
-import typing
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from functools import cached_property
@@ -82,7 +81,7 @@ class Backup(raw.Backup):
         self.check_config_path()
         config_root = Path(Backup.source)
         rules = parser.Rules(
-            self.include_dict, Path.paths_exclude.yaml, root=config_root
+            self.include_dict, context.storage.excludes, root=config_root
         )
         if self.sub_check_path is not None:
             relative_source = self.source.relative_to(config_root)
@@ -105,27 +104,23 @@ class Backup(raw.Backup):
             or any(
                 fnmatch.fnmatch(str(path), pattern) for pattern in self.ignore_patterns
             )
-            or path.name in self.ignore_names
+            or path.name in context.storage.ignore_names
             or path.is_symlink()
         )
 
     @cached_property
     def ignore_patterns(self) -> list[str]:
-        ignore_patterns = typing.cast(list[str], Path.ignore_patterns.yaml)
+        ignore_patterns = context.storage.ignore_patterns
         if not context.options.include_browser:
             ignore_patterns.append(context.config.browser_pattern)
         return ignore_patterns
 
     @cached_property
-    def ignore_names(self) -> list[str]:
-        return typing.cast(list[str], Path.ignore_names.yaml)
-
-    @cached_property
     def include_dict(self) -> list[str | dict[str, Any]]:
-        includes = Path.paths_include.yaml
+        includes = context.storage.includes
         if not context.options.include_browser:
             self.remove_browser(includes)
-        return typing.cast(list[str | dict[str, Any]], includes)
+        return includes
 
     def remove_browser(self, includes: list[str | dict[str, Any]]) -> None:
         for include in includes:

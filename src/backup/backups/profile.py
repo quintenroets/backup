@@ -2,6 +2,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 
 from .. import backup
+from ..context import context
 from ..models import Path
 from ..utils import parser
 
@@ -18,7 +19,7 @@ class Backup(backup.Backup):
         super().__post_init__()
 
     def generate_paths(self) -> Iterator[Path]:
-        rules = parser.Rules(Path.profile_paths.yaml, root=Backup.source)
+        rules = parser.Rules(context.storage.profile_paths, root=Backup.source)
         for rule in rules:
             source_path = self.source / rule.path
             dest_path = self.dest / rule.path

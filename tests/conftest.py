@@ -55,7 +55,15 @@ def context() -> Context:
     return context_
 
 
-@pytest.fixture(scope="session", autouse=True)
-def test_context(context: Context) -> Context:
+@pytest.fixture()
+def test_context(context: Context) -> Iterator[Context]:
+    context.config.overwrite_newer = False
+    yield context
     context.config.overwrite_newer = True
-    return context
+
+
+@pytest.fixture()
+def test_cli_open_context(context: Context) -> Iterator[Context]:
+    context.options.configure = True
+    yield context
+    context.options.configure = False

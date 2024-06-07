@@ -1,21 +1,26 @@
 import pytest
 from backup import Backup
+from backup.context.context import Context
 from backup.models import Action, Path
 
 from tests.test_backup import fill
 
 
-def test_push(mocked_backup: Backup) -> None:
+def test_empty_push(mocked_backup: Backup) -> None:
+    mocked_backup.run_action(Action.push)
+
+
+def test_push(mocked_backup: Backup, test_context: Context) -> None:
     verify_push(mocked_backup)
 
 
 def test_pull(mocked_backup: Backup) -> None:
-    fill(mocked_backup.source, b"")
+    verify_push(mocked_backup)
     mocked_backup.run_action(Action.pull)
 
 
 def test_malformed_filters_indicated(mocked_backup: Backup) -> None:
-    mocked_backup.filter_rules = ["?"]
+    mocked_backup.filter_rules = ["????"]
     with pytest.raises(ValueError):
         mocked_backup.capture_status()
 

@@ -36,9 +36,9 @@ class RuleConfig:
         )
         if isinstance(names, str):
             path = (root / names).resolve()
-            if not path.is_relative_to(root):
+            if not path.is_relative_to(root):  # pragma: no cover
                 message = "Currently, only symlinks under the same sub root are allowed"
-                raise Exception(message)
+                raise ValueError(message)
             names = str(path.relative_to(root))
             names = names.split(RuleConfig.path_separator)
 

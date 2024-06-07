@@ -6,6 +6,8 @@ from ..context import context
 from ..models import Path
 from . import rclone
 
+reserved_characters = "\\", "[", "]", "*", "**", "?", "{", "}"
+
 
 def calculate_sub_check_path() -> Path | None:  # pragma: no cover
     if context.options.export_resume_changes:
@@ -56,7 +58,6 @@ class Rclone(rclone.Rclone):
     def escape(cls, path: Path) -> str:
         # backslash character needs to be first in sequence
         # or otherwise each escape gets escaped again
-        reserved_characters = "\\", "[", "]", "*", "**", "?", "{", "}"
         recursive_symbol = "**"
         recursive = path.name == recursive_symbol
         if recursive:

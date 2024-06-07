@@ -51,5 +51,5 @@ def test_config_download(restore_config_path: None) -> None:
 
 def test_rclone_config_download(restore_rclone_config_path: None) -> None:
     Path.rclone_config.unlink(missing_ok=True)
-    check_setup(install=False)
+    check_setup()
     assert Path.rclone_config.lines[0] == "# Encrypted rclone configuration File"

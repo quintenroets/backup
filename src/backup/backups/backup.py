@@ -136,4 +136,4 @@ class Backup(backup.Backup):
             for path in paths:
                 cli.console.rule(str(path))
                 sub_check_path = self.sub_check_path or ""
-                run_diff(path, self.source, cache.Backup.dest / sub_check_path)
+                run_diff(path, self.source, context.config.cache_path / sub_check_path)

@@ -1,3 +1,4 @@
+import sys
 from collections.abc import Iterator
 from unittest.mock import PropertyMock, patch
 
@@ -33,17 +34,7 @@ def path() -> Iterator[Path]:
 
 
 @pytest.fixture()
-def path2() -> Iterator[Path]:
-    yield from provision_path()
-
-
-@pytest.fixture()
 def directory(path: Path) -> Iterator[Path]:
-    yield from provision_directory()
-
-
-@pytest.fixture()
-def directory2(path2: Path) -> Iterator[Path]:
     yield from provision_directory()
 
 
@@ -84,13 +75,6 @@ def test_context(context: Context) -> Iterator[Context]:
         ) = restored_directories
 
 
-@pytest.fixture()
-def test_cli_open_context(context: Context) -> Iterator[Context]:
-    context.options.configure = True
-    yield context
-    context.options.configure = False
-
-
 @pytest.fixture(scope="session", autouse=True)
 def mocked_storage(context: Context) -> Iterator[None]:
     storage = Storage()
@@ -102,10 +86,11 @@ def mocked_storage(context: Context) -> Iterator[None]:
     patched_cli_methods = [
         patch.object(cli, "confirm", return_value=True),
         patch.object(cli.console, "clear"),
+        patch.object(sys.stdin, "isatty", return_value=True),
     ]
     patched_storage = patch.object(context, "storage", new_callable=mock_storage)
     patches = [patched_storage, *patched_cli_methods, *patched_methods]
-    with patches[0], patches[1], patches[2], patches[3], patches[4]:  # type: ignore[attr-defined]
+    with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:  # type: ignore[attr-defined]
         yield None
 
 

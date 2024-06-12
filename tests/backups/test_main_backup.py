@@ -4,12 +4,12 @@ from backup.context.context import Context
 from backup.models import Action, Path
 
 
-def test_status(mocked_backup: Backup) -> None:
-    mocked_backup.run_action(Action.status)
+def test_status(mocked_backup_with_filled_content: Backup) -> None:
+    mocked_backup_with_filled_content.run_action(Action.status)
 
 
-def test_diff(mocked_backup: Backup) -> None:
-    mocked_backup.run_action(Action.diff)
+def test_diff(mocked_backup_with_filled_content: Backup) -> None:
+    mocked_backup_with_filled_content.run_action(Action.diff)
 
 
 def test_empty_push(mocked_backup: Backup) -> None:

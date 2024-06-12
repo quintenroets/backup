@@ -1,13 +1,10 @@
-from __future__ import annotations
-
 import os
-import typing
-from typing import TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 
 import superpathlib
 from simple_classproperty import classproperty
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from datetime import datetime
 
 T = TypeVar("T", bound="Path")
@@ -94,7 +91,7 @@ class Path(superpathlib.Path):
     @classproperty
     def assets(cls: type[T]) -> T:
         path = cls.script_assets / cls.source_root.name
-        return typing.cast(T, path)
+        return cast(T, path)
 
     @classmethod
     @classproperty

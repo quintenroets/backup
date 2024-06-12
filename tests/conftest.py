@@ -50,15 +50,14 @@ def context() -> Iterator[Context]:
 
 @pytest.fixture()
 def test_context(context: Context) -> Iterator[Context]:
-    directories = [Path.tempdir() for _ in range(3)]
+    directories = [Path.tempdir() for _ in range(4)]
     restored_directories = (
         context.config.backup_source,
         context.config.backup_dest,
         context.config.cache_path,
         context.config.profiles_source_root,
     )
-    with directories[0], directories[1], directories[2]:
-        directories.append(directories[0] / "profiles")
+    with directories[0], directories[1], directories[2], directories[3]:
         (
             context.config.backup_source,
             context.config.backup_dest,

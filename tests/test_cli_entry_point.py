@@ -1,8 +1,7 @@
 from unittest.mock import MagicMock, patch
 
-from package_dev_utils.tests.args import no_cli_args
-
 from backup import cli
+from package_dev_utils.tests.args import no_cli_args
 
 
 @no_cli_args

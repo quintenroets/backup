@@ -55,14 +55,14 @@ def test_context(context: Context) -> Iterator[Context]:
         context.config.backup_source,
         context.config.backup_dest,
         context.config.cache_path,
-        context.config.profiles_path,
+        context.config.profiles_source_root,
     )
     with directories[0], directories[1], directories[2], directories[3]:
         (
             context.config.backup_source,
             context.config.backup_dest,
             context.config.cache_path,
-            context.config.profiles_path,
+            context.config.profiles_source_root,
         ) = directories
         context.config.overwrite_newer = False
         yield context
@@ -71,7 +71,7 @@ def test_context(context: Context) -> Iterator[Context]:
             context.config.backup_source,
             context.config.backup_dest,
             context.config.cache_path,
-            context.config.profiles_path,
+            context.config.profiles_source_root,
         ) = restored_directories
 
 

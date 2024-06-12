@@ -18,5 +18,5 @@ class Config:
     browser_pattern: str = f"{browser_folder}/**/*"
     backup_source: Path = Path("/")
     backup_dest: Path = Path.remote
-    profiles_path: Path = Path.profiles
+    profiles_source_root: Path = Path.HOME
     cache_path: Path = Path.backup_cache

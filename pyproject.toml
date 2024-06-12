@@ -13,7 +13,7 @@ dependencies = [
     "powercli >=0.3.0, <1",
     "PyYAML >=6.0.1, <7",
     "tqdm >=4.66.1, <5",
-    "xattr >=0.10.1, <1",
+    "xattr >=0.10.1, <2",
 ]
 
 [project.optional-dependencies]

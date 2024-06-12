@@ -1,6 +1,7 @@
 from collections.abc import Iterator
 from unittest.mock import PropertyMock, patch
 
+import cli
 import pytest
 from backup.backups.backup import Backup
 from backup.context import context as context_
@@ -73,7 +74,6 @@ def test_context(context: Context) -> Iterator[Context]:
             context.config.profiles_path,
         ) = directories
         context.config.overwrite_newer = False
-        context.options.confirm_push = False
         yield context
         context.config.overwrite_newer = True
         (
@@ -99,9 +99,13 @@ def mocked_storage(context: Context) -> Iterator[None]:
         mocked_method(CachedFileContent, "__get__", mocks.CachedFileContent.__get__),
         mocked_method(CachedFileContent, "__set__", mocks.CachedFileContent.__set__),
     ]
+    patched_cli_methods = [
+        patch.object(cli, "confirm", return_value=True),
+        patch.object(cli.console, "clear"),
+    ]
     patched_storage = patch.object(context, "storage", new_callable=mock_storage)
-    patches = [patched_storage, *patched_methods]
-    with patches[0], patches[1], patches[2]:  # type: ignore[attr-defined]
+    patches = [patched_storage, *patched_cli_methods, *patched_methods]
+    with patches[0], patches[1], patches[2], patches[3], patches[4]:  # type: ignore[attr-defined]
         yield None
 
 

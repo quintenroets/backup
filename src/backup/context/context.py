@@ -18,7 +18,7 @@ class Context(Context_[Options, Config, Secrets]):
         return self.config.backup_dest
 
     def extract_profiles_path(self) -> Path:
-        return self.config.profiles_path
+        return self.config.profiles_source_root
 
     def extract_cache_path(self) -> Path:
         return self.config.cache_path

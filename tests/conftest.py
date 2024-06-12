@@ -4,13 +4,13 @@ from unittest.mock import PropertyMock, patch
 
 import cli
 import pytest
+from package_utils.storage import CachedFileContent
+
 from backup.backups.backup import Backup
 from backup.context import context as context_
 from backup.context.context import Context
 from backup.models import Path
 from backup.utils.setup import check_setup
-from package_utils.storage import CachedFileContent
-
 from tests import mocks
 from tests.mocks.methods import mocked_method
 from tests.mocks.storage import Storage
@@ -50,19 +50,20 @@ def context() -> Iterator[Context]:
 
 @pytest.fixture()
 def test_context(context: Context) -> Iterator[Context]:
-    directories = [Path.tempdir() for _ in range(4)]
+    directories = [Path.tempdir() for _ in range(3)]
     restored_directories = (
         context.config.backup_source,
         context.config.backup_dest,
         context.config.cache_path,
-        context.config.profiles_path,
+        context.config.profiles_source_root,
     )
-    with directories[0], directories[1], directories[2], directories[3]:
+    with directories[0], directories[1], directories[2]:
+        directories.append(directories[0] / "profiles")
         (
             context.config.backup_source,
             context.config.backup_dest,
             context.config.cache_path,
-            context.config.profiles_path,
+            context.config.profiles_source_root,
         ) = directories
         context.config.overwrite_newer = False
         yield context
@@ -71,7 +72,7 @@ def test_context(context: Context) -> Iterator[Context]:
             context.config.backup_source,
             context.config.backup_dest,
             context.config.cache_path,
-            context.config.profiles_path,
+            context.config.profiles_source_root,
         ) = restored_directories
 
 

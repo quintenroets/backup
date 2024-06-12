@@ -1,6 +1,7 @@
 from collections.abc import Callable, Iterator
 
 import pytest
+
 from backup.models import Path
 from backup.utils import check_setup
 

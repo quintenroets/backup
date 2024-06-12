@@ -1,8 +1,9 @@
 from typing import Any
 
+from package_utils.storage import CachedFileContent
+
 from backup import storage
 from backup.models import Path
-from package_utils.storage import CachedFileContent
 
 
 class Defaults:

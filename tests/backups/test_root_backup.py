@@ -2,8 +2,8 @@ from collections.abc import Iterator
 
 import cli
 import pytest
-from backup import Backup
 
+from backup import Backup
 from tests.conftest import fill
 
 

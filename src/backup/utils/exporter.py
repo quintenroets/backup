@@ -4,6 +4,7 @@ import cli
 
 from backup.backups.remote import Backup
 
+from ..context import context
 from ..models import Path
 
 
@@ -27,7 +28,7 @@ def export_resume() -> bool:
 
 
 def export_path(path: Path) -> None:
-    relative_path = path.with_export_suffix.relative_to(Backup.source)
+    relative_path = path.with_export_suffix.relative_to(context.config.backup_source)
     backup = Backup(path=relative_path)
     backup.export_pdfs()
     path.with_export_suffix.mtime = path.mtime

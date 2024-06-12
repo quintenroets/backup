@@ -16,3 +16,7 @@ class Config:
     browser_name: str = "chromium"
     browser_folder: Path = Path(".config") / browser_name
     browser_pattern: str = f"{browser_folder}/**/*"
+    backup_source: Path = Path("/")
+    backup_dest: Path = Path.remote
+    profiles_path: Path = Path.profiles
+    cache_path: Path = Path.backup_cache

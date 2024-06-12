@@ -14,8 +14,8 @@ from ..utils import setup
 
 @dataclass
 class Rclone:
-    source: Path = Path("/")
-    dest: Path = Path.remote
+    source: Path = field(default_factory=context.extract_backup_source)
+    dest: Path = field(default_factory=context.extract_backup_dest)
     filter_rules: list[str] = field(default_factory=list)
     options: list[CommandItem] = field(default_factory=list)
     root: bool = False

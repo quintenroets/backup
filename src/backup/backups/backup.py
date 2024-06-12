@@ -71,7 +71,7 @@ class Backup(backup.Backup):
         return response
 
     def cache_status(self) -> Changes:
-        if profile.Backup.source.is_relative_to(self.source):
+        if context.config.backup_source.is_relative_to(self.source):
             profile.Backup().capture_push()
         cache_backup = cache.Backup(
             quiet=self.quiet_cache, sub_check_path=self.sub_check_path

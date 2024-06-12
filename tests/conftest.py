@@ -2,10 +2,7 @@ from collections.abc import Iterator
 from unittest.mock import PropertyMock, patch
 
 import pytest
-from backup.backup import rclone
-from backup.backups import profile
 from backup.backups.backup import Backup
-from backup.backups.cache import cache
 from backup.context import context as context_
 from backup.context.context import Context
 from backup.models import Path
@@ -49,14 +46,6 @@ def directory2(path2: Path) -> Iterator[Path]:
     yield from provision_directory()
 
 
-@pytest.fixture()
-def mocked_backup(directory: Path, directory2: Path) -> Iterator[Backup]:
-    rclone.Rclone.source = directory
-    rclone.Rclone.dest = directory2
-    cache.Backup.source = directory
-    yield Backup(source=directory, dest=directory2)
-
-
 @pytest.fixture(scope="session", autouse=True)
 def setup_rclone() -> None:
     check_setup()
@@ -64,16 +53,21 @@ def setup_rclone() -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def context() -> Iterator[Context]:
-    with Path.tempdir() as directory:
-        profile.Backup.dest = directory
-        yield context_
+    yield context_
 
 
 @pytest.fixture()
 def test_context(context: Context) -> Iterator[Context]:
-    context.config.overwrite_newer = False
-    yield context
-    context.config.overwrite_newer = True
+    directories = [Path.tempdir() for _ in range(4)]
+    with directories[0], directories[1], directories[2], directories[3]:
+        context.config.backup_source = directories[0]
+        context.config.backup_dest = directories[1]
+        context.config.cache_path = directories[2]
+        context.config.profiles_path = directories[3]
+        context.config.overwrite_newer = False
+        context.options.confirm_push = False
+        yield context
+        context.config.overwrite_newer = True
 
 
 @pytest.fixture()
@@ -95,3 +89,8 @@ def mocked_storage(context: Context) -> Iterator[None]:
     patches = [patched_storage, *patched_methods]
     with patches[0], patches[1], patches[2]:  # type: ignore[attr-defined]
         yield None
+
+
+@pytest.fixture
+def mocked_backup(test_context: Context) -> Backup:
+    return Backup()

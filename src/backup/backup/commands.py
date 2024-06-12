@@ -52,6 +52,7 @@ class Backup(paths.Rclone):
             source, dest = self.dest, self.source
         else:
             source, dest = self.source, self.dest
+        print(source, dest)
         args = action, source, dest, *args
         with super().prepared_runner(*args) as runner:
             yield runner

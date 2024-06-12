@@ -6,6 +6,10 @@ from backup.models import Action, Path
 from tests.test_backup import fill
 
 
+def test_status(mocked_backup: Backup) -> None:
+    mocked_backup.run_action(Action.status)
+
+
 def test_empty_push(mocked_backup: Backup) -> None:
     mocked_backup.run_action(Action.push)
 

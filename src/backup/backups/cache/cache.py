@@ -79,7 +79,7 @@ class Backup(raw.Backup):
 
     def generate_entry_rules(self) -> Iterator[parser.PathRule]:
         self.check_config_path()
-        config_root = Path(Backup.source)
+        config_root = context.config.backup_source
         rules = parser.Rules(
             self.include_dict, context.storage.excludes, root=config_root
         )

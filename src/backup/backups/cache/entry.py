@@ -5,7 +5,6 @@ from typing import ClassVar
 
 from ...context import context
 from ...models import Path
-from .raw import Backup
 
 
 @dataclass
@@ -19,7 +18,7 @@ class Entry:
     changed: bool | None = None
     relative_browser_path: ClassVar[Path] = (
         Path.HOME / context.config.browser_folder
-    ).relative_to(Backup.source)
+    ).relative_to(context.config.backup_source)
 
     def __post_init__(self) -> None:
         if self.source is None:

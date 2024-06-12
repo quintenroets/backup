@@ -25,9 +25,10 @@ class Backup(commands.Backup):
             parts = line.split()
             date_str = " ".join(parts[1:3]).split(".")[0]
             path_str = " ".join(parts[4:])
-            date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-            path = Path(path_str)
-            yield path, date
+            if path_str:
+                date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+                path = Path(path_str)
+                yield path, date
 
     def update_dest(self, dest_info: Iterator[tuple[Path, datetime]]) -> None:
         dest_files = self.process_dest_info(dest_info)

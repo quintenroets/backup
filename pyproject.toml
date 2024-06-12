@@ -1,55 +1,72 @@
 [project]
 name = "backupmaster"
-version = "0.5.2"
-description = ""
-authors = [{ name = "Quinten Roets", email = "qdr2104@columbia.edu" }]
-license = { text = "MIT" }
+version = "1.0.0"
+description = "Backup import files across entire disk"
+authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
+license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "beautifulsoup4",
-    "lxml",
-    "PyYAML",
-    "powercli",
-    "rich",
-    "superpathlib",
-    "tqdm",
-    "xattr",
+    "beautifulsoup4 >=4.12.2, <5",
+    "lxml >=4.9.3, <5",
+    "package-utils[context] >=0.6.4, <1",
+    "powercli >=0.3.0, <1",
+    "PyYAML >=6.0.1, <7",
+    "tqdm >=4.66.1, <5",
+    "xattr >=0.10.1, <1",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit",
-    "bump2version"
-]
-test = [
-    "dirhash",
-    "hypothesis",
-    "pytest"
+    "dirhash >=0.2.1, <1",
+    "package-dev-tools >=0.6.0, <1",
+    "package-dev-utils >=0.1.6, <1",
+    "types-beautifulsoup4 >=4.12.0.20240106, <5",
 ]
 
 [project.urls]
 "Source Code" = "https://github.com/quintenroets/backup"
 
-
 [project.scripts]
-backup = "backup:main"
+backup = "backup.cli:entry_point"
 
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.coverage.run]
+command_line = "-m pytest"
+
+[tool.coverage.report]
+precision = 4
+fail_under = 80
+
+[tool.mypy]
+strict = true
+no_implicit_reexport = false
+
+[tool.pytest.ini_options]
+pythonpath = [
+    "src", ".",
+]
 
 [tool.ruff]
 fix = true
 
 [tool.ruff.lint]
 select = [
-    "E", # pycodestyle errors
-    "W", # pycodestyle warnings
-    "F", # pyflakes
-    "I", # isort
-    "UP", # pyupgrade
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "UP",  # pyupgrade
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+
+[tool.setuptools.package-data]
+backup = ["py.typed"]

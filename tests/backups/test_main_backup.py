@@ -3,24 +3,25 @@ from backup import Backup
 from backup.context.context import Context
 from backup.models import Action, Path
 
-from tests.test_backup import fill
-
 
 def test_status(mocked_backup: Backup) -> None:
     mocked_backup.run_action(Action.status)
+
+
+def test_diff(mocked_backup: Backup) -> None:
+    mocked_backup.run_action(Action.diff)
 
 
 def test_empty_push(mocked_backup: Backup) -> None:
     mocked_backup.run_action(Action.push)
 
 
-def test_push(mocked_backup: Backup, test_context: Context) -> None:
-    verify_push(mocked_backup)
+def test_push(mocked_backup_with_filled_content: Backup, test_context: Context) -> None:
+    verify_push(mocked_backup_with_filled_content)
 
 
-def test_pull(mocked_backup: Backup) -> None:
-    verify_push(mocked_backup)
-    mocked_backup.run_action(Action.pull)
+def test_pull(mocked_backup_with_filled_content: Backup) -> None:
+    verify_pull(mocked_backup_with_filled_content)
 
 
 def test_malformed_filters_indicated(mocked_backup: Backup) -> None:
@@ -39,9 +40,13 @@ def test_sub_check_path(mocked_backup: Backup) -> None:
     verify_push(mocked_backup)
 
 
-def verify_push(mocked_backup: Backup) -> None:
-    fill(mocked_backup.source, b"")
-    fill(mocked_backup.source, b" ", number=1)
-    mocked_backup.run_action(Action.push)
-    fill(mocked_backup.source, b" ", number=2)
-    mocked_backup.run_action(Action.push)
+def verify_push(backup: Backup) -> None:
+    backup.run_action(Action.push)
+    backup.run_action(Action.push)
+
+
+def verify_pull(backup: Backup) -> None:
+    backup.run_action(Action.pull)
+    dest_file = next(backup.dest.iterdir())
+    dest_file.unlink()
+    backup.run_action(Action.pull)

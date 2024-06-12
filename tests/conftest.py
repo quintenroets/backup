@@ -59,15 +59,29 @@ def context() -> Iterator[Context]:
 @pytest.fixture()
 def test_context(context: Context) -> Iterator[Context]:
     directories = [Path.tempdir() for _ in range(4)]
+    restored_directories = (
+        context.config.backup_source,
+        context.config.backup_dest,
+        context.config.cache_path,
+        context.config.profiles_path,
+    )
     with directories[0], directories[1], directories[2], directories[3]:
-        context.config.backup_source = directories[0]
-        context.config.backup_dest = directories[1]
-        context.config.cache_path = directories[2]
-        context.config.profiles_path = directories[3]
+        (
+            context.config.backup_source,
+            context.config.backup_dest,
+            context.config.cache_path,
+            context.config.profiles_path,
+        ) = directories
         context.config.overwrite_newer = False
         context.options.confirm_push = False
         yield context
         context.config.overwrite_newer = True
+        (
+            context.config.backup_source,
+            context.config.backup_dest,
+            context.config.cache_path,
+            context.config.profiles_path,
+        ) = restored_directories
 
 
 @pytest.fixture()
@@ -93,4 +107,29 @@ def mocked_storage(context: Context) -> Iterator[None]:
 
 @pytest.fixture
 def mocked_backup(test_context: Context) -> Backup:
-    return Backup()
+    backup = Backup()
+    backup.sub_check_path = backup.source
+    return backup
+
+
+@pytest.fixture
+def mocked_backup_with_filled_content(mocked_backup: Backup) -> Backup:
+    fill_directories(mocked_backup)
+    return mocked_backup
+
+
+def fill_directories(mocked_backup: Backup) -> None:
+    content = b"content"
+    content2 = b"content2"
+    fill(mocked_backup.source, content)
+    fill(mocked_backup.source, content, number=1)
+    fill(mocked_backup.source, content, number=3)
+
+    fill(mocked_backup.dest, content)
+    fill(mocked_backup.dest, content2, number=2)
+    fill(mocked_backup.dest, content2, number=3)
+
+
+def fill(directory: Path, content: bytes, number: int = 0) -> None:
+    path = directory / f"{number}.txt"
+    path.byte_content = content

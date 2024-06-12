@@ -50,7 +50,7 @@ class Backup(syncer.Backup):
             )
             result = backup.push(reverse=reverse)
         else:
-            result = None
+            result = None  # pragma: nocover
         return result
 
     def extract_root_paths(self, reverse: bool) -> Iterator[Path]:

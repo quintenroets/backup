@@ -24,7 +24,7 @@ class Backup(commands.Backup):
         for line in tree:
             parts = line.split()
             date_str = " ".join(parts[1:3]).split(".")[0]
-            path_str = " ".join(parts[4:])
+            path_str = " ".join(parts[3:])
             if path_str:
                 date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
                 path = Path(path_str)

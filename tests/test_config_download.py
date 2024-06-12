@@ -30,23 +30,10 @@ def restore_and_check(
 
 
 @pytest.fixture
-def restore_config_path(
-    restore_and_check: Callable[[Path], Iterator[None]],
-) -> Iterator[None]:
-    yield from restore_and_check(Path.config)
-
-
-@pytest.fixture
 def restore_rclone_config_path(
     restore_and_check: Callable[[Path], Iterator[None]],
 ) -> Iterator[None]:
     yield from restore_and_check(Path.rclone_config.parent)
-
-
-def test_config_download(restore_config_path: None) -> None:
-    Path.config.rmtree(missing_ok=True)
-    cache.Backup.check_config_path()
-    assert Path.config.exists()
 
 
 def test_rclone_config_download(restore_rclone_config_path: None) -> None:

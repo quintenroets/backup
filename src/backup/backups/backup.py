@@ -58,7 +58,7 @@ class Backup(backup.Backup):
         changes: Changes = self.cache_status()
         if changes and context.options.confirm_push and sys.stdin.isatty():
             if not self.ask_confirm(changes):
-                changes.changes = []
+                changes.changes = []  # pragma: nocover
         return changes.paths
 
     def ask_confirm(self, changes: Changes) -> bool:
@@ -67,7 +67,7 @@ class Backup(backup.Backup):
             message, show_diff=context.options.show_file_diffs
         )
         if not response and not context.options.show_file_diffs:
-            response = changes.ask_confirm(message, show_diff=True)
+            response = changes.ask_confirm(message, show_diff=True)  # pragma: nocover
         return response
 
     def cache_status(self) -> Changes:

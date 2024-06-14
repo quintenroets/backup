@@ -87,27 +87,30 @@ class RetrievedContentChecker(PathChecker):
         raise NotImplementedError  # pragma: nocover
 
 
-class KwalletChecker(RetrievedContentChecker):
-    def retrieve_content(
-        self,
-    ) -> Iterator[tuple[str, tuple[tuple[str, list[str]], ...]]]:
-        folders = ("Network Management", "Passwords", "ksshaskpass")
-        folders_with_progress = cli.track_progress(
-            folders, description="Checking kwallet content", unit="folders"
-        )
-        for folder in folders_with_progress:
-            info = self.calculate_folder_info(folder)
-            yield folder, tuple(info)
+@dataclass
+class KwalletItem:
+    folder: str
+    item: str
 
-    @classmethod
-    def calculate_folder_info(cls, folder: str) -> Iterator[tuple[str, list[str]]]:
-        try:
-            items = cli.capture_output_lines("kwallet-query -l kdewallet -f", folder)
-            command = "kwallet-query kdewallet -r"
-            for item in items:
-                yield item, cli.capture_output_lines(command, item, "-f", folder)
-        except cli.CalledProcessError:  # pragma: nocover
-            pass
+
+class KwalletChecker(RetrievedContentChecker):
+    def retrieve_content(self) -> Iterator[tuple[str, str, list[str]]]:
+        items = list(self.generate_items())
+        items_with_progress = cli.track_progress(
+            items, description="Checking kwallet content", unit="items"
+        )
+        command = "kwallet-query kdewallet -r"
+        for item in items_with_progress:
+            full_command = command, item.item, "-f", item.folder
+            info = cli.capture_output_lines(*full_command)
+            yield item.folder, item.item, info
+
+    def generate_items(self) -> Iterator[KwalletItem]:
+        folders = ("Network Management", "Passwords", "ksshaskpass")
+        command = "kwallet-query -l kdewallet -f"
+        for folder in folders:
+            for item in cli.capture_output_lines(command, folder):
+                yield KwalletItem(folder=folder, item=item)
 
 
 class RcloneChecker(RetrievedContentChecker):

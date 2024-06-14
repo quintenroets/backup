@@ -2,6 +2,7 @@ import json
 
 from backup import Backup as MainBackup
 from backup.backup import Backup
+from backup.context.context import Context
 from backup.models import Change, ChangeType, Path
 
 
@@ -58,3 +59,15 @@ def test_single_file_copy(mocked_backup_with_filled_content: MainBackup) -> None
     )
     path = next(backup.source.iterdir())
     backup.capture_output("copyto", path, backup.dest / path.relative_to(backup.source))
+
+
+def test_all_options(
+    test_context: Context, mocked_backup_with_filled_content: MainBackup
+) -> None:
+    overwrite_newer = test_context.config.overwrite_newer
+    test_context.config.overwrite_newer = False
+    backup = Backup(
+        mocked_backup_with_filled_content.source, mocked_backup_with_filled_content.dest
+    )
+    backup.capture_push()
+    test_context.config.overwrite_newer = overwrite_newer

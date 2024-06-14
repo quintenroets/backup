@@ -2,7 +2,7 @@
 [![PyPI version](https://badge.fury.io/py/backupmaster.svg)](https://badge.fury.io/py/backupmaster)
 ![Python version](https://img.shields.io/badge/python-3.10+-brightgreen)
 ![Operating system](https://img.shields.io/badge/os-linux-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-86%25-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-89%25-brightgreen)
 
 Back up import files across entire disk
 - Scale to huge number of files

@@ -26,20 +26,21 @@ class PathChecker:
         return hash(content)
 
     def extract_content(self, path: Path) -> Iterator[str]:
+        for section in self.extract_sections(path):
+            if section[0] not in self.ignore_sections_str:
+                for line in section:
+                    if not any(word in line for word in self.ignore_lines):
+                        yield line
+
+    @classmethod
+    def extract_sections(cls, path: Path) -> Iterator[list[str]]:
         content_lines = path.lines
         header_indices = [
             i for i, line in enumerate(content_lines) if line.startswith("[")
         ]
-        non_volatile_sections = []
+        header_indices.append(len(content_lines))
         for start, end in zip(header_indices, header_indices[1:]):
-            section = content_lines[start:end]
-            if section[0] not in self.ignore_sections_str:
-                non_volatile_sections.append(section)
-
-        for section in non_volatile_sections:
-            for line in section:
-                if not any(word in line for word in self.ignore_lines):
-                    yield line
+            yield content_lines[start:end]
 
 
 class CommentsRemovedChecker(PathChecker):
@@ -83,7 +84,7 @@ class RetrievedContentChecker(PathChecker):
         return hash_value
 
     def retrieve_content(self) -> Any:
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: nocover
 
 
 class KwalletChecker(RetrievedContentChecker):
@@ -91,10 +92,12 @@ class KwalletChecker(RetrievedContentChecker):
         self,
     ) -> Iterator[tuple[str, tuple[tuple[str, list[str]], ...]]]:
         folders = ("Network Management", "Passwords", "ksshaskpass")
-        with cli.status("Checking kwallet content"):
-            for folder in folders:
-                info = self.calculate_folder_info(folder)
-                yield folder, tuple(info)
+        folders_with_progress = cli.track_progress(
+            folders, description="Checking kwallet content", unit="folders"
+        )
+        for folder in folders_with_progress:
+            info = self.calculate_folder_info(folder)
+            yield folder, tuple(info)
 
     @classmethod
     def calculate_folder_info(cls, folder: str) -> Iterator[tuple[str, list[str]]]:
@@ -103,7 +106,7 @@ class KwalletChecker(RetrievedContentChecker):
             command = "kwallet-query kdewallet -r"
             for item in items:
                 yield item, cli.capture_output_lines(command, item, "-f", folder)
-        except cli.CalledProcessError:
+        except cli.CalledProcessError:  # pragma: nocover
             pass
 
 

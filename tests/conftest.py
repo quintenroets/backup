@@ -64,9 +64,7 @@ def test_context(context: Context) -> Iterator[Context]:
             context.config.cache_path,
             context.config.profiles_source_root,
         ) = directories
-        context.config.overwrite_newer = False
         yield context
-        context.config.overwrite_newer = True
         (
             context.config.backup_source,
             context.config.backup_dest,
@@ -109,7 +107,7 @@ def mocked_backup_with_filled_content(mocked_backup: Backup) -> Backup:
 
 def fill_directories(mocked_backup: Backup) -> None:
     content = b"content"
-    content2 = b"content2"
+    content2 = content * 2
     fill(mocked_backup.source, content)
     fill(mocked_backup.source, content, number=1)
     fill(mocked_backup.source, content, number=3)

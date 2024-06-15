@@ -47,7 +47,7 @@ def test_ls(mocked_backup_with_filled_content: MainBackup) -> None:
     backup = Backup(
         mocked_backup_with_filled_content.source, mocked_backup_with_filled_content.dest
     )
-    path = next(backup.source.iterdir())
+    path = next(path for path in backup.source.iterdir() if path.is_file())
     file_info = backup.capture_output("lsjson", path)
     parsed_file_info = json.loads(file_info)
     assert parsed_file_info[0]["Name"] == path.name

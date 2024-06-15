@@ -53,6 +53,10 @@ class Rclone(rclone.Rclone):
 
         if self.paths:
             yield "- *"
+        elif self.dest.is_relative_to(self.source):
+            dest_pattern = self.dest.relative_to(self.source)
+            yield f"- /{dest_pattern}/**"
+            yield "+ *"
 
     @classmethod
     def escape(cls, path: Path) -> str:

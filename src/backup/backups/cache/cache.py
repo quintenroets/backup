@@ -10,12 +10,12 @@ from ...context import context
 from ...models import Changes, Path
 from ...utils import parser
 from ..backup import backup
-from . import raw
 from .detailed_entry import Entry
 
 
 @dataclass
-class Backup(raw.Backup):
+class Backup(backup.Backup):
+    dest: Path = field(default_factory=context.extract_cache_path)
     quiet: bool = True
     visited: set[Path] = field(default_factory=set)
     number_of_entries: int = 0

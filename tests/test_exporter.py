@@ -12,8 +12,9 @@ def create_empty_pdf(self: remote.Backup) -> None:
     path.touch()
 
 
+@patch("xattr.xattr.set")
 @patch.object(remote.Backup, "export_pdfs", autospec=True)
-def test_export(mocked_export: MagicMock, test_context: Context) -> None:
+def test_export(mocked_export: MagicMock, _: MagicMock, test_context: Context) -> None:
     mocked_export.side_effect = create_empty_pdf
     add_mocked_document(test_context)
     exporter.export_changes()

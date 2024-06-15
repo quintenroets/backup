@@ -45,11 +45,11 @@ class Entry(entry.Entry):
 
     @property
     def check_key(self) -> Path:
-        if self.source.is_relative_to(Path.profiles):
-            check_key = self.source.relative_to(Path.profiles)
+        if self.source.is_relative_to(context.profiles_path):
+            check_key = self.source.relative_to(context.profiles_path)
             check_key = check_key.relative_to(check_key.parts[0])
-        elif self.source.is_relative_to(Path.HOME):  # noqa
-            check_key = self.source.relative_to(Path.HOME)  # noqa
+        elif self.source.is_relative_to(context.profiles_source_root):  # noqa
+            check_key = self.source.relative_to(context.profiles_source_root)  # noqa
         else:
             check_key = self.relative
         return check_key

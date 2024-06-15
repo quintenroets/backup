@@ -12,6 +12,14 @@ def test_diff(mocked_backup_with_filled_content: Backup) -> None:
     mocked_backup_with_filled_content.run_action(Action.diff)
 
 
+def test_show_diff(
+    mocked_backup_with_filled_content: Backup, test_context: Context
+) -> None:
+    test_context.options.show_file_diffs = True
+    mocked_backup_with_filled_content.run_action(Action.push)
+    test_context.options.show_file_diffs = False
+
+
 def test_empty_push(mocked_backup: Backup) -> None:
     mocked_backup.run_action(Action.push)
 
@@ -50,3 +58,13 @@ def verify_pull(backup: Backup) -> None:
     dest_file = next(backup.dest.iterdir())
     dest_file.unlink()
     backup.run_action(Action.pull)
+
+
+def test_detailed_checker(
+    mocked_backup_with_filled_content: Backup, test_context: Context
+) -> None:
+    path_to_check = test_context.profiles_source_root / ".config" / "gtkrc"
+    path_to_check.touch()
+    mocked_backup_with_filled_content.run_action(Action.push)
+    path_to_check.text = "#"
+    Backup().run_action(Action.push)

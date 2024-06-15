@@ -24,3 +24,8 @@ def test_export(mocked_export: MagicMock, _: MagicMock, test_context: Context) -
 
 def add_mocked_document(test_context: Context) -> None:
     test_context.selected_resume_pdf_path.with_suffix(".docx").touch()
+
+
+@patch("cli.run")
+def test_export_pdfs(_: MagicMock, test_context: Context) -> None:
+    remote.Backup().export_pdfs()

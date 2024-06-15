@@ -13,6 +13,7 @@ class Backup(backup.Backup):
 
     def __post_init__(self) -> None:
         self.set_dest(self.profile_name)
+        self.dest.mkdir(parents=True, exist_ok=True)
         paths = self.generate_paths()
         self.paths = list(paths)
         super().__post_init__()

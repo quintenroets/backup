@@ -16,6 +16,6 @@ def mocked_backup_with_root_dest(mocked_backup: Backup) -> Iterator[Backup]:
 
 
 def test_push(mocked_backup_with_root_dest: Backup) -> None:
-    fill(mocked_backup_with_root_dest.source, b"content")
+    fill(mocked_backup_with_root_dest.source)
     mocked_backup_with_root_dest.run_push()
     assert not mocked_backup_with_root_dest.capture_status().paths

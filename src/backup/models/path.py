@@ -187,12 +187,6 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def main_resume_pdf(cls: type[T]) -> T:
-        path = cls.resume / "Resume Quinten Roets.pdf"
-        return cast(T, path)
-
-    @classmethod
-    @classproperty
     def remote(cls: type[T]) -> T:
         return cls("backup:")
 
@@ -207,3 +201,8 @@ class Path(superpathlib.Path):
     def rclone_config(cls: type[T]) -> T:
         path = cls.HOME / ".config" / "rclone" / "rclone.conf"
         return cast(T, path)
+
+    @classmethod
+    @classproperty
+    def backup_source(cls: type[T]) -> T:
+        return cls("/")

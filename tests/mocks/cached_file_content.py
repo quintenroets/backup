@@ -18,7 +18,7 @@ class CachedFileContent(cached_file_content.CachedFileContent[T], Generic[T]):
             untyped_result = CachedFileContent._storage.get(self.path, self.default)
             result = typing.cast(T, untyped_result)
         else:
-            result = self.load_function(instance)
+            result = self.load_function(instance)  # pragma: nocover
         return result
 
     def __set__(self, instance: Any, value: T) -> None:

@@ -71,7 +71,7 @@ class Backup(backup.Backup):
         return response
 
     def cache_status(self) -> Changes:
-        if context.config.profiles_source_root.is_relative_to(self.source):
+        if context.profiles_path.is_relative_to(self.source):
             profile.Backup().capture_push()
         cache_backup = cache.Backup(
             quiet=self.quiet_cache, sub_check_path=self.sub_check_path
@@ -86,12 +86,12 @@ class Backup(backup.Backup):
             self.after_pull()
 
     def after_pull(self) -> None:
-        if self.contains_change(Path.resume):
+        if self.contains_change(context.resume_path):
             if exporter.export_changes():
-                path = Path.main_resume_pdf
+                path = context.main_resume_pdf_path
                 with cli.status("Uploading new resume pdf"):
                     Backup(path=path, confirm=False).capture_push()
-        if self.contains_change(Path.profiles):
+        if self.contains_change(context.profiles_path):
             profile.Backup().reload()
 
     def contains_change(self, path: Path) -> bool:

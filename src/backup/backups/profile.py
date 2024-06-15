@@ -9,8 +9,7 @@ from ..utils import parser
 
 @dataclass
 class Backup(backup.Backup):
-    source: Path = field(default_factory=context.extract_profiles_path)
-    quiet: bool = True
+    source: Path = field(default_factory=context.extract_profiles_source_root)
 
     def __post_init__(self) -> None:
         self.set_dest(self.profile_name)
@@ -20,7 +19,7 @@ class Backup(backup.Backup):
 
     def generate_paths(self) -> Iterator[Path]:
         rules = parser.Rules(
-            context.storage.profile_paths, root=context.config.backup_source
+            context.storage.profile_paths, root=context.extract_profiles_source_root()
         )
         for rule in rules:
             source_path = self.source / rule.path
@@ -35,7 +34,7 @@ class Backup(backup.Backup):
                     yield path.relative_to(self.dest)
 
     def set_dest(self, profile_name: str) -> None:
-        self.dest = Path.profiles / profile_name
+        self.dest = context.profiles_path / profile_name
 
     @property
     def profile_name(self) -> str:

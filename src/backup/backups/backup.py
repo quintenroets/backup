@@ -14,7 +14,6 @@ from . import cache, profile
 
 @dataclass
 class Backup(backup.Backup):
-    quiet_cache: bool = False
     reverse: bool = False
     confirm: bool = field(default_factory=lambda: context.options.confirm_push)
 
@@ -30,8 +29,7 @@ class Backup(backup.Backup):
                 self.diff()
 
     def status(self, show: bool = True) -> Changes:
-        self.quiet_cache = True
-        self.paths = self.cache_status().paths
+        self.paths = self.cache_status(quiet=True).paths
         status = super().capture_status() if self.paths else Changes()
         if show:
             status.print()
@@ -70,12 +68,10 @@ class Backup(backup.Backup):
             response = changes.ask_confirm(message, show_diff=True)  # pragma: nocover
         return response
 
-    def cache_status(self) -> Changes:
+    def cache_status(self, quiet: bool = False) -> Changes:
         if context.profiles_path.is_relative_to(self.source):
             profile.Backup().capture_push()
-        cache_backup = cache.Backup(
-            quiet=self.quiet_cache, sub_check_path=self.sub_check_path
-        )
+        cache_backup = cache.Backup(quiet=quiet, sub_check_path=self.sub_check_path)
         return cache_backup.status()
 
     def run_pull(self) -> None:

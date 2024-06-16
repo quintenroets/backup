@@ -7,9 +7,7 @@ from backup.models import Change, ChangeType, Path
 
 
 def test_status(mocked_backup_with_filled_content: MainBackup) -> None:
-    backup = Backup(
-        mocked_backup_with_filled_content.source, mocked_backup_with_filled_content.dest
-    )
+    backup = Backup()
     status = backup.capture_status(quiet=True)
 
     expected_changes = (
@@ -24,9 +22,7 @@ def test_status(mocked_backup_with_filled_content: MainBackup) -> None:
 
 
 def test_push(mocked_backup_with_filled_content: MainBackup) -> None:
-    backup = Backup(
-        mocked_backup_with_filled_content.source, mocked_backup_with_filled_content.dest
-    )
+    backup = Backup()
     backup.capture_push()
     backup.push()
     assert not backup.capture_status().paths
@@ -35,18 +31,14 @@ def test_push(mocked_backup_with_filled_content: MainBackup) -> None:
 def test_pull(
     mocked_backup_with_filled_content: MainBackup,
 ) -> None:
-    backup = Backup(
-        mocked_backup_with_filled_content.source, mocked_backup_with_filled_content.dest
-    )
+    backup = Backup()
     backup.capture_pull()
     backup.pull()
     assert not backup.capture_status().paths
 
 
 def test_ls(mocked_backup_with_filled_content: MainBackup) -> None:
-    backup = Backup(
-        mocked_backup_with_filled_content.source, mocked_backup_with_filled_content.dest
-    )
+    backup = Backup()
     path = next(path for path in backup.source.iterdir() if path.is_file())
     file_info = backup.capture_output("lsjson", path)
     parsed_file_info = json.loads(file_info)
@@ -54,9 +46,7 @@ def test_ls(mocked_backup_with_filled_content: MainBackup) -> None:
 
 
 def test_single_file_copy(mocked_backup_with_filled_content: MainBackup) -> None:
-    backup = Backup(
-        mocked_backup_with_filled_content.source, mocked_backup_with_filled_content.dest
-    )
+    backup = Backup()
     path = next(backup.source.iterdir())
     backup.capture_output("copyto", path, backup.dest / path.relative_to(backup.source))
 

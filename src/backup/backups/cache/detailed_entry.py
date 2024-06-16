@@ -35,7 +35,7 @@ class Entry(entry.Entry):
     def update_cached_dest(self) -> None:
         no_original_mtime_present = (
             self.dest.exists()
-            and self.dest.is_relative_to(Path.backup_cache)
+            and self.dest.is_relative_to(context.config.cache_path)
             and self.dest.tag is None
         )
         if no_original_mtime_present:

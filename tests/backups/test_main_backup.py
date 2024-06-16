@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 from backup import Backup
 from backup.context.context import Context
@@ -60,8 +62,9 @@ def verify_pull(backup: Backup) -> None:
     backup.run_action(Action.pull)
 
 
+@patch("xattr.xattr.set")
 def test_detailed_checker(
-    mocked_backup_with_filled_content: Backup, test_context: Context
+    _: MagicMock, mocked_backup_with_filled_content: Backup, test_context: Context
 ) -> None:
     path_to_check = test_context.profiles_source_root / ".config" / "gtkrc"
     path_to_check.touch()

@@ -145,19 +145,6 @@ def mocked_backup_with_filled_content(
     return mocked_backup
 
 
-@pytest.fixture
-def mocked_backup_with_filled_content_for_pull(
-    mocked_backup_with_filled_content: Backup, test_context: Context
-) -> Backup:
-    profile_path = test_context.config.backup_dest / Path.HOME.relative_to(
-        Path.backup_source
-    )
-    for name in Defaults.create_profile_paths():
-        path = profile_path / name
-        path.touch()
-    return mocked_backup_with_filled_content
-
-
 def fill_directories(
     mocked_backup: Backup, test_context: Context, content: str = "content"
 ) -> None:
@@ -166,9 +153,24 @@ def fill_directories(
     content2 = content * 2
     for number in (0, 2):
         fill(mocked_backup.dest, content2, number=number)
-    for name in Defaults.create_profile_paths():
-        path = test_context.profiles_source_root / name
-        path.touch()
+    add_profile_paths(test_context.profiles_source_root)
+
+
+def add_profile_paths(root: Path) -> None:
+    name = Defaults.create_profile_paths()[0]
+    path = root / name
+    path.touch()
+
+
+@pytest.fixture
+def mocked_backup_with_filled_content_for_pull(
+    mocked_backup_with_filled_content: Backup, test_context: Context
+) -> Backup:
+    profile_path = test_context.config.backup_dest / Path.HOME.relative_to(
+        Path.backup_source
+    )
+    add_profile_paths(profile_path)
+    return mocked_backup_with_filled_content
 
 
 def fill(directory: Path, content: str = "content", number: int = 0) -> None:

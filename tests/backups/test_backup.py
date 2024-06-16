@@ -70,4 +70,5 @@ def test_show_diff(
     test_context.options.show_file_diffs = True
     changes = backup.capture_status()
     changes.ask_confirm(message="message", show_diff=True)
+    changes.changes[0].print()
     test_context.options.show_file_diffs = False

@@ -7,7 +7,7 @@ import superpathlib
 from simple_classproperty import classproperty
 
 if TYPE_CHECKING:
-    from datetime import datetime
+    from datetime import datetime  # pragma: nocover
 
 T = TypeVar("T", bound="Path")
 
@@ -45,7 +45,7 @@ class Path(superpathlib.Path):
         mtime = self.mtime
 
         use_tag = check_tag and self.exists() and self.is_relative_to(Path.backup_cache)
-        if use_tag:
+        if use_tag:  # pragma: nocover
             tag = self.tag
             if tag:
                 mtime = int(tag)
@@ -151,12 +151,6 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def harddrive_paths(cls: type[T]) -> T:
-        path = cls.config / "harddrive.yaml"
-        return cast(T, path)
-
-    @classmethod
-    @classproperty
     def profile_paths(cls: type[T]) -> T:
         path = cls.config / "profiles.yaml"
         return cast(T, path)
@@ -189,12 +183,6 @@ class Path(superpathlib.Path):
     @classproperty
     def remote(cls: type[T]) -> T:
         return cls("backup:")
-
-    @classmethod
-    @classproperty
-    def harddrive(cls: type[T]) -> T:
-        path = cls("/") / "media" / cls.HOME.name / "Backup"
-        return cast(T, path)
 
     @classmethod
     @classproperty

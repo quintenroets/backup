@@ -94,8 +94,8 @@ class Backup(backup.Backup):
 
     @classmethod
     def check_config_path(cls) -> None:
-        if not context.config_path.exists():
-            backup.Backup(folder=context.config_path).capture_pull()
+        if not Path.config.exists():
+            backup.Backup(folder=Path.config).capture_pull()
 
     def exclude_root(self, path: Path) -> bool:
         return (

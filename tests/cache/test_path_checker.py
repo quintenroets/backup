@@ -7,6 +7,7 @@ from backup.backups.cache.checker.path import (
     RcloneChecker,
     UserPlaceChecker,
 )
+from backup.context import Context
 from backup.models import Path
 
 
@@ -38,14 +39,14 @@ def test_user_place_checker() -> None:
         checker.calculate_relevant_hash(path)
 
 
-def test_rclone_checker() -> None:
+def test_rclone_checker(test_context: Context) -> None:
     checker = RcloneChecker()
     with Path.tempfile() as path:
         checker.calculate_relevant_hash(path)
 
 
 @patch("cli.capture_output_lines", return_value=[""])
-def test_kwallet_checker(_: MagicMock) -> None:
+def test_kwallet_checker(_: MagicMock, test_context: Context) -> None:
     checker = KwalletChecker()
     with Path.tempfile() as path:
         checker.calculate_relevant_hash(path)

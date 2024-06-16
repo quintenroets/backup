@@ -68,3 +68,9 @@ def test_detailed_checker(
     mocked_backup_with_filled_content.run_action(Action.push)
     path_to_check.text = "#"
     Backup().run_action(Action.push)
+
+
+def test_after_pull(mocked_backup: Backup, test_context: Context) -> None:
+    path = Path.resume.relative_to(mocked_backup.source)
+    mocked_backup.paths = [path]
+    mocked_backup.after_pull()

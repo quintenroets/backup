@@ -30,8 +30,7 @@ class Path(superpathlib.Path):
     def hash_path(self: T) -> T:
         hashes = self.hashes
         if self.is_relative_to(self.backup_cache):
-            backup_root = Path("/")
-            hashes = self.backup_cache / self.hashes.relative_to(backup_root)
+            hashes = self.backup_cache / self.hashes.relative_to(self.backup_source)
         path = hashes / self.name
         return cast(T, path)
 
@@ -177,6 +176,18 @@ class Path(superpathlib.Path):
     @classproperty
     def resume(cls: type[T]) -> T:
         path = cls.docs / "Drive" / "resume" / "Resume"
+        return cast(T, path)
+
+    @classmethod
+    @classproperty
+    def main_resume_pdf(cls: type[T]) -> T:
+        path = cls.resume / "Resume Quinten Roets.pdf"
+        return cast(T, path)
+
+    @classmethod
+    @classproperty
+    def selected_resume_pdf(cls: type[T]) -> T:
+        path = Path.resume / "Main" / Path.main_resume_pdf.name
         return cast(T, path)
 
     @classmethod

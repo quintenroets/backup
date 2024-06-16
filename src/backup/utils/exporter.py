@@ -13,13 +13,13 @@ def export_changes() -> bool:
 
 
 def export_resume() -> bool:
-    for path in context.resume_path.rglob("*.docx"):
+    for path in Path.resume.rglob("*.docx"):
         if path.with_export_suffix.mtime < path.mtime:
-            message_path = path.relative_to(context.resume_path)
+            message_path = path.relative_to(Path.resume)
             with cli.status(f"Exporting {message_path}"):
                 export_path(path)
 
-    path = context.main_resume_pdf_path
+    path = Path.main_resume_pdf
     selected_resume = Path.resume / "Main" / path.name
     main_resume_updated = selected_resume.mtime > path.mtime
     if main_resume_updated:

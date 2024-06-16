@@ -1,5 +1,9 @@
 import sys
 from collections.abc import Iterator
+from contextlib import AbstractContextManager
+from dataclasses import dataclass
+from types import TracebackType
+from typing import Any
 from unittest.mock import PropertyMock, patch
 
 import cli
@@ -14,6 +18,24 @@ from package_utils.storage import CachedFileContent
 from tests import mocks
 from tests.mocks.methods import mocked_method
 from tests.mocks.storage import Defaults, Storage
+
+
+@dataclass
+class ContextList(AbstractContextManager[None]):
+    items: list[AbstractContextManager[Any]]
+
+    def __enter__(self) -> None:
+        for item in self.items:
+            item.__enter__()
+
+    def __exit__(
+        self,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        for item in self.items:
+            item.__exit__(exception_type, exception_value, traceback)
 
 
 def provision_path() -> Iterator[Path]:
@@ -48,6 +70,22 @@ def context() -> Iterator[Context]:
     yield context_
 
 
+def generate_context_managers(
+    directories: list[Path],
+) -> Iterator[AbstractContextManager[Any]]:
+    yield from directories
+    root = directories[0]
+    yield mock_under_test_root(root=root, path=Path.config)
+    yield mock_under_test_root(root=root, path=Path.hashes)
+    yield mock_under_test_root(root=root, path=Path.resume)
+
+
+def mock_under_test_root(root: Path, path: Path) -> AbstractContextManager[Any]:
+    return_value = root / path.relative_to(Path.backup_source)
+    mocked_path = PropertyMock(return_value=return_value)
+    return patch.object(Path, path.name.lower(), new_callable=mocked_path)
+
+
 @pytest.fixture()
 def test_context(context: Context) -> Iterator[Context]:
     directories = [Path.tempdir() for _ in range(3)]
@@ -56,7 +94,8 @@ def test_context(context: Context) -> Iterator[Context]:
         context.config.backup_dest,
         context.config.cache_path,
     )
-    with directories[0], directories[1], directories[2]:
+    context_managers = list(generate_context_managers(directories))
+    with ContextList(context_managers):
         (
             context.config.backup_source,
             context.config.backup_dest,

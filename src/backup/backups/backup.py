@@ -86,9 +86,9 @@ class Backup(backup.Backup):
             self.after_pull()
 
     def after_pull(self) -> None:
-        if self.contains_change(context.resume_path):
+        if self.contains_change(Path.resume):
             if exporter.export_changes():
-                path = context.main_resume_pdf_path
+                path = Path.main_resume_pdf
                 with cli.status("Uploading new resume pdf"):
                     Backup(path=path, confirm=False).capture_push()
         if self.contains_change(context.profiles_path):

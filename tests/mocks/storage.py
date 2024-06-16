@@ -12,7 +12,7 @@ class Defaults:
 
     @classmethod
     def create_profile_paths(cls) -> list[str]:
-        return ["dummy.txt"]
+        return ["dummy.txt", "dummy_directory"]
 
 
 class Storage(storage.Storage):

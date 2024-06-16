@@ -20,7 +20,7 @@ class Backup(paths.Rclone):
         with self.prepared_runner_with_locations(*options, reverse=False) as runner:
             runner.quiet = quiet
             try:
-                return self.get_changes(runner)
+                return self.capture_changes(runner)
             except cli.CalledProcessError:
                 raise create_malformed_filters_error(self.filter_rules)
 
@@ -56,7 +56,7 @@ class Backup(paths.Rclone):
         with super().prepared_runner(*args) as runner:
             yield runner
 
-    def get_changes(self, runner: Runner[str]) -> Changes:
+    def capture_changes(self, runner: Runner[str]) -> Changes:
         change_results = self.generate_change_results(runner)
         changes = self.extract_changes(change_results)
         return Changes(list(changes))

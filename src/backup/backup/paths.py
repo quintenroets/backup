@@ -53,8 +53,17 @@ class Rclone(rclone.Rclone):
 
         if self.paths:
             yield "- *"
-        elif self.dest.is_relative_to(self.source):
+        else:
+            yield from self.generate_overlapping_dest_ignore_rules()
+
+    def generate_overlapping_dest_ignore_rules(self) -> Iterator[str]:
+        if self.dest.is_relative_to(self.source):
             dest_pattern = self.dest.relative_to(self.source)
+        elif self.source.is_relative_to(self.dest):
+            dest_pattern = self.source.relative_to(self.dest)
+        else:
+            dest_pattern = None
+        if dest_pattern is not None:
             yield f"- /{dest_pattern}/**"
             yield "+ *"
 

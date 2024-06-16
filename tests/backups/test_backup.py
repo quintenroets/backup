@@ -11,9 +11,9 @@ def test_status(mocked_backup_with_filled_content: MainBackup) -> None:
     status = backup.capture_status(quiet=True)
 
     expected_changes = (
+        Change(Path("0.txt"), ChangeType.modified),
         Change(Path("1.txt"), ChangeType.created),
         Change(Path("2.txt"), ChangeType.deleted),
-        Change(Path("3.txt"), ChangeType.modified),
     )
     for change in status:
         change.source = change.dest = None
@@ -56,8 +56,18 @@ def test_all_options(
 ) -> None:
     overwrite_newer = test_context.config.overwrite_newer
     test_context.config.overwrite_newer = False
-    backup = Backup(
-        mocked_backup_with_filled_content.source, mocked_backup_with_filled_content.dest
-    )
+    backup = Backup()
     backup.capture_push()
     test_context.config.overwrite_newer = overwrite_newer
+
+
+def test_show_diff(
+    mocked_backup_with_filled_content: Backup, test_context: Context
+) -> None:
+    backup = Backup()
+    (backup.source / "0.txt").lines = ["same", "different"]
+    (backup.dest / "0.txt").lines = ["same", "different2"]
+    test_context.options.show_file_diffs = True
+    changes = backup.capture_status()
+    changes.ask_confirm(message="message", show_diff=True)
+    test_context.options.show_file_diffs = False

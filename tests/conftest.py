@@ -108,10 +108,10 @@ def mocked_backup_with_filled_content(
 def fill_directories(
     mocked_backup: Backup, test_context: Context, content: str = "content"
 ) -> None:
-    for number in (0, 1, 3):
+    for number in (0, 1):
         fill(mocked_backup.source, content, number=number)
     content2 = content * 2
-    for number in (0, 2, 3):
+    for number in (0, 2):
         fill(mocked_backup.dest, content2, number=number)
     for name in Defaults.create_profile_paths():
         path = test_context.profiles_source_root / name

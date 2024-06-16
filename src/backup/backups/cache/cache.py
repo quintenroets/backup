@@ -94,8 +94,8 @@ class Backup(backup.Backup):
 
     @classmethod
     def check_config_path(cls) -> None:
-        if not Path.config.exists():
-            backup.Backup(folder=Path.config).capture_pull()
+        if not context.config_path.exists():
+            backup.Backup(folder=context.config_path).capture_pull()
 
     def exclude_root(self, path: Path) -> bool:
         return (
@@ -122,10 +122,11 @@ class Backup(backup.Backup):
             self.remove_browser(includes)
         return includes
 
-    def remove_browser(self, includes: list[str | dict[str, Any]]) -> None:
+    @classmethod
+    def remove_browser(cls, includes: list[str | dict[str, Any]]) -> None:
         for include in includes:
             if isinstance(include, dict):
                 key, value = next(iter(include.items()))
-                self.remove_browser(value)
+                cls.remove_browser(value)
                 if context.config.browser_name in key:
                     includes.remove(include)

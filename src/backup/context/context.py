@@ -40,6 +40,11 @@ class Context(Context_[Options, Config, Secrets]):
         return cast(Path, path)
 
     @property
+    def config_path(self) -> Path:
+        path = self.config.backup_source / Path.config.relative_to(Path.backup_source)
+        return cast(Path, path)
+
+    @property
     def main_resume_pdf_path(self) -> Path:
         return self.resume_path / "Resume Quinten Roets.pdf"
 

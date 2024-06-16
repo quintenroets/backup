@@ -11,3 +11,9 @@ def test_generate_path_rules() -> None:
     rclone = Rclone()
     rclone.folder = rclone.source / "subpath"
     rclone.create_filters()
+
+
+def test_generate_path_rules_with_overlapping_source() -> None:
+    rclone = Rclone()
+    rclone.source = rclone.dest / "subpath"
+    rclone.create_filters()

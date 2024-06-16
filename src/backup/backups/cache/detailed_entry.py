@@ -5,6 +5,7 @@ from ...context import context
 from ...models import Path
 from . import entry
 from .checker.detailed import Checker
+from .checker.path import extract_hash_path
 
 
 @dataclass
@@ -20,10 +21,10 @@ class Entry(entry.Entry):
         )
         if only_volatile_content_changed:
             self.update_cached_dest()
-        elif self.source.hash_path.exists():
-            self.hash_path = self.source.hash_path.relative_to(
-                context.config.backup_source
-            )
+        else:
+            hash_path = extract_hash_path(self.source)
+            if hash_path.exists():
+                self.hash_path = hash_path.relative_to(context.config.backup_source)
         return only_volatile_content_changed
 
     def relevant_content_unchanged(self) -> bool:

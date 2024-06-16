@@ -76,9 +76,7 @@ def generate_context_managers(
     yield from directories
     root = directories[0]
     yield mock_under_test_root(root=root, path=Path.config)
-    yield mock_under_test_root(root=root, path=Path.hashes)
     yield mock_under_test_root(root=root, path=Path.resume)
-    yield mock_under_test_root(root=root, path=Path.backup_cache, name="backup_cache")
 
 
 def mock_under_test_root(
@@ -93,19 +91,17 @@ def mock_under_test_root(
 
 @pytest.fixture()
 def test_context(context: Context) -> Iterator[Context]:
-    directories = [Path.tempdir() for _ in range(3)]
+    directories = [Path.tempdir() for _ in range(2)]
     restored_directories = (
         context.config.backup_source,
         context.config.backup_dest,
         context.config.cache_path,
     )
     context_managers = list(generate_context_managers(directories))
+    relative_cache_path = Path.backup_cache.relative_to(Path.backup_source)
     with ContextList(context_managers):
-        (
-            context.config.backup_source,
-            context.config.backup_dest,
-            context.config.cache_path,
-        ) = directories
+        (context.config.backup_source, context.config.backup_dest) = directories
+        context.config.cache_path = context.config.backup_source / relative_cache_path
         context.profiles_source_root.mkdir(parents=True)
         yield context
         (
@@ -147,6 +143,19 @@ def mocked_backup_with_filled_content(
 ) -> Backup:
     fill_directories(mocked_backup, test_context)
     return mocked_backup
+
+
+@pytest.fixture
+def mocked_backup_with_filled_content_for_pull(
+    mocked_backup_with_filled_content: Backup, test_context: Context
+) -> Backup:
+    profile_path = test_context.config.backup_dest / Path.HOME.relative_to(
+        Path.backup_source
+    )
+    for name in Defaults.create_profile_paths():
+        path = profile_path / name
+        path.touch()
+    return mocked_backup_with_filled_content
 
 
 def fill_directories(

@@ -68,6 +68,7 @@ class Backup(backup.Backup):
 
     def entry_rules(self) -> Iterator[parser.PathRule]:
         any_include = False
+        yield from self.generate_exclude_overlapping_rules()
         rules = self.generate_entry_rules()
         for rule in rules:
             any_include |= rule.include
@@ -77,14 +78,25 @@ class Backup(backup.Backup):
             root = Path()
             yield parser.PathRule(root, True)
 
+    def generate_exclude_overlapping_rules(self) -> Iterator[parser.PathRule]:
+        if self.dest.is_relative_to(self.source):
+            relative_dest = self.dest.relative_to(self.source)
+        elif self.source.is_relative_to(self.dest):
+            relative_dest = self.source.relative_to(self.dest)
+        else:
+            relative_dest = None
+        if relative_dest is not None:
+            yield parser.PathRule(relative_dest, False)
+
     def generate_entry_rules(self) -> Iterator[parser.PathRule]:
         self.check_config_path()
-        config_root = context.config.backup_source
         rules = parser.Rules(
-            self.include_dict, context.storage.excludes, root=config_root
+            self.include_dict,
+            context.storage.excludes,
+            root=context.config.backup_source,
         )
         if self.sub_check_path is not None:
-            relative_source = self.source.relative_to(config_root)
+            relative_source = self.source.relative_to(context.config.backup_source)
             for rule in rules:
                 if rule.path.is_relative_to(relative_source):
                     rule.path = rule.path.relative_to(relative_source)

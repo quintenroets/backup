@@ -1,12 +1,22 @@
 import os
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import cli
 
 from ....context import context
 from ....models import Path
+
+
+def extract_hash_path(path: Path) -> Path:
+    root = (
+        context.config.cache_path
+        if path.is_relative_to(context.config.cache_path)
+        else context.config.backup_source
+    )
+    relative_hashes = cast(Path, Path.hashes).relative_to(Path.backup_source)
+    return root / relative_hashes / path.name
 
 
 @dataclass
@@ -62,7 +72,7 @@ class UserPlaceChecker(PathChecker):
 
 class RetrievedContentChecker(PathChecker):
     def extract_content(self, path: Path) -> Iterator[str]:
-        hash_path = path.hash_path
+        hash_path = extract_hash_path(path)
         # compare generated hash with saved hash
         content_hash = (
             hash_path.text

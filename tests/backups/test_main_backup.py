@@ -26,12 +26,20 @@ def test_empty_push(mocked_backup: Backup) -> None:
     mocked_backup.run_action(Action.push)
 
 
-def test_push(mocked_backup_with_filled_content: Backup, test_context: Context) -> None:
+def test_push(mocked_backup_with_filled_content: Backup) -> None:
     verify_push(mocked_backup_with_filled_content)
 
 
-def test_pull(mocked_backup_with_filled_content: Backup) -> None:
-    verify_pull(mocked_backup_with_filled_content)
+def test_pull(
+    mocked_backup_with_filled_content_for_pull: Backup, test_context: Context
+) -> None:
+    verify_pull(test_context)
+
+
+def test_pull_with_sub_path(
+    mocked_backup_with_filled_content_for_pull: Backup, test_context: Context
+) -> None:
+    verify_pull(test_context, backup=mocked_backup_with_filled_content_for_pull)
 
 
 def test_malformed_filters_indicated(mocked_backup: Backup) -> None:
@@ -55,9 +63,11 @@ def verify_push(backup: Backup) -> None:
     backup.run_action(Action.push)
 
 
-def verify_pull(backup: Backup) -> None:
+def verify_pull(context: Context, backup: Backup | None = None) -> None:
+    if backup is None:
+        backup = Backup()
     backup.run_action(Action.pull)
-    dest_file = next(backup.dest.iterdir())
+    dest_file = next(context.config.backup_dest.iterdir())
     dest_file.unlink()
     backup.run_action(Action.pull)
 

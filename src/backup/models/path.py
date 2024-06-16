@@ -27,11 +27,6 @@ class Path(superpathlib.Path):
         superpathlib.Path.mtime.fset(self, value)  # type: ignore[attr-defined]
 
     @property
-    def hash_path(self: T) -> T:
-        path = self.hashes / self.name
-        return cast(T, path)
-
-    @property
     def with_export_suffix(self: T) -> T:
         return self.with_suffix(".pdf")
 

@@ -39,7 +39,8 @@ def test_user_place_checker(test_context: Context) -> None:
         checker.calculate_relevant_hash(path)
 
 
-def test_rclone_checker(test_context: Context) -> None:
+@patch("cli.capture_output_lines", return_value=[""])
+def test_rclone_checker(_: MagicMock, test_context: Context) -> None:
     checker = RcloneChecker()
     with Path.tempfile() as path:
         checker.calculate_relevant_hash(path)

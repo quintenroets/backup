@@ -14,9 +14,7 @@ def test_detailed_checker(_: MagicMock, __: MagicMock, test_context: Context) ->
         source=path,
     )
     path.touch()
-    entry.is_changed()
-    path.text = " "
-    path.touch()
+    assert entry.is_changed()
 
 
 @patch("cli.capture_output_lines", return_value=[""])
@@ -31,6 +29,4 @@ def test_detailed_checker_hash_path(
         dest_root=test_context.config.backup_dest,
         source=path,
     )
-    entry.is_changed()
-    path.text = " "
-    entry.is_changed()
+    assert entry.is_changed()

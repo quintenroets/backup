@@ -66,7 +66,7 @@ class RetrievedContentChecker(PathChecker):
         # compare generated hash with saved hash
         content_hash = (
             hash_path.text
-            if hash_path.is_relative_to(Path.backup_cache)
+            if hash_path.is_relative_to(context.config.cache_path)
             else self.calculate_content_hash()
         )
         if content_hash != hash_path.text:
@@ -105,7 +105,8 @@ class KwalletChecker(RetrievedContentChecker):
             info = cli.capture_output_lines(*full_command)
             yield item.folder, item.item, info
 
-    def generate_items(self) -> Iterator[KwalletItem]:
+    @classmethod
+    def generate_items(cls) -> Iterator[KwalletItem]:
         folders = ("Network Management", "Passwords", "ksshaskpass")
         command = "kwallet-query -l kdewallet -f"
         for folder in folders:

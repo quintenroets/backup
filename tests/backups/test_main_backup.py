@@ -63,17 +63,25 @@ def verify_pull(backup: Backup) -> None:
 
 
 @patch("xattr.xattr.set")
-def test_detailed_checker(
-    _: MagicMock, mocked_backup_with_filled_content: Backup, test_context: Context
-) -> None:
-    path_to_check = test_context.profiles_source_root / ".config" / "gtkrc"
-    path_to_check.touch()
-    mocked_backup_with_filled_content.run_action(Action.push)
-    path_to_check.text = "#"
+def test_detailed_checker(_: MagicMock, test_context: Context) -> None:
+    path = test_context.profiles_source_root / ".config" / "gtkrc"
+    path.touch()
+    Backup().run_action(Action.push)
+    path.text = "#"
+    Backup().run_action(Action.push)
+
+
+@patch("xattr.xattr.set")
+def test_detailed_checker_hash_path(_: MagicMock, test_context: Context) -> None:
+    path = test_context.profiles_source_root / ".config" / "rclone" / "rclone.conf"
+    path.touch()
+    Backup().run_action(Action.push)
+    path.text = " "
     Backup().run_action(Action.push)
 
 
 def test_after_pull(mocked_backup: Backup, test_context: Context) -> None:
-    path = Path.resume.relative_to(mocked_backup.source)
+    Path.selected_resume_pdf.touch()
+    path = Path.selected_resume_pdf.relative_to(mocked_backup.source)
     mocked_backup.paths = [path]
     mocked_backup.after_pull()

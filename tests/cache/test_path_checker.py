@@ -12,7 +12,7 @@ from backup.models import Path
 
 
 @pytest.fixture
-def checker() -> PathChecker:
+def checker(test_context: Context) -> PathChecker:
     return PathChecker()
 
 
@@ -32,7 +32,7 @@ def test_sections(checker: PathChecker) -> None:
         checker.calculate_relevant_hash(path)
 
 
-def test_user_place_checker() -> None:
+def test_user_place_checker(test_context: Context) -> None:
     checker = UserPlaceChecker()
     with Path.tempfile() as path:
         path.text = '<bookmark href="https://www.example.com">'

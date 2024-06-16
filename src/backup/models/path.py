@@ -28,10 +28,7 @@ class Path(superpathlib.Path):
 
     @property
     def hash_path(self: T) -> T:
-        hashes = self.hashes
-        if self.is_relative_to(self.backup_cache):
-            hashes = self.backup_cache / self.hashes.relative_to(self.backup_source)
-        path = hashes / self.name
+        path = self.hashes / self.name
         return cast(T, path)
 
     @property

@@ -1,27 +1,19 @@
 [project]
-name = "backupmaster"
-version = "1.1.0"
-description = "Backup import files across entire disk"
+name = "backup"
+version = "0.1.0"
+description = "Template for Python package published on PyPI"
 authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "beautifulsoup4 >=4.12.2, <5",
-    "lxml >=4.9.3, <6",
-    "package-utils[context] >=0.6.4, <1",
-    "powercli >=0.3.0, <1",
-    "PyYAML >=6.0.1, <7",
-    "tqdm >=4.66.1, <5",
-    "xattr >=0.10.1, <2",
+    "package-utils[context] >=0.6.1, <1",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "dirhash >=0.2.1, <1",
-    "package-dev-tools >=0.6.0, <1",
+    "package-dev-tools >=0.5.11, <1",
     "package-dev-utils >=0.1.6, <1",
-    "types-beautifulsoup4 >=4.12.0.20240106, <5",
 ]
 
 [project.urls]
@@ -35,11 +27,11 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.coverage.run]
-command_line = "-m pytest"
+command_line = "-m pytest tests"
 
 [tool.coverage.report]
 precision = 4
-fail_under = 91
+fail_under = 100
 
 [tool.mypy]
 strict = true

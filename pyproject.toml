@@ -1,6 +1,6 @@
 [project]
 name = "backupmaster"
-version = "1.1.0"
+version = "1.1.1"
 description = "Backup import files across entire disk"
 authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
 license = {text = "MIT"}

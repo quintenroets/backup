@@ -81,13 +81,10 @@ class Backup(backup.Backup):
 
     def generate_entry_rules(self) -> Iterator[parser.PathRule]:
         self.check_config_path()
-        rules = parser.Rules(
-            self.include_dict,
-            context.storage.excludes,
-            root=context.config.backup_source,
-        )
+        root = context.config.backup_source
+        rules = parser.Rules(self.include_dict, context.storage.excludes, root=root)
         if self.sub_check_path is not None:
-            relative_source = self.source.relative_to(context.config.backup_source)
+            relative_source = self.source.relative_to(root)
             for rule in rules:
                 if rule.path.is_relative_to(relative_source):
                     rule.path = rule.path.relative_to(relative_source)

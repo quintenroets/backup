@@ -1,6 +1,6 @@
 from package_utils.context.entry_point import create_entry_point
 
-from backup import main
+from backup.main.main import main
 
 from ..context import context
 

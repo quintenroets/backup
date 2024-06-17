@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from backup import Backup
+from backup.backups import Backup
 from backup.context.context import Context
 from backup.models import Action, Path
 

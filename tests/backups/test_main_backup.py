@@ -5,6 +5,8 @@ from backup import Backup
 from backup.context.context import Context
 from backup.models import Action, Path
 
+from tests.mocks.storage import Defaults
+
 
 def test_status(mocked_backup_with_filled_content: Backup) -> None:
     mocked_backup_with_filled_content.run_action(Action.status)
@@ -30,16 +32,47 @@ def test_push(mocked_backup_with_filled_content: Backup) -> None:
     verify_push(mocked_backup_with_filled_content)
 
 
-def test_pull(
-    mocked_backup_with_filled_content_for_pull: Backup, test_context: Context
+def test_push_with_indent(mocked_backup_with_filled_content: Backup) -> None:
+    directory = mocked_backup_with_filled_content.source / "sub" / "directory"
+    paths = (
+        directory / "a.txt",
+        directory / "b.txt",
+        directory / "sub_sub" / "a.txt",
+        directory / "sub_sub" / "b.txt",
+    )
+    for path in paths:
+        path.touch()
+    verify_push(mocked_backup_with_filled_content)
+
+
+def test_push_with_profile(
+    mocked_backup_with_filled_content: Backup, test_context: Context
 ) -> None:
+    path = test_context.profiles_path / Defaults.create_profile_paths()[0]
+    path.touch()
+    verify_push(mocked_backup_with_filled_content)
+
+
+def test_pull(mocked_backup_with_filled_content: Backup, test_context: Context) -> None:
     verify_pull(test_context)
 
 
 def test_pull_with_sub_path(
-    mocked_backup_with_filled_content_for_pull: Backup, test_context: Context
+    mocked_backup_with_filled_content: Backup, test_context: Context
 ) -> None:
-    verify_pull(test_context, backup=mocked_backup_with_filled_content_for_pull)
+    verify_pull(test_context, backup=mocked_backup_with_filled_content)
+
+
+def test_pull_with_profile(
+    mocked_backup_with_filled_content: Backup, test_context: Context
+) -> None:
+    profile_path = (
+        test_context.config.backup_dest
+        / test_context.profiles_path.relative_to(test_context.config.backup_source)
+    )
+    path = profile_path / Defaults.create_profile_paths()[0]
+    path.touch()
+    verify_pull(test_context, backup=mocked_backup_with_filled_content)
 
 
 def test_malformed_filters_indicated(mocked_backup: Backup) -> None:

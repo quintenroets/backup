@@ -20,9 +20,9 @@ class Backup(backup.Backup):
     visited: set[Path] = field(default_factory=set)
     number_of_entries: int = 0
 
-    def status(self) -> Changes:
+    def status(self, reverse: bool = False) -> Changes:
         self.paths = list(self.generate_changed_paths())
-        return super().capture_status() if self.paths else Changes([])
+        return super().capture_status(reverse=reverse) if self.paths else Changes([])
 
     def generate_changed_paths(self) -> Iterator[Path]:
         entries: Iterable[Entry] = self.generate_entries()

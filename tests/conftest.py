@@ -17,7 +17,7 @@ from package_utils.storage import CachedFileContent
 
 from tests import mocks
 from tests.mocks.methods import mocked_method
-from tests.mocks.storage import Defaults, Storage
+from tests.mocks.storage import Storage
 
 
 @dataclass
@@ -138,39 +138,17 @@ def mocked_backup(test_context: Context) -> Backup:
 
 
 @pytest.fixture
-def mocked_backup_with_filled_content(
-    mocked_backup: Backup, test_context: Context
-) -> Backup:
-    fill_directories(mocked_backup, test_context)
+def mocked_backup_with_filled_content(mocked_backup: Backup) -> Backup:
+    fill_directories(mocked_backup)
     return mocked_backup
 
 
-def fill_directories(
-    mocked_backup: Backup, test_context: Context, content: str = "content"
-) -> None:
+def fill_directories(mocked_backup: Backup, content: str = "content") -> None:
     for number in (0, 1):
         fill(mocked_backup.source, content, number=number)
     content2 = content * 2
     for number in (0, 2):
         fill(mocked_backup.dest, content2, number=number)
-    add_profile_paths(test_context.profiles_source_root)
-
-
-def add_profile_paths(root: Path) -> None:
-    name = Defaults.create_profile_paths()[0]
-    path = root / name
-    path.touch()
-
-
-@pytest.fixture
-def mocked_backup_with_filled_content_for_pull(
-    mocked_backup_with_filled_content: Backup, test_context: Context
-) -> Backup:
-    profile_path = test_context.config.backup_dest / Path.HOME.relative_to(
-        Path.backup_source
-    )
-    add_profile_paths(profile_path)
-    return mocked_backup_with_filled_content
 
 
 def fill(directory: Path, content: str = "content", number: int = 0) -> None:

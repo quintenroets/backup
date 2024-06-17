@@ -17,6 +17,11 @@ class Backup(backup.Backup):
         self.paths = list(paths)
         super().__post_init__()
 
+    def generate_path_rules(self) -> Iterator[str]:
+        if not self.paths:
+            yield "- *"
+        yield from super().generate_path_rules()
+
     def generate_paths(self) -> Iterator[Path]:
         rules = parser.Rules(
             context.storage.profile_paths, root=context.extract_profiles_source_root()

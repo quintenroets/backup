@@ -15,9 +15,9 @@ from . import paths
 
 @dataclass
 class Backup(paths.Rclone):
-    def capture_status(self, quiet: bool = False) -> Changes:
+    def capture_status(self, quiet: bool = False, reverse: bool = False) -> Changes:
         options = "check", "--combined", "-"
-        with self.prepared_runner_with_locations(*options, reverse=False) as runner:
+        with self.prepared_runner_with_locations(*options, reverse=reverse) as runner:
             runner.quiet = quiet
             try:
                 return self.capture_changes(runner)

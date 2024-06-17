@@ -16,10 +16,10 @@ def test_detailed_checker(_: MagicMock, __: MagicMock, test_context: Context) ->
         source=path,
     )
     path.touch()
-    assert entry.is_changed()
+    assert not entry.only_volatile_content_changed()
     path.text = "#"
     entry.dest.touch()
-    assert not entry.is_changed()
+    assert entry.only_volatile_content_changed()
 
 
 @patch("cli.capture_output_lines", return_value=[""])
@@ -34,11 +34,9 @@ def test_detailed_checker_hash_path(
         dest_root=test_context.config.cache_path,
         source=path,
     )
-    assert entry.is_changed()
-
+    assert not entry.only_volatile_content_changed()
     hash_path = extract_hash_path(entry.dest)
     hash_path.text = RcloneChecker().calculate_content_hash()
     entry.dest.touch()
     path.text = " "
-
-    assert not entry.is_changed()
+    assert entry.only_volatile_content_changed()

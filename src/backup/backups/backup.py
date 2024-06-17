@@ -14,7 +14,6 @@ from . import cache, profile
 
 @dataclass
 class Backup(backup.Backup):
-    reverse: bool = False
     confirm: bool = field(default_factory=lambda: context.options.confirm_push)
 
     def run_action(self, action: Action) -> None:
@@ -52,10 +51,10 @@ class Backup(backup.Backup):
             path=self.path, paths=self.paths, sub_check_path=self.sub_check_path
         ).push()
 
-    def check_changed_paths(self, reverse: bool = True) -> list[Path]:
+    def check_changed_paths(self, reverse: bool) -> list[Path]:
         changes: Changes = self.cache_status(reverse=reverse)
         if changes and context.options.confirm_push and sys.stdin.isatty():
-            if not self.ask_confirm(changes, reverse=True):
+            if not self.ask_confirm(changes, reverse=reverse):
                 changes.changes = []  # pragma: nocover
         return changes.paths
 

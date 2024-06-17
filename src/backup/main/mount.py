@@ -1,4 +1,5 @@
 import os
+import time
 from dataclasses import dataclass, field
 from typing import Annotated
 
@@ -6,8 +7,8 @@ import cli
 import typer
 
 from backup.models import Path
-
 from backup.utils.setup import check_setup
+
 from ..context import context
 
 
@@ -34,6 +35,8 @@ class Mounter:
         env = os.environ | {"RCLONE_CONFIG_PASS": self.rclone_secret}
         env.pop("RCLONE_PASSWORD_COMMAND", None)
         cli.launch("rclone mount", env=env)
+        time.sleep(5)
+        cli.run("ls", self.path)
 
     def check_path(self) -> None:
         if self.path is None:

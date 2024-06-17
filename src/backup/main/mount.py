@@ -34,7 +34,6 @@ class Mounter:
         self.check_path()
         env = os.environ | {"RCLONE_CONFIG_PASS": self.rclone_secret}
         env.pop("RCLONE_PASSWORD_COMMAND", None)
-        cli.run("rclone mount", f"{self.remote}:", self.path, env=env)
         cli.launch("rclone mount", f"{self.remote}:", self.path, env=env)
         time.sleep(5)
 
@@ -42,7 +41,6 @@ class Mounter:
         if self.path is None:
             self.path = Path("/") / "media" / self.remote.split(":")[0].capitalize()
         if not self.path.exists():
-            print("jihaaa")
             username = "root" if "GITHUB_ACTIONS" in os.environ else os.getlogin()
             commands = (
                 f"sudo mkdir {self.path}",

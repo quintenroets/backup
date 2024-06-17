@@ -35,7 +35,6 @@ class Mounter:
         env = os.environ | {"RCLONE_CONFIG_PASS": self.rclone_secret}
         env.pop("RCLONE_PASSWORD_COMMAND", None)
         cli.launch("rclone mount", f"{self.remote}:", self.path, env=env)
-        time.sleep(5)
 
     def check_path(self) -> None:
         if self.path is None:

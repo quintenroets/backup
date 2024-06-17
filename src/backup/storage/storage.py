@@ -24,3 +24,6 @@ class Storage:
     profile_paths: CachedFileContent[list[str]] = CachedFileContent(
         Path.profile_paths, default=[]
     )
+    active_profile: CachedFileContent[str] = CachedFileContent(
+        Path.active_profile, default="light"
+    )

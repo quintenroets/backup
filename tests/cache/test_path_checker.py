@@ -7,11 +7,12 @@ from backup.backups.cache.checker.path import (
     RcloneChecker,
     UserPlaceChecker,
 )
+from backup.context import Context
 from backup.models import Path
 
 
 @pytest.fixture
-def checker() -> PathChecker:
+def checker(test_context: Context) -> PathChecker:
     return PathChecker()
 
 
@@ -31,21 +32,22 @@ def test_sections(checker: PathChecker) -> None:
         checker.calculate_relevant_hash(path)
 
 
-def test_user_place_checker() -> None:
+def test_user_place_checker(test_context: Context) -> None:
     checker = UserPlaceChecker()
     with Path.tempfile() as path:
         path.text = '<bookmark href="https://www.example.com">'
         checker.calculate_relevant_hash(path)
 
 
-def test_rclone_checker() -> None:
+@patch("cli.capture_output_lines", return_value=[""])
+def test_rclone_checker(_: MagicMock, test_context: Context) -> None:
     checker = RcloneChecker()
     with Path.tempfile() as path:
         checker.calculate_relevant_hash(path)
 
 
 @patch("cli.capture_output_lines", return_value=[""])
-def test_kwallet_checker(_: MagicMock) -> None:
+def test_kwallet_checker(_: MagicMock, test_context: Context) -> None:
     checker = KwalletChecker()
     with Path.tempfile() as path:
         checker.calculate_relevant_hash(path)

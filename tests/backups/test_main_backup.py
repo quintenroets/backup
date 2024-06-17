@@ -1,7 +1,11 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 from backup import Backup
 from backup.context.context import Context
 from backup.models import Action, Path
+
+from tests.mocks.storage import Defaults
 
 
 def test_status(mocked_backup_with_filled_content: Backup) -> None:
@@ -12,16 +16,63 @@ def test_diff(mocked_backup_with_filled_content: Backup) -> None:
     mocked_backup_with_filled_content.run_action(Action.diff)
 
 
+def test_show_diff(
+    mocked_backup_with_filled_content: Backup, test_context: Context
+) -> None:
+    test_context.options.show_file_diffs = True
+    mocked_backup_with_filled_content.run_action(Action.push)
+    test_context.options.show_file_diffs = False
+
+
 def test_empty_push(mocked_backup: Backup) -> None:
     mocked_backup.run_action(Action.push)
 
 
-def test_push(mocked_backup_with_filled_content: Backup, test_context: Context) -> None:
+def test_push(mocked_backup_with_filled_content: Backup) -> None:
     verify_push(mocked_backup_with_filled_content)
 
 
-def test_pull(mocked_backup_with_filled_content: Backup) -> None:
-    verify_pull(mocked_backup_with_filled_content)
+def test_push_with_indent(mocked_backup_with_filled_content: Backup) -> None:
+    directory = mocked_backup_with_filled_content.source / "sub" / "directory"
+    paths = (
+        directory / "a.txt",
+        directory / "b.txt",
+        directory / "sub_sub" / "a.txt",
+        directory / "sub_sub" / "b.txt",
+    )
+    for path in paths:
+        path.touch()
+    verify_push(mocked_backup_with_filled_content)
+
+
+def test_push_with_profile(
+    mocked_backup_with_filled_content: Backup, test_context: Context
+) -> None:
+    path = test_context.profiles_path / Defaults.create_profile_paths()[0]
+    path.touch()
+    verify_push(mocked_backup_with_filled_content)
+
+
+def test_pull(mocked_backup_with_filled_content: Backup, test_context: Context) -> None:
+    verify_pull(test_context)
+
+
+def test_pull_with_sub_path(
+    mocked_backup_with_filled_content: Backup, test_context: Context
+) -> None:
+    verify_pull(test_context, backup=mocked_backup_with_filled_content)
+
+
+def test_pull_with_profile(
+    mocked_backup_with_filled_content: Backup, test_context: Context
+) -> None:
+    profile_path = (
+        test_context.config.backup_dest
+        / test_context.profiles_path.relative_to(test_context.config.backup_source)
+    )
+    path = profile_path / Defaults.create_profile_paths()[0]
+    path.touch()
+    verify_pull(test_context, backup=mocked_backup_with_filled_content)
 
 
 def test_malformed_filters_indicated(mocked_backup: Backup) -> None:
@@ -45,8 +96,37 @@ def verify_push(backup: Backup) -> None:
     backup.run_action(Action.push)
 
 
-def verify_pull(backup: Backup) -> None:
+def verify_pull(context: Context, backup: Backup | None = None) -> None:
+    if backup is None:
+        backup = Backup()
     backup.run_action(Action.pull)
-    dest_file = next(backup.dest.iterdir())
+    dest_file = next(
+        path for path in context.config.backup_dest.rglob("*") if path.is_file()
+    )
     dest_file.unlink()
     backup.run_action(Action.pull)
+
+
+@patch("xattr.xattr.set")
+def test_detailed_checker(_: MagicMock, test_context: Context) -> None:
+    path = test_context.profiles_source_root / ".config" / "gtkrc"
+    path.touch()
+    Backup().run_action(Action.push)
+    path.text = "#"
+    Backup().run_action(Action.push)
+
+
+@patch("xattr.xattr.set")
+def test_detailed_checker_hash_path(_: MagicMock, test_context: Context) -> None:
+    path = test_context.profiles_source_root / ".config" / "rclone" / "rclone.conf"
+    path.touch()
+    Backup().run_action(Action.push)
+    path.text = " "
+    Backup().run_action(Action.push)
+
+
+def test_after_pull(mocked_backup: Backup, test_context: Context) -> None:
+    Path.selected_resume_pdf.touch()
+    path = Path.selected_resume_pdf.relative_to(mocked_backup.source)
+    mocked_backup.paths = [path]
+    mocked_backup.after_pull()

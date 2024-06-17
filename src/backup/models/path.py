@@ -7,7 +7,7 @@ import superpathlib
 from simple_classproperty import classproperty
 
 if TYPE_CHECKING:
-    from datetime import datetime
+    from datetime import datetime  # pragma: nocover
 
 T = TypeVar("T", bound="Path")
 
@@ -27,15 +27,6 @@ class Path(superpathlib.Path):
         superpathlib.Path.mtime.fset(self, value)  # type: ignore[attr-defined]
 
     @property
-    def hash_path(self: T) -> T:
-        hashes = self.hashes
-        if self.is_relative_to(self.backup_cache):
-            backup_root = Path("/")
-            hashes = self.backup_cache / self.hashes.relative_to(backup_root)
-        path = hashes / self.name
-        return cast(T, path)
-
-    @property
     def with_export_suffix(self: T) -> T:
         return self.with_suffix(".pdf")
 
@@ -45,7 +36,7 @@ class Path(superpathlib.Path):
         mtime = self.mtime
 
         use_tag = check_tag and self.exists() and self.is_relative_to(Path.backup_cache)
-        if use_tag:
+        if use_tag:  # pragma: nocover
             tag = self.tag
             if tag:
                 mtime = int(tag)
@@ -151,12 +142,6 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def harddrive_paths(cls: type[T]) -> T:
-        path = cls.config / "harddrive.yaml"
-        return cast(T, path)
-
-    @classmethod
-    @classproperty
     def profile_paths(cls: type[T]) -> T:
         path = cls.config / "profiles.yaml"
         return cast(T, path)
@@ -187,14 +172,20 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def remote(cls: type[T]) -> T:
-        return cls("backup:")
+    def main_resume_pdf(cls: type[T]) -> T:
+        path = cls.resume / "Resume Quinten Roets.pdf"
+        return cast(T, path)
 
     @classmethod
     @classproperty
-    def harddrive(cls: type[T]) -> T:
-        path = cls("/") / "media" / cls.HOME.name / "Backup"
+    def selected_resume_pdf(cls: type[T]) -> T:
+        path = Path.resume / "Main" / Path.main_resume_pdf.name
         return cast(T, path)
+
+    @classmethod
+    @classproperty
+    def remote(cls: type[T]) -> T:
+        return cls("backup:")
 
     @classmethod
     @classproperty

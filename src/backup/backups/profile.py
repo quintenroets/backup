@@ -12,10 +12,15 @@ class Backup(backup.Backup):
     source: Path = field(default_factory=context.extract_profiles_source_root)
 
     def __post_init__(self) -> None:
-        self.set_dest(self.profile_name)
+        self.set_dest(self.active_profile)
         paths = self.generate_paths()
         self.paths = list(paths)
         super().__post_init__()
+
+    def generate_path_rules(self) -> Iterator[str]:
+        if not self.paths:
+            yield "- *"
+        yield from super().generate_path_rules()
 
     def generate_paths(self) -> Iterator[Path]:
         rules = parser.Rules(
@@ -35,20 +40,22 @@ class Backup(backup.Backup):
 
     def set_dest(self, profile_name: str) -> None:
         self.dest = context.profiles_path / profile_name
+        self.dest.mkdir(parents=True, exist_ok=True)
+        self.filter_rules = []
 
     @property
-    def profile_name(self) -> str:
-        return Path.active_profile.text.strip() or "light"
+    def active_profile(self) -> str:
+        return context.storage.active_profile.strip()
 
-    @profile_name.setter
-    def profile_name(self, value: str) -> None:
-        Path.active_profile.text = value
+    @active_profile.setter
+    def active_profile(self, value: str) -> None:
+        context.storage.active_profile = value
         self.set_dest(value)
 
     def apply_profile(self, value: str) -> None:
-        if value != self.profile_name:
+        if value != self.active_profile:
             self.push()
-            self.profile_name = value
+            self.active_profile = value
             self.pull()
 
     def reload(self) -> None:

@@ -20,9 +20,9 @@ class Backup(backup.Backup):
     visited: set[Path] = field(default_factory=set)
     number_of_entries: int = 0
 
-    def status(self) -> Changes:
+    def status(self, reverse: bool = False) -> Changes:
         self.paths = list(self.generate_changed_paths())
-        return super().capture_status() if self.paths else Changes([])
+        return super().capture_status(reverse=reverse) if self.paths else Changes([])
 
     def generate_changed_paths(self) -> Iterator[Path]:
         entries: Iterable[Entry] = self.generate_entries()
@@ -68,6 +68,8 @@ class Backup(backup.Backup):
 
     def entry_rules(self) -> Iterator[parser.PathRule]:
         any_include = False
+        if self.overlapping_sub_path is not None:
+            yield parser.PathRule(self.overlapping_sub_path, False)
         rules = self.generate_entry_rules()
         for rule in rules:
             any_include |= rule.include
@@ -79,12 +81,10 @@ class Backup(backup.Backup):
 
     def generate_entry_rules(self) -> Iterator[parser.PathRule]:
         self.check_config_path()
-        config_root = context.config.backup_source
-        rules = parser.Rules(
-            self.include_dict, context.storage.excludes, root=config_root
-        )
+        root = context.config.backup_source
+        rules = parser.Rules(self.include_dict, context.storage.excludes, root=root)
         if self.sub_check_path is not None:
-            relative_source = self.source.relative_to(config_root)
+            relative_source = self.source.relative_to(root)
             for rule in rules:
                 if rule.path.is_relative_to(relative_source):
                     rule.path = rule.path.relative_to(relative_source)
@@ -122,10 +122,11 @@ class Backup(backup.Backup):
             self.remove_browser(includes)
         return includes
 
-    def remove_browser(self, includes: list[str | dict[str, Any]]) -> None:
+    @classmethod
+    def remove_browser(cls, includes: list[str | dict[str, Any]]) -> None:
         for include in includes:
             if isinstance(include, dict):
                 key, value = next(iter(include.items()))
-                self.remove_browser(value)
+                cls.remove_browser(value)
                 if context.config.browser_name in key:
                     includes.remove(include)

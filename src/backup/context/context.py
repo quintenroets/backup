@@ -30,22 +30,9 @@ class Context(Context_[Options, Config, Secrets]):
         return self.extract_profiles_source_root()
 
     @property
-    def resume_path(self) -> Path:
-        path = self.config.backup_source / Path.resume.relative_to(Path.backup_source)
-        return cast(Path, path)
-
-    @property
     def profiles_path(self) -> Path:
         path = self.config.backup_source / Path.profiles.relative_to(Path.backup_source)
         return cast(Path, path)
-
-    @property
-    def main_resume_pdf_path(self) -> Path:
-        return self.resume_path / "Resume Quinten Roets.pdf"
-
-    @property
-    def selected_resume_pdf_path(self) -> Path:
-        return self.resume_path / "Main" / self.main_resume_pdf_path.name
 
 
 context = Context(Options, Config, Secrets)

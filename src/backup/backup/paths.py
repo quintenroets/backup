@@ -53,10 +53,19 @@ class Rclone(rclone.Rclone):
 
         if self.paths:
             yield "- *"
-        elif self.dest.is_relative_to(self.source):
-            dest_pattern = self.dest.relative_to(self.source)
-            yield f"- /{dest_pattern}/**"
+        elif self.overlapping_sub_path is not None:
+            yield f"- /{self.overlapping_sub_path}/**"
             yield "+ *"
+
+    @property
+    def overlapping_sub_path(self) -> Path | None:
+        if self.dest.is_relative_to(self.source):
+            path = self.dest.relative_to(self.source)
+        elif self.source.is_relative_to(self.dest):
+            path = self.source.relative_to(self.dest)
+        else:
+            path = None
+        return path
 
     @classmethod
     def escape(cls, path: Path) -> str:

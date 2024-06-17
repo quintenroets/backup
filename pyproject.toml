@@ -1,6 +1,6 @@
 [project]
 name = "backupmaster"
-version = "1.1.0"
+version = "1.1.1"
 description = "Backup import files across entire disk"
 authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
 license = {text = "MIT"}
@@ -35,11 +35,11 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.coverage.run]
-command_line = "-m pytest"
+command_line = "-m pytest tests"
 
 [tool.coverage.report]
 precision = 4
-fail_under = 91
+fail_under = 100
 
 [tool.mypy]
 strict = true

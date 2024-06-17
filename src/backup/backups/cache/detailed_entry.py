@@ -5,6 +5,7 @@ from ...context import context
 from ...models import Path
 from . import entry
 from .checker.detailed import Checker
+from .checker.path import extract_hash_path
 
 
 @dataclass
@@ -20,10 +21,10 @@ class Entry(entry.Entry):
         )
         if only_volatile_content_changed:
             self.update_cached_dest()
-        elif self.source.hash_path.exists():
-            self.hash_path = self.source.hash_path.relative_to(
-                context.config.backup_source
-            )
+        else:
+            hash_path = extract_hash_path(self.source)
+            if hash_path.exists():
+                self.hash_path = hash_path.relative_to(context.config.backup_source)
         return only_volatile_content_changed
 
     def relevant_content_unchanged(self) -> bool:
@@ -35,7 +36,7 @@ class Entry(entry.Entry):
     def update_cached_dest(self) -> None:
         no_original_mtime_present = (
             self.dest.exists()
-            and self.dest.is_relative_to(Path.backup_cache)
+            and self.dest.is_relative_to(context.config.cache_path)
             and self.dest.tag is None
         )
         if no_original_mtime_present:
@@ -45,11 +46,11 @@ class Entry(entry.Entry):
 
     @property
     def check_key(self) -> Path:
-        if self.source.is_relative_to(Path.profiles):
-            check_key = self.source.relative_to(Path.profiles)
+        if self.source.is_relative_to(context.profiles_path):
+            check_key = self.source.relative_to(context.profiles_path)
             check_key = check_key.relative_to(check_key.parts[0])
-        elif self.source.is_relative_to(Path.HOME):  # noqa
-            check_key = self.source.relative_to(Path.HOME)  # noqa
+        elif self.source.is_relative_to(context.profiles_source_root):  # noqa
+            check_key = self.source.relative_to(context.profiles_source_root)  # noqa
         else:
             check_key = self.relative
         return check_key

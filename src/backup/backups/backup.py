@@ -14,8 +14,6 @@ from . import cache, profile
 
 @dataclass
 class Backup(backup.Backup):
-    quiet_cache: bool = False
-    reverse: bool = False
     confirm: bool = field(default_factory=lambda: context.options.confirm_push)
 
     def run_action(self, action: Action) -> None:
@@ -30,8 +28,7 @@ class Backup(backup.Backup):
                 self.diff()
 
     def status(self, show: bool = True) -> Changes:
-        self.quiet_cache = True
-        self.paths = self.cache_status().paths
+        self.paths = self.cache_status(quiet=True).paths
         status = super().capture_status() if self.paths else Changes()
         if show:
             status.print()
@@ -40,7 +37,7 @@ class Backup(backup.Backup):
     def run_push(self, reverse: bool = False) -> None:
         any_include = any(rule.startswith("+") for rule in self.filter_rules)
         if not self.paths and not any_include:
-            self.paths = self.check_changed_paths()
+            self.paths = self.check_changed_paths(reverse=reverse)
         if self.paths:
             self.start_push(reverse=reverse)
 
@@ -54,15 +51,16 @@ class Backup(backup.Backup):
             path=self.path, paths=self.paths, sub_check_path=self.sub_check_path
         ).push()
 
-    def check_changed_paths(self) -> list[Path]:
-        changes: Changes = self.cache_status()
+    def check_changed_paths(self, reverse: bool) -> list[Path]:
+        changes: Changes = self.cache_status(reverse=reverse)
         if changes and context.options.confirm_push and sys.stdin.isatty():
-            if not self.ask_confirm(changes):
+            if not self.ask_confirm(changes, reverse=reverse):
                 changes.changes = []  # pragma: nocover
         return changes.paths
 
-    def ask_confirm(self, changes: Changes) -> bool:
-        message = "Pull?" if self.reverse else "Push?"
+    @classmethod
+    def ask_confirm(cls, changes: Changes, reverse: bool = False) -> bool:
+        message = "Pull?" if reverse else "Push?"
         response = changes.ask_confirm(
             message, show_diff=context.options.show_file_diffs
         )
@@ -70,13 +68,11 @@ class Backup(backup.Backup):
             response = changes.ask_confirm(message, show_diff=True)  # pragma: nocover
         return response
 
-    def cache_status(self) -> Changes:
+    def cache_status(self, quiet: bool = False, reverse: bool = False) -> Changes:
         if context.profiles_path.is_relative_to(self.source):
             profile.Backup().capture_push()
-        cache_backup = cache.Backup(
-            quiet=self.quiet_cache, sub_check_path=self.sub_check_path
-        )
-        return cache_backup.status()
+        cache_backup = cache.Backup(quiet=quiet, sub_check_path=self.sub_check_path)
+        return cache_backup.status(reverse=reverse)
 
     def run_pull(self) -> None:
         if not context.options.no_sync:
@@ -86,9 +82,9 @@ class Backup(backup.Backup):
             self.after_pull()
 
     def after_pull(self) -> None:
-        if self.contains_change(context.resume_path):
+        if self.contains_change(Path.resume):
             if exporter.export_changes():
-                path = context.main_resume_pdf_path
+                path = Path.main_resume_pdf
                 with cli.status("Uploading new resume pdf"):
                     Backup(path=path, confirm=False).capture_push()
         if self.contains_change(context.profiles_path):

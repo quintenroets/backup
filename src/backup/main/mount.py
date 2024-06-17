@@ -37,12 +37,16 @@ class Mounter:
         cli.run("rclone mount", f"{self.remote}:", self.path, env=env)
         cli.launch("rclone mount", f"{self.remote}:", self.path, env=env)
         time.sleep(5)
-        cli.run("ls", self.path)
 
     def check_path(self) -> None:
         if self.path is None:
             self.path = Path("/") / "media" / self.remote.split(":")[0].capitalize()
         if not self.path.exists():
+            print("jihaaa")
             username = "root" if "GITHUB_ACTIONS" in os.environ else os.getlogin()
-            commands = f"sudo mkdir {self.path}", f"sudo chown {username} {self.path}"
+            commands = (
+                f"sudo mkdir {self.path}",
+                f"sudo chown {username} {self.path}",
+                f"sudo chmod 777 {self.path}",
+            )
             cli.run_commands(*commands)

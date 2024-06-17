@@ -100,7 +100,9 @@ def verify_pull(context: Context, backup: Backup | None = None) -> None:
     if backup is None:
         backup = Backup()
     backup.run_action(Action.pull)
-    dest_file = next(context.config.backup_dest.iterdir())
+    dest_file = next(
+        path for path in context.config.backup_dest.rglob("*") if path.is_file()
+    )
     dest_file.unlink()
     backup.run_action(Action.pull)
 

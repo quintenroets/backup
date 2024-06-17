@@ -13,14 +13,14 @@ from ..context import context
 class Help:
     remote = "name of remote to mount"
     path = "local path to mount remote to"
-    rclone_key = "decryption key for rclone configuration"
+    rclone_secret = "decryption key for rclone configuration"
 
 
 @dataclass
 class Mounter:
     remote: Annotated[str, typer.Option(help=Help.remote)] = "backup"
     path: Annotated[Path | None, typer.Option(help=Help.path)] = None
-    rclone_key: Annotated[str, typer.Option(help=Help.rclone_key)] = field(
+    rclone_secret: Annotated[str, typer.Option(help=Help.rclone_secret)] = field(
         default_factory=lambda: context.secrets.rclone
     )
 
@@ -29,7 +29,7 @@ class Mounter:
         Mount remote to local path.
         """
         self.check_path()
-        env = os.environ | {"RCLONE_CONFIG_PASS": self.rclone_key}
+        env = os.environ | {"RCLONE_CONFIG_PASS": self.rclone_secret}
         env.pop("RCLONE_PASSWORD_COMMAND", None)
         cli.launch("rclone mount", env=env)
 

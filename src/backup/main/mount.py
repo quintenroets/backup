@@ -43,6 +43,6 @@ class Mounter:
             self.path = Path("/") / "media" / self.remote.split(":")[0].lower()
         if not self.path.exists():
             username = "runner" if "GITHUB_ACTIONS" in os.environ else os.getlogin()
-            commands = f"-u {username} mkdir -p", "chmod 777"
+            commands = f"install -d -o {username} -g {username}", "chmod 777"
             for command in commands:
                 cli.run(command, self.path, root=True)

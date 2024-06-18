@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock, patch
 
 from backup.cli import entry_point, mount
-from package_dev_utils.tests.args import no_cli_args
+from package_dev_utils.tests.args import cli_args, no_cli_args
+from superpathlib import Path
 
 
 @no_cli_args
@@ -10,8 +11,9 @@ def test_entry_point(_: MagicMock) -> None:
     entry_point.entry_point()
 
 
-@no_cli_args
 @patch("cli.launch")
-@patch("cli.run_commands")
+@patch("cli.run")
 def test_mount_entry_point(_: MagicMock, __: MagicMock) -> None:
-    mount.entry_point()
+    with Path.tempfile(create=False) as path:
+        with cli_args("--path", path):
+            mount.entry_point()

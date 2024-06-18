@@ -21,7 +21,7 @@ class Help:
 @dataclass
 class Mounter:
     remote: Annotated[str, typer.Option(help=Help.remote)] = "backup"
-    path: Annotated[Path | None, typer.Option(help=Help.path)] = None
+    path: Annotated[Path, typer.Option(help=Help.path)] = field(default_factory=Path)
     rclone_secret: Annotated[str, typer.Option(help=Help.rclone_secret)] = field(
         default_factory=lambda: context.secrets.rclone
     )
@@ -38,13 +38,13 @@ class Mounter:
         time.sleep(0.5)
 
     def check_path(self) -> None:
-        if self.path is None:
-            self.path = Path("/") / "media" / self.remote.split(":")[0].capitalize()
+        if not self.path.parts:
+            self.path = Path("/") / "media" / self.remote.split(":")[0].lower()
         if not self.path.exists():
             username = "root" if "GITHUB_ACTIONS" in os.environ else os.getlogin()
             commands = (
-                f"sudo mkdir {self.path}",
-                f"sudo chown {username} {self.path}",
-                f"sudo chmod 777 {self.path}",
+                f"mkdir {self.path}",
+                f"chown {username} {self.path}",
+                f"chmod 777 {self.path}",
             )
-            cli.run_commands(*commands)
+            cli.run_commands(*commands, root=True)

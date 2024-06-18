@@ -17,3 +17,10 @@ def test_mount_entry_point(_: MagicMock, __: MagicMock) -> None:
     with Path.tempfile(create=False) as path:
         with cli_args("--path", path):
             mount.entry_point()
+
+
+@no_cli_args
+@patch("cli.launch")
+@patch("cli.run")
+def test_mount_entry_point_without_path_specified(_: MagicMock, __: MagicMock) -> None:
+    mount.entry_point()

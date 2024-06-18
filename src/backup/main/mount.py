@@ -42,6 +42,17 @@ class Mounter:
         if not self.path.parts:
             self.path = Path("/") / "media" / self.remote.split(":")[0].lower()
         if not self.path.exists():
-            username = "runner" if "GITHUB_ACTIONS" in os.environ else os.getlogin()
-            command = f"install -d -o {username} -g {username} -m 777", self.path
+            self.create_path()
+
+    def create_path(self) -> None:
+        created_root = self.path
+        while not created_root.parent.exists():
+            created_root = created_root.parent
+        username = "runner" if "GITHUB_ACTIONS" in os.environ else os.getlogin()
+        commands = (
+            f"mkdir -p {self.path}",
+            f"chown {username}:{username} -R {created_root}",
+            f"chmod 777 -R {created_root}",
+        )
+        for command in commands:
             cli.run(command, root=True)

@@ -17,7 +17,7 @@ def calculate_sub_check_path() -> Path | None:  # pragma: no cover
     else:
         sub_check_path = None
     if sub_check_path is not None:
-        sub_check_path = sub_check_path.relative_to(rclone.Rclone.source)
+        sub_check_path = sub_check_path.relative_to(context.config.backup_source)
     return cast(Path | None, sub_check_path)
 
 

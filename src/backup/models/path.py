@@ -31,7 +31,7 @@ class Path(superpathlib.Path):
         return self.with_suffix(".pdf")
 
     def extract_date(self, check_tag: bool = False) -> datetime:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         mtime = self.mtime
 
@@ -41,8 +41,7 @@ class Path(superpathlib.Path):
             if tag:
                 mtime = int(tag)
 
-        date = datetime.fromtimestamp(mtime)
-        return date.astimezone(timezone.utc)
+        return datetime.fromtimestamp(mtime)
 
     def has_date(self, date: datetime, check_tag: bool = False) -> bool:
         path_date = self.extract_date(check_tag=check_tag)

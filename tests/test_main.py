@@ -2,8 +2,8 @@ from collections.abc import Iterator
 from unittest.mock import MagicMock, patch
 
 import pytest
-from backup import main
 from backup.context.context import Context
+from backup.main.main import main
 
 
 @patch("backup.backups.backup.Backup.run_action")

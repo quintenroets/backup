@@ -1,7 +1,7 @@
 import json
 
-from backup import Backup as MainBackup
 from backup.backup import Backup
+from backup.backups import Backup as MainBackup
 from backup.context.context import Context
 from backup.models import Change, ChangeType, Path
 

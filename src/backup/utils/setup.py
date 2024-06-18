@@ -14,7 +14,7 @@ def check_setup(install: bool = True) -> None:
 def install_rclone() -> None:
     # curl required inside rclone install.sh script
     commands = (
-        "sudo apt install -y curl",
+        "sudo apt-get install -y curl",
         "curl https://rclone.org/install.sh | sudo bash",
     )
     cli.run_commands_in_shell(*commands, check=False)

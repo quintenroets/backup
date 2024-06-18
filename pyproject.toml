@@ -1,6 +1,6 @@
 [project]
 name = "backupmaster"
-version = "1.1.2"
+version = "1.2.0"
 description = "Backup import files across entire disk"
 authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
 license = {text = "MIT"}
@@ -12,7 +12,6 @@ dependencies = [
     "package-utils[context] >=0.6.4, <1",
     "powercli >=0.3.0, <1",
     "PyYAML >=6.0.1, <7",
-    "tqdm >=4.66.1, <5",
     "xattr >=0.10.1, <2",
 ]
 
@@ -28,7 +27,8 @@ dev = [
 "Source Code" = "https://github.com/quintenroets/backup"
 
 [project.scripts]
-backup = "backup.cli:entry_point"
+backup = "backup.cli.entry_point:entry_point"
+mount-remote = "backup.cli.mount:entry_point"
 
 [build-system]
 requires = ["setuptools"]

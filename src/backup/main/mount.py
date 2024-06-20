@@ -16,6 +16,7 @@ class Help:
     remote = "name of remote to mount"
     path = "local path to mount remote to"
     rclone_secret = "decryption key for rclone configuration"
+    cache_mode = "vfs-cache-mode option for rclone"
 
 
 @dataclass
@@ -25,6 +26,7 @@ class Mounter:
     rclone_secret: Annotated[str, typer.Option(help=Help.rclone_secret)] = field(
         default_factory=lambda: context.secrets.rclone
     )
+    cache_mode: str = "write"
 
     def run(self) -> None:
         """
@@ -35,7 +37,8 @@ class Mounter:
         env = os.environ | {"RCLONE_CONFIG_PASS": self.rclone_secret}
         env.pop("RCLONE_PASSWORD_COMMAND", None)
         remote = f"{self.remote}:" if ":" not in self.remote else self.remote
-        cli.launch("rclone mount", remote, self.path, env=env)
+        options = {"vfs-cache-mode": self.cache_mode}
+        cli.launch("rclone mount", remote, self.path, options, env=env)
         time.sleep(0.5)
 
     def check_path(self) -> None:

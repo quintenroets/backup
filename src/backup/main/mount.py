@@ -1,12 +1,12 @@
 import os
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Annotated
 
 import cli
 import typer
 
-from pathlib import Path
 from backup.utils.setup import check_setup
 
 from ..context import context

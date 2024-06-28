@@ -46,9 +46,23 @@ class Rclone:
     ) -> Iterator[CommandItem]:
         if self.root:
             yield "-E"
-        yield from ("rclone", *args, "--filter-from", filters_path)
+        yield "rclone"
+        yield from self.generate_substituted_paths(*args)
+        yield from ("--filter-from", filters_path)
         yield from self.options
         yield from self.generate_options()
+
+    @classmethod
+    def generate_substituted_paths(cls, *args: CommandItem) -> Iterator[CommandItem]:
+        if context.username:
+            for arg in args:
+                if isinstance(arg, Path) and arg.parts[0] == Path.remote.name:
+                    user_home = str(Path.HOME.with_name(context.username))
+                    yield str(arg).replace(str(Path.HOME), user_home)
+                else:
+                    yield arg
+        else:
+            yield from args  # pragma: nocover
 
     def create_filters_path(self) -> Path:
         path = Path.tempfile()

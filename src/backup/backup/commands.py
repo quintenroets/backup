@@ -7,6 +7,7 @@ import cli
 from cli.commands.commands import CommandItem
 from cli.commands.runner import Runner
 
+from ..context import context
 from ..models import Change, Changes, ChangeType, Path
 from ..utils import generate_output_lines
 from ..utils.error_handling import create_malformed_filters_error
@@ -52,9 +53,19 @@ class Backup(paths.Rclone):
             source, dest = self.dest, self.source
         else:
             source, dest = self.source, self.dest
-        args = action, source, dest, *args
+        source_str = self.substitute_correct_username(source)
+        dest_str = self.substitute_correct_username(dest)
+        args = action, source_str, dest_str, *args
         with super().prepared_runner(*args) as runner:
             yield runner
+
+    @classmethod
+    def substitute_correct_username(cls, path: Path) -> str:
+        path_str = str(path)
+        if context.username and path.parts[0] == Path.remote:
+            user_home = Path.HOME.with_name(context.username)
+            path_str = str(path).replace(str(Path.HOME), str(user_home))
+        return path_str
 
     def capture_changes(self, runner: Runner[str]) -> Changes:
         change_results = self.generate_change_results(runner)

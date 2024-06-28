@@ -35,7 +35,7 @@ class Context(Context_[Options, Config, Secrets]):
         path = self.config.backup_source / Path.profiles.relative_to(Path.backup_source)
         return cast(Path, path)
 
-    @cached_property
+    @property
     def username(self) -> str:
         return os.getenv("USERNAME", default="")
 

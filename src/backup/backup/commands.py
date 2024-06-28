@@ -7,7 +7,6 @@ import cli
 from cli.commands.commands import CommandItem
 from cli.commands.runner import Runner
 
-from ..context import context
 from ..models import Change, Changes, ChangeType, Path
 from ..utils import generate_output_lines
 from ..utils.error_handling import create_malformed_filters_error

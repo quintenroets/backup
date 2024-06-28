@@ -1,3 +1,4 @@
+import os
 import sys
 from collections.abc import Iterator
 from contextlib import AbstractContextManager
@@ -67,6 +68,9 @@ def setup_rclone() -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def context() -> Iterator[Context]:
+    os.environ["USERNAME"] = (
+        "runner" if "GITHUB_ACTIONS" in os.environ else os.getlogin()
+    )
     yield context_
 
 

@@ -17,6 +17,7 @@ class Backup(syncer.Backup):
                 self.sub_check_path = self.sub_check_path.relative_to(self.source)
             self.source /= self.sub_check_path
             self.dest /= self.sub_check_path
+        super().__post_init__()
 
     def push(self, reverse: bool = False) -> subprocess.CompletedProcess[str]:
         dest = self.source if reverse else self.dest

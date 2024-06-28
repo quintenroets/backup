@@ -62,7 +62,7 @@ class Backup(paths.Rclone):
     @classmethod
     def substitute_correct_username(cls, path: Path) -> str:
         path_str = str(path)
-        if context.username and path.parts[0] == Path.remote:
+        if context.username and path.parts[0] == Path.remote.name:
             user_home = Path.HOME.with_name(context.username)
             path_str = str(path).replace(str(Path.HOME), str(user_home))
         return path_str

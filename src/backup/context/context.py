@@ -1,3 +1,4 @@
+import os
 from functools import cached_property
 from typing import cast
 
@@ -33,6 +34,10 @@ class Context(Context_[Options, Config, Secrets]):
     def profiles_path(self) -> Path:
         path = self.config.backup_source / Path.profiles.relative_to(Path.backup_source)
         return cast(Path, path)
+
+    @property
+    def username(self) -> str:
+        return os.getenv("USERNAME", default="")
 
 
 context = Context(Options, Config, Secrets)

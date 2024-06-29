@@ -72,3 +72,13 @@ def test_show_diff(
     changes.ask_confirm(message="message", show_diff=True)
     changes.changes[0].print()
     test_context.options.show_file_diffs = False
+
+
+def test_path_used(mocked_backup: Backup) -> None:
+    path = Path("dummy.txt")
+    assert Backup(path=path).paths == (path,)
+
+
+def test_directory_used(mocked_backup_with_filled_content: Backup) -> None:
+    directory = Path("dummy")
+    assert Backup(directory=directory).paths == (directory / "**",)

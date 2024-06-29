@@ -23,7 +23,7 @@ def calculate_sub_check_path() -> Path | None:  # pragma: no cover
 
 @dataclass
 class Rclone(rclone.Rclone):
-    folder: Path | None = None
+    directory: Path | None = None
     paths: list[Path] | tuple[Path] | set[Path] = field(
         default_factory=lambda: context.options.paths
     )
@@ -31,18 +31,20 @@ class Rclone(rclone.Rclone):
     sub_check_path: Path | None = field(default_factory=calculate_sub_check_path)
     path_separator: str = field(default="/", repr=False)
 
+    def __post_init__(self) -> None:
+        if self.directory is not None:
+            self.path = self.directory / "**"
+        if self.path is not None:
+            self.paths = (self.path,)
+        super().__post_init__()
+
     def create_filters_path(self) -> Path:
         if not self.filter_rules:
             self.create_filters()
         return super().create_filters_path()
 
     def create_filters(self) -> None:
-        if self.folder is not None:
-            self.path = self.folder / "**"
-        if self.path is not None:
-            self.paths = (self.path,)
-        filter_rules = self.generate_path_rules()
-        self.filter_rules = list(filter_rules)
+        self.filter_rules = list(self.generate_path_rules())
 
     def generate_path_rules(self) -> Iterator[str]:
         for path in self.paths:

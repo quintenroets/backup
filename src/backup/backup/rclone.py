@@ -34,12 +34,15 @@ class Rclone:
     @contextmanager
     def prepared_runner(self, *args: CommandItem) -> Iterator[Runner[str]]:
         filters_path = self.create_filters_path()
-        command = self.generate_cli_command_parts(*args, filters_path=filters_path)
+        command_parts = self.generate_cli_command_parts(
+            *args, filters_path=filters_path
+        )
+        command = tuple(command_parts)
         env = os.environ | {"RCLONE_CONFIG_PASS": context.secrets.rclone}
         env.pop("RCLONE_PASSWORD_COMMAND", None)
         kwargs = {"env": env}
         with filters_path:
-            yield Runner(tuple(command), root=self.root, kwargs=kwargs)
+            yield Runner(command, root=self.root, kwargs=kwargs)
 
     def generate_cli_command_parts(
         self, *args: CommandItem, filters_path: Path

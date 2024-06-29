@@ -54,11 +54,17 @@ class Backup(syncer.Backup):
             result = None  # pragma: nocover
         return result
 
-    def extract_root_paths(self, reverse: bool) -> Iterator[Path]:
-        self_dest = self.source if reverse else self.dest
+    def extract_root_paths(self, reverse: bool) -> list[Path]:
+        paths = list(self.generate_root_paths(reverse))
+        self.paths = cast(list[Path], self.paths)
+        for path in paths:
+            self.paths.remove(path)
+        return paths
+
+    def generate_root_paths(self, reverse: bool = False) -> Iterator[Path]:
+        dest = self.source if reverse else self.dest
         self.paths = list(self.paths)
         for path in self.paths:
-            dest = self_dest / path
-            if dest.is_root:
-                self.paths.remove(path)
+            path_dest = dest / path
+            if path_dest.is_root:
                 yield path

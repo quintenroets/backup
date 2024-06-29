@@ -8,12 +8,15 @@ def test_escape() -> None:
 
 
 def test_generate_path_rules() -> None:
-    rclone = Rclone()
-    rclone.folder = rclone.source / "subpath"
+    directory = Path("subpath")
+    rclone = Rclone(directory=directory)
     rclone.create_filters()
+    assert rclone.filter_rules == [f"+ /{directory / '**'}", "- *"]
 
 
 def test_generate_path_rules_with_overlapping_source() -> None:
     rclone = Rclone()
-    rclone.source = rclone.dest / "subpath"
+    sub_path = "sub_path"
+    rclone.source = rclone.dest / sub_path
     rclone.create_filters()
+    assert rclone.filter_rules == [f"- /{sub_path}/**", "+ *"]

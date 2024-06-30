@@ -22,7 +22,9 @@ class Backup(syncer.Backup):
     def push(self, reverse: bool = False) -> subprocess.CompletedProcess[str]:
         dest = self.source if reverse else self.dest
         return (
-            self.process_root_dest(reverse) if dest.is_root else super().push(reverse)
+            self.process_root_dest(reverse=reverse)
+            if dest.is_root
+            else super().push(reverse=reverse)
         )
 
     def restore_paths(self) -> None:
@@ -30,10 +32,12 @@ class Backup(syncer.Backup):
         # self.paths expected to be unmodified
         self.paths += self.root_paths
 
-    def process_root_dest(self, reverse: bool) -> subprocess.CompletedProcess[str]:
+    def process_root_dest(
+        self, *, reverse: bool = False
+    ) -> subprocess.CompletedProcess[str]:
         root_output = self.process_root_paths(reverse)
         output = (
-            super().push()
+            super().push(reverse=reverse)
             if self.paths
             else cast(subprocess.CompletedProcess[str], root_output)
         )

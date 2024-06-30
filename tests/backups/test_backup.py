@@ -23,18 +23,22 @@ def test_status(mocked_backup_with_filled_content: MainBackup) -> None:
 
 def test_push(mocked_backup_with_filled_content: MainBackup) -> None:
     backup = Backup()
+    hash_value = backup.source.content_hash
     backup.capture_push()
     backup.push()
     assert not backup.capture_status().paths
+    assert backup.source.content_hash == hash_value
 
 
 def test_pull(
     mocked_backup_with_filled_content: MainBackup,
 ) -> None:
     backup = Backup()
+    hash_value = backup.dest.content_hash
     backup.capture_pull()
     backup.pull()
     assert not backup.capture_status().paths
+    assert backup.dest.content_hash == hash_value
 
 
 def test_ls(mocked_backup_with_filled_content: MainBackup) -> None:

@@ -71,7 +71,7 @@ def context() -> Iterator[Context]:
     os.environ["USERNAME"] = (
         "runner" if "GITHUB_ACTIONS" in os.environ else os.getlogin()
     )
-    yield context_
+    return context_
 
 
 def generate_context_managers(
@@ -84,7 +84,9 @@ def generate_context_managers(
 
 
 def mock_under_test_root(
-    root: Path, path: Path, name: str | None = None
+    root: Path,
+    path: Path,
+    name: str | None = None,
 ) -> AbstractContextManager[Any]:
     if name is None:
         name = path.name.lower()
@@ -134,14 +136,14 @@ def mocked_storage(context: Context) -> Iterator[None]:
         yield None
 
 
-@pytest.fixture
+@pytest.fixture()
 def mocked_backup(test_context: Context) -> Backup:
     backup = Backup()
     backup.sub_check_path = backup.source
     return backup
 
 
-@pytest.fixture
+@pytest.fixture()
 def mocked_backup_with_filled_content(mocked_backup: Backup) -> Backup:
     fill_directories(mocked_backup)
     return mocked_backup

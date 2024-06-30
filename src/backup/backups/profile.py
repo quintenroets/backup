@@ -24,7 +24,8 @@ class Backup(backup.Backup):
 
     def generate_paths(self) -> Iterator[Path]:
         rules = parser.Rules(
-            context.storage.profile_paths, root=context.extract_profiles_source_root()
+            context.storage.profile_paths,
+            root=context.extract_profiles_source_root(),
         )
         for rule in rules:
             source_path = self.source / rule.path

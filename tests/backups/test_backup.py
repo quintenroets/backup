@@ -52,7 +52,8 @@ def test_single_file_copy(mocked_backup_with_filled_content: MainBackup) -> None
 
 
 def test_all_options(
-    test_context: Context, mocked_backup_with_filled_content: MainBackup
+    test_context: Context,
+    mocked_backup_with_filled_content: MainBackup,
 ) -> None:
     overwrite_newer = test_context.config.overwrite_newer
     test_context.config.overwrite_newer = False
@@ -62,7 +63,8 @@ def test_all_options(
 
 
 def test_show_diff(
-    mocked_backup_with_filled_content: Backup, test_context: Context
+    mocked_backup_with_filled_content: Backup,
+    test_context: Context,
 ) -> None:
     backup = Backup()
     (backup.source / "0.txt").lines = ["same", "different"]

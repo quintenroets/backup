@@ -25,7 +25,9 @@ def test_detailed_checker(_: MagicMock, __: MagicMock, test_context: Context) ->
 @patch("cli.capture_output_lines", return_value=[""])
 @patch("xattr.xattr.set")
 def test_detailed_checker_hash_path(
-    _: MagicMock, __: MagicMock, test_context: Context
+    _: MagicMock,
+    __: MagicMock,
+    test_context: Context,
 ) -> None:
     path = test_context.profiles_source_root / ".config" / "rclone" / "rclone.conf"
     path.touch()

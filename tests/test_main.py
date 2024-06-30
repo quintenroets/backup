@@ -11,7 +11,7 @@ def test_main(_: MagicMock) -> None:
     main()
 
 
-@pytest.fixture
+@pytest.fixture()
 def open_urls_context(test_context: Context) -> Iterator[Context]:
     test_context.options.configure = True
     yield test_context

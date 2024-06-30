@@ -73,7 +73,10 @@ class Change:
 
     @classmethod
     def from_pattern(
-        cls, pattern: str, source: Path | None = None, dest: Path | None = None
+        cls,
+        pattern: str,
+        source: Path | None = None,
+        dest: Path | None = None,
     ) -> Change:
         type_ = ChangeType.from_symbol(pattern[0])
         path = Path(pattern[2:])
@@ -90,7 +93,7 @@ class Change:
     @property
     def skip_print(self) -> bool:
         assert self.source is not None
-        return (self.source / self.path).is_relative_to(Path.hashes)  # noqa
+        return (self.source / self.path).is_relative_to(Path.hashes)
 
     def print(self) -> None:
         cli.console.print(self.message, end="")
@@ -100,7 +103,11 @@ class Change:
         assert self.source is not None
         assert self.dest is not None
         return calculate_diff(
-            self.path, self.source, self.dest, color=color, max_lines=max_lines
+            self.path,
+            self.source,
+            self.dest,
+            color=color,
+            max_lines=max_lines,
         )
 
 

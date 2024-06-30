@@ -41,13 +41,17 @@ class Backup(syncer.Backup):
         return output
 
     def process_root_paths(
-        self, reverse: bool
+        self,
+        reverse: bool,
     ) -> subprocess.CompletedProcess[str] | None:
         root_paths = self.extract_root_paths(reverse)
         self.root_paths = list(root_paths)
         if self.root_paths or not self.paths:
             backup = syncer.Backup(
-                source=self.source, dest=self.dest, root=True, paths=self.root_paths
+                source=self.source,
+                dest=self.dest,
+                root=True,
+                paths=self.root_paths,
             )
             result = backup.push(reverse=reverse)
         else:

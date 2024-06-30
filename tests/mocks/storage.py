@@ -22,11 +22,14 @@ class Defaults:
 
 class Storage(storage.Storage):
     includes: CachedFileContent[list[str | dict[str, Any]]] = CachedFileContent(
-        Path.paths_include, default=Defaults.create_include_rules()
+        Path.paths_include,
+        default=Defaults.create_include_rules(),
     )
     excludes: CachedFileContent[list[str | dict[str, Any]]] = CachedFileContent(
-        Path.paths_exclude, default=Defaults.create_exclude_rules()
+        Path.paths_exclude,
+        default=Defaults.create_exclude_rules(),
     )
     profile_paths: CachedFileContent[list[str]] = CachedFileContent(
-        Path.profile_paths, default=Defaults.create_profile_paths()
+        Path.profile_paths,
+        default=Defaults.create_profile_paths(),
     )

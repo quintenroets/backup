@@ -42,13 +42,18 @@ class Backup(backup.Backup):
             self.start_push(reverse=reverse)
 
     def start_push(
-        self, reverse: bool = False
+        self,
+        reverse: bool = False,
     ) -> subprocess.CompletedProcess[str] | None:
         backup.Backup(
-            path=self.path, paths=self.paths, sub_check_path=self.sub_check_path
+            path=self.path,
+            paths=self.paths,
+            sub_check_path=self.sub_check_path,
         ).push(reverse=reverse)
         return cache.Backup(
-            path=self.path, paths=self.paths, sub_check_path=self.sub_check_path
+            path=self.path,
+            paths=self.paths,
+            sub_check_path=self.sub_check_path,
         ).push()
 
     def check_changed_paths(self, reverse: bool) -> list[Path]:
@@ -62,7 +67,8 @@ class Backup(backup.Backup):
     def ask_confirm(cls, changes: Changes, reverse: bool = False) -> bool:
         message = "Pull?" if reverse else "Push?"
         response = changes.ask_confirm(
-            message, show_diff=context.options.show_file_diffs
+            message,
+            show_diff=context.options.show_file_diffs,
         )
         if not response and not context.options.show_file_diffs:
             response = changes.ask_confirm(message, show_diff=True)  # pragma: nocover
@@ -115,7 +121,8 @@ class Backup(backup.Backup):
             self.filter_rules.append(f"- {context.config.browser_pattern}")
         info = self.get_dest_info()
         cache_backup = cache.Backup(
-            sub_check_path=self.sub_check_path, filter_rules=self.filter_rules
+            sub_check_path=self.sub_check_path,
+            filter_rules=self.filter_rules,
         )
         cache_backup.update_dest(info)
 

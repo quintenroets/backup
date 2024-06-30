@@ -35,7 +35,8 @@ class Rclone:
     def prepared_runner(self, *args: CommandItem) -> Iterator[Runner[str]]:
         filters_path = self.create_filters_path()
         command_parts = self.generate_cli_command_parts(
-            *args, filters_path=filters_path
+            *args,
+            filters_path=filters_path,
         )
         command = tuple(command_parts)
         env = os.environ | {"RCLONE_CONFIG_PASS": context.secrets.rclone}
@@ -45,7 +46,9 @@ class Rclone:
             yield Runner(command, root=self.root, kwargs=kwargs)
 
     def generate_cli_command_parts(
-        self, *args: CommandItem, filters_path: Path
+        self,
+        *args: CommandItem,
+        filters_path: Path,
     ) -> Iterator[CommandItem]:
         if self.root:
             yield "-E"

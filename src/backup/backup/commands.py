@@ -46,7 +46,10 @@ class Backup(paths.Rclone):
 
     @contextmanager
     def prepared_runner_with_locations(
-        self, action: str, *args: CommandItem, reverse: bool = False
+        self,
+        action: str,
+        *args: CommandItem,
+        reverse: bool = False,
     ) -> Iterator[Runner[str]]:
         if reverse:
             source, dest = self.dest, self.source
@@ -77,7 +80,7 @@ class Backup(paths.Rclone):
         Update modified times to avoid checking again in the future.
         """
         no_change_paths = [result.path for result in results]
-        if self.dest.is_relative_to(Path.backup_cache):  # noqa  # pragma: no cover
+        if self.dest.is_relative_to(Path.backup_cache):  # pragma: no cover
             for path in no_change_paths:
                 dest = self.dest / path
                 if dest.tag is None:

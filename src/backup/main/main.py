@@ -1,23 +1,13 @@
 import cli
 
-from ..backups import Backup
-from ..context import context
-from ..models import Action, Path
+from backup.context import context
 
 
 def main() -> None:
     """
-    Backup important files across entire disk.
+    Python package template.
     """
-    if context.options.configure:
-        cli.open_urls(Path.config)
-    else:
-        backup_files()
-
-
-def backup_files() -> None:
-    backup = Backup()
-    action = (
-        Action.pull if context.options.export_resume_changes else context.options.action
-    )
-    backup.run_action(action)
+    message = "main functionality"
+    if context.options.debug:
+        cli.console.print(message)
+    cli.console.print(context.secrets)

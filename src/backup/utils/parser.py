@@ -29,7 +29,9 @@ class RuleConfig:
         return rules
 
     def add_item(
-        self, item: dict[Any, Any] | str | tuple[str, ...], root: Path
+        self,
+        item: dict[Any, Any] | str | tuple[str, ...],
+        root: Path,
     ) -> None:
         names, content = (
             next(iter(item.items())) if isinstance(item, dict) else (item, [])
@@ -82,7 +84,9 @@ class Rules:
         yield from self.generate_rules(include_rules, exclude_rules)
 
     def generate_rules(
-        self, include: RuleConfig, exclude: RuleConfig
+        self,
+        include: RuleConfig,
+        exclude: RuleConfig,
     ) -> Iterator[PathRule]:
         sub_names = include.sub_rules.keys() | exclude.sub_rules.keys()
         for name in sub_names:

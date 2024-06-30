@@ -11,7 +11,7 @@ from backup.context import Context
 from backup.models import Path
 
 
-@pytest.fixture
+@pytest.fixture()
 def checker(test_context: Context) -> PathChecker:
     return PathChecker()
 

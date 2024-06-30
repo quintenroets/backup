@@ -43,7 +43,8 @@ class Backup(commands.Backup):
                 dest_path.unlink()
 
     def process_dest_info(
-        self, dest_info: Iterator[tuple[Path, datetime]]
+        self,
+        dest_info: Iterator[tuple[Path, datetime]],
     ) -> Iterator[Path]:
         for relative_path, date in dest_info:
             path = self.dest / relative_path

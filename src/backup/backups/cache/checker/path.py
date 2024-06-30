@@ -49,7 +49,7 @@ class PathChecker:
             i for i, line in enumerate(content_lines) if line.startswith("[")
         ]
         header_indices.append(len(content_lines))
-        for start, end in zip(header_indices, header_indices[1:]):
+        for start, end in zip(header_indices, header_indices[1:], strict=False):
             yield content_lines[start:end]
 
 
@@ -61,7 +61,7 @@ class UserPlaceChecker(PathChecker):
     tag_ignore_names: tuple[str, ...] = ("tags", "kdeconnect")
 
     def extract_content(self, path: Path) -> Iterator[str]:
-        from bs4 import BeautifulSoup  # noqa: E402, autoimport
+        from bs4 import BeautifulSoup  # , autoimport
 
         soup = BeautifulSoup(path.text, features="xml")
         for tag in soup.find_all("bookmark"):
@@ -84,8 +84,8 @@ class RetrievedContentChecker(PathChecker):
         yield content_hash
 
     def calculate_content_hash(self) -> str:
-        import hashlib  # noqa: E402, autoimport
-        import json  # noqa: E402, autoimport
+        import hashlib  # , autoimport
+        import json  # , autoimport
 
         content_generator = self.retrieve_content()
         content = tuple(content_generator)
@@ -107,7 +107,9 @@ class KwalletChecker(RetrievedContentChecker):
     def retrieve_content(self) -> Iterator[tuple[str, str, list[str]]]:
         items = list(self.generate_items())
         items_with_progress = cli.track_progress(
-            items, description="Checking kwallet content", unit="items"
+            items,
+            description="Checking kwallet content",
+            unit="items",
         )
         command = "kwallet-query kdewallet -r"
         for item in items_with_progress:

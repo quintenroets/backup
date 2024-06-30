@@ -25,7 +25,7 @@ def calculate_sub_check_path() -> Path | None:  # pragma: no cover
 class Rclone(rclone.Rclone):
     directory: Path | None = None
     paths: list[Path] | tuple[Path] | set[Path] = field(
-        default_factory=lambda: context.options.paths
+        default_factory=lambda: context.options.paths,
     )
     path: Path | None = None
     sub_check_path: Path | None = field(default_factory=calculate_sub_check_path)

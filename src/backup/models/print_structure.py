@@ -65,7 +65,9 @@ class PrintStructure:
 
     @classmethod
     def create_sub_structure(
-        cls, root_name: str, sub_print_changes: list[PrintChange]
+        cls,
+        root_name: str,
+        sub_print_changes: list[PrintChange],
     ) -> PrintStructure:
         root_path = Path(root_name)
         children = [c.child for c in sub_print_changes]
@@ -80,7 +82,9 @@ class PrintStructure:
             sub_structure.un_indent()
 
         sub_structure.root = PrintChange(
-            root_path, Change(Path()), sub_print_changes[0].indent_count
+            root_path,
+            Change(Path()),
+            sub_print_changes[0].indent_count,
         )
         return sub_structure
 

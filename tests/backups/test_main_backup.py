@@ -17,7 +17,8 @@ def test_diff(mocked_backup_with_filled_content: Backup) -> None:
 
 
 def test_show_diff(
-    mocked_backup_with_filled_content: Backup, test_context: Context
+    mocked_backup_with_filled_content: Backup,
+    test_context: Context,
 ) -> None:
     test_context.options.show_file_diffs = True
     mocked_backup_with_filled_content.run_action(Action.push)
@@ -46,7 +47,8 @@ def test_push_with_indent(mocked_backup_with_filled_content: Backup) -> None:
 
 
 def test_push_with_profile(
-    mocked_backup_with_filled_content: Backup, test_context: Context
+    mocked_backup_with_filled_content: Backup,
+    test_context: Context,
 ) -> None:
     path = test_context.profiles_path / Defaults.create_profile_paths()[0]
     path.touch()
@@ -58,13 +60,15 @@ def test_pull(mocked_backup_with_filled_content: Backup, test_context: Context) 
 
 
 def test_pull_with_sub_path(
-    mocked_backup_with_filled_content: Backup, test_context: Context
+    mocked_backup_with_filled_content: Backup,
+    test_context: Context,
 ) -> None:
     verify_pull(test_context, backup=mocked_backup_with_filled_content)
 
 
 def test_pull_with_profile(
-    mocked_backup_with_filled_content: Backup, test_context: Context
+    mocked_backup_with_filled_content: Backup,
+    test_context: Context,
 ) -> None:
     profile_path = (
         test_context.config.backup_dest

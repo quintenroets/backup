@@ -69,7 +69,7 @@ class Backup(backup.Backup):
         return response
 
     def cache_status(self, quiet: bool = False, reverse: bool = False) -> Changes:
-        if context.profiles_path.is_relative_to(self.source):
+        if context.profiles_source_root.is_relative_to(self.source):
             profile.Backup().capture_push()
         cache_backup = cache.Backup(quiet=quiet, sub_check_path=self.sub_check_path)
         return cache_backup.status(reverse=reverse)

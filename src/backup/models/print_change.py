@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass
+from functools import cached_property
 
 import cli
 
@@ -28,11 +29,12 @@ class PrintChange:
     def child(self) -> PrintChange:
         return PrintChange(self.path_from_root, self.change, self.indent_count + 1)
 
-    def print(self, show_diff: bool = False) -> None:
-        whitespace = self.indent * self.indent_count
-        symbol = self.change.type.symbol if self.change else "\u2022"
-        color = self.change.type.color if self.change.path.parts else "black"
+    @property
+    def symbol(self) -> str:
+        return self.change.type.symbol if self.change.path.parts else "\u2022"
 
+    @cached_property
+    def path_message(self) -> str:
         root = Path("/")
         relative_home = Path.HOME.relative_to(root)
         path = (
@@ -40,27 +42,36 @@ class PrintChange:
             if self.path.is_relative_to(relative_home)
             else self.path
         )
-        message = str(path)
-        available_width = cli.console.width - len(whitespace + symbol + " " + "-")
+        return str(path)
+
+    @cached_property
+    def whitespace(self) -> str:
+        return self.indent * self.indent_count
+
+    def print(self, show_diff: bool = False) -> None:
+        not_usable_width = self.whitespace + self.symbol + " " + "-"
+        available_width = cli.console.width - len(not_usable_width)
         message_chunks = [
-            message[start : start + available_width]
-            for start in range(0, len(message), available_width)
+            self.path_message[start : start + available_width]
+            for start in range(0, len(self.path_message), available_width)
         ]
-        last_chunk_index = len(message_chunks) - 1
-        lines = []
-        for i, message in enumerate(message_chunks):
-            prefix = f"{symbol} " if i == 0 else "  "
-            need_suffix = i < last_chunk_index and " " not in (
-                message[-1],
-                message_chunks[i + 1][0],
-            )
-            suffix = "-" if need_suffix else ""
-            formatted_message = f"{whitespace}{prefix}[bold {color}]{message}{suffix}"
-            lines.append(formatted_message)
+        lines = self.format_lines(message_chunks)
         message = "\n".join(lines)
         cli.console.print(message)
         if show_diff and self.change.path.parts:
             self.print_diff()
+
+    def format_lines(self, lines: list[str]) -> Iterator[str]:
+        color = self.change.type.color if self.change.path.parts else "black"
+        last_chunk_index = len(lines) - 1
+        for i, message in enumerate(lines):
+            prefix = f"{self.symbol} " if i == 0 else "  "
+            need_suffix = i < last_chunk_index and " " not in (
+                message[-1],
+                lines[i + 1][0],
+            )
+            suffix = "-" if need_suffix else ""
+            yield f"{self.whitespace}{prefix}[bold {color}]{message}{suffix}"
 
     def print_diff(self) -> None:
         lines = self.generate_print_lines()

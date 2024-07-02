@@ -130,3 +130,11 @@ def test_after_pull(mocked_backup: Backup, test_context: Context) -> None:
     path = Path.selected_resume_pdf.relative_to(mocked_backup.source)
     mocked_backup.paths = [path]
     mocked_backup.after_pull()
+
+
+def test_profile_parent_sub_check_path(
+    mocked_backup_with_filled_content: Backup, test_context_with_sub_check_path: Context
+) -> None:
+    backup = Backup()
+    backup.dest.mkdir(parents=True)
+    verify_push(backup)

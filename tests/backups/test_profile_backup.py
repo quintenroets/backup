@@ -24,3 +24,7 @@ def test_generate_path_rules(test_context: Context) -> None:
 
 def test_reload(test_context: Context) -> None:
     profile.Backup().reload()
+
+
+def test_sub_check_path_ignored(test_context_with_sub_check_path: Context) -> None:
+    profile.Backup().push()

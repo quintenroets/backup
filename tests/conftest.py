@@ -115,6 +115,18 @@ def test_context(context: Context) -> Iterator[Context]:
         ) = restored_directories
 
 
+@pytest.fixture()
+def test_context_with_sub_check_path(test_context: Context) -> Iterator[Context]:
+    test_context.options.sub_check = True
+    sub_check_path = (
+        test_context.config.backup_source
+        / test_context.config.profiles_source_root.relative_to(Path.backup_source)
+    )
+    with patch.object(Path, "cwd", return_value=sub_check_path):
+        yield test_context
+    test_context.options.sub_check = False
+
+
 @pytest.fixture(scope="session", autouse=True)
 def mocked_storage(context: Context) -> Iterator[None]:
     storage = Storage()

@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from backup.backup import Backup
 from backup.backups import Backup as MainBackup
 from backup.context.context import Context
@@ -21,7 +22,8 @@ def test_status(mocked_backup_with_filled_content: MainBackup) -> None:
         assert change in status
 
 
-def test_push(mocked_backup_with_filled_content: MainBackup) -> None:
+@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+def test_push() -> None:
     backup = Backup()
     hash_value = backup.source.content_hash
     backup.capture_push()

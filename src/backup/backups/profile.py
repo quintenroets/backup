@@ -10,6 +10,7 @@ from ..utils import parser
 @dataclass
 class Backup(backup.Backup):
     source: Path = field(default_factory=context.extract_profiles_source_root)
+    sub_check_path: Path | None = None
 
     def __post_init__(self) -> None:
         self.set_dest(self.active_profile)

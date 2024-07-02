@@ -105,7 +105,7 @@ class Backup(backup.Backup):
     def get_sync_message(self) -> str:
         message = "Reading remote filesystem"
         if self.sub_check_path is not None:
-            message += f" at {self.sub_check_path.short_notation}"
+            message += f" at {self.sub_check_path.resolve().short_notation}"
         return message
 
     def run_remote_sync(self) -> None:

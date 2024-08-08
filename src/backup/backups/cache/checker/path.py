@@ -62,7 +62,7 @@ class UserPlaceChecker(PathChecker):
     tag_ignore_names: tuple[str, ...] = ("tags", "kdeconnect")
 
     def extract_content(self, path: Path) -> Iterator[str]:
-        from bs4 import BeautifulSoup  # , autoimport
+        from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(path.text, features="xml")
         for tag in soup.find_all("bookmark"):

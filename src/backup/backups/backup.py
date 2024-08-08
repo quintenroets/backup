@@ -4,11 +4,12 @@ from dataclasses import dataclass, field
 
 import cli
 
-from .. import backup
-from ..context import context
-from ..models import Action, Changes, Path
-from ..models.change import run_diff
-from ..utils import exporter
+from backup import backup
+from backup.context import context
+from backup.models import Action, Changes, Path
+from backup.models.change import run_diff
+from backup.utils import exporter
+
 from . import cache, profile
 
 
@@ -27,14 +28,14 @@ class Backup(backup.Backup):
             case Action.diff:
                 self.diff()
 
-    def status(self, show: bool = True) -> Changes:
+    def status(self, *, show: bool = True) -> Changes:
         self.paths = self.cache_status(quiet=True).paths
         status = super().capture_status() if self.paths else Changes()
         if show:
             status.print()
         return status
 
-    def run_push(self, reverse: bool = False) -> None:
+    def run_push(self, *, reverse: bool = False) -> None:
         any_include = any(rule.startswith("+") for rule in self.filter_rules)
         if not self.paths and not any_include:
             self.paths = self.check_changed_paths(reverse=reverse)
@@ -42,33 +43,45 @@ class Backup(backup.Backup):
             self.start_push(reverse=reverse)
 
     def start_push(
-        self, reverse: bool = False
+        self,
+        *,
+        reverse: bool = False,
     ) -> subprocess.CompletedProcess[str] | None:
         backup.Backup(
-            path=self.path, paths=self.paths, sub_check_path=self.sub_check_path
+            path=self.path,
+            paths=self.paths,
+            sub_check_path=self.sub_check_path,
         ).push(reverse=reverse)
         return cache.Backup(
-            path=self.path, paths=self.paths, sub_check_path=self.sub_check_path
+            path=self.path,
+            paths=self.paths,
+            sub_check_path=self.sub_check_path,
         ).push()
 
-    def check_changed_paths(self, reverse: bool) -> list[Path]:
+    def check_changed_paths(self, *, reverse: bool) -> list[Path]:
         changes: Changes = self.cache_status(reverse=reverse)
-        if changes and context.options.confirm_push and sys.stdin.isatty():
-            if not self.ask_confirm(changes, reverse=reverse):
-                changes.changes = []  # pragma: nocover
+        remove_changes = (
+            changes
+            and context.options.confirm_push
+            and sys.stdin.isatty()
+            and not self.ask_confirm(changes, reverse=reverse)
+        )
+        if remove_changes:
+            changes.changes = []  # pragma: nocover
         return changes.paths
 
     @classmethod
-    def ask_confirm(cls, changes: Changes, reverse: bool = False) -> bool:
+    def ask_confirm(cls, changes: Changes, *, reverse: bool = False) -> bool:
         message = "Pull?" if reverse else "Push?"
         response = changes.ask_confirm(
-            message, show_diff=context.options.show_file_diffs
+            message,
+            show_diff=context.options.show_file_diffs,
         )
         if not response and not context.options.show_file_diffs:
             response = changes.ask_confirm(message, show_diff=True)  # pragma: nocover
         return response
 
-    def cache_status(self, quiet: bool = False, reverse: bool = False) -> Changes:
+    def cache_status(self, *, quiet: bool = False, reverse: bool = False) -> Changes:
         if context.profiles_source_root.is_relative_to(self.source):
             profile.Backup().capture_push()
         cache_backup = cache.Backup(quiet=quiet, sub_check_path=self.sub_check_path)
@@ -82,11 +95,10 @@ class Backup(backup.Backup):
             self.after_pull()
 
     def after_pull(self) -> None:
-        if self.contains_change(Path.resume):
-            if exporter.export_changes():
-                path = Path.main_resume_pdf
-                with cli.status("Uploading new resume pdf"):
-                    Backup(path=path, confirm=False).capture_push()
+        if self.contains_change(Path.resume) and exporter.export_changes():
+            path = Path.main_resume_pdf
+            with cli.status("Uploading new resume pdf"):
+                Backup(path=path, confirm=False).capture_push()
         if self.contains_change(context.profiles_path):
             profile.Backup().reload()
 
@@ -115,7 +127,8 @@ class Backup(backup.Backup):
             self.filter_rules.append(f"- {context.config.browser_pattern}")
         info = self.get_dest_info()
         cache_backup = cache.Backup(
-            sub_check_path=self.sub_check_path, filter_rules=self.filter_rules
+            sub_check_path=self.sub_check_path,
+            filter_rules=self.filter_rules,
         )
         cache_backup.update_dest(info)
 

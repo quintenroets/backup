@@ -7,15 +7,14 @@ from typing import Annotated
 import cli
 import typer
 
+from backup.context import context
 from backup.utils.setup import check_setup
-
-from ..context import context
 
 
 class Help:
     remote = "name of remote to mount"
     path = "local path to mount remote to"
-    rclone_secret = "decryption key for rclone configuration"
+    rclone_secret = "decryption key for rclone configuration"  # noqa: S105
     cache_mode = "vfs-cache-mode option for rclone"
 
 
@@ -24,7 +23,7 @@ class Mounter:
     remote: Annotated[str, typer.Option(help=Help.remote)] = "backup"
     path: Annotated[Path, typer.Option(help=Help.path)] = field(default_factory=Path)
     rclone_secret: Annotated[str, typer.Option(help=Help.rclone_secret)] = field(
-        default_factory=lambda: context.secrets.rclone
+        default_factory=lambda: context.secrets.rclone,
     )
     cache_mode: str = "write"
 

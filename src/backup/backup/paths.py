@@ -2,8 +2,9 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import cast
 
-from ..context import context
-from ..models import Path
+from backup.context import context
+from backup.models import Path
+
 from . import rclone
 
 reserved_characters = "\\", "[", "]", "*", "**", "?", "{", "}"
@@ -25,7 +26,7 @@ def calculate_sub_check_path() -> Path | None:  # pragma: no cover
 class Rclone(rclone.Rclone):
     directory: Path | None = None
     paths: list[Path] | tuple[Path] | set[Path] = field(
-        default_factory=lambda: context.options.paths
+        default_factory=lambda: context.options.paths,
     )
     path: Path | None = None
     sub_check_path: Path | None = field(default_factory=calculate_sub_check_path)
@@ -48,9 +49,12 @@ class Rclone(rclone.Rclone):
 
     def generate_path_rules(self) -> Iterator[str]:
         for path in self.paths:
-            if path.is_relative_to(self.source):
-                path = path.relative_to(self.source)
-            path_str = self.escape(path)
+            relative_path = (
+                path.relative_to(self.source)
+                if path.is_relative_to(self.source)
+                else path
+            )
+            path_str = self.escape(relative_path)
             yield f"+ /{path_str}"
 
         if self.paths:

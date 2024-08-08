@@ -1,13 +1,15 @@
+import pytest
 from backup.backups import profile
-from backup.context import Context
 from backup.models import Path
 
 
-def test_set_profile(context: Context) -> None:
+@pytest.mark.usefixtures("context")
+def test_set_profile() -> None:
     profile.Backup().apply_profile("dark")
 
 
-def test_generate_path_rules(test_context: Context) -> None:
+@pytest.mark.usefixtures("test_context")
+def test_generate_path_rules() -> None:
     backup = profile.Backup()
     directory = Path("dummy_directory")
     expected_paths = (directory / "out.txt", directory / "out2.txt", Path("dummy.txt"))
@@ -22,9 +24,11 @@ def test_generate_path_rules(test_context: Context) -> None:
     assert paths == set(expected_paths)
 
 
-def test_reload(test_context: Context) -> None:
+@pytest.mark.usefixtures("test_context")
+def test_reload() -> None:
     profile.Backup().reload()
 
 
-def test_sub_check_path_ignored(test_context_with_sub_check_path: Context) -> None:
+@pytest.mark.usefixtures("test_context_with_sub_check_path")
+def test_sub_check_path_ignored() -> None:
     profile.Backup().push()

@@ -11,8 +11,8 @@ from backup.context import Context
 from backup.models import Path
 
 
-@pytest.fixture
-def checker(test_context: Context) -> PathChecker:
+@pytest.fixture()
+def checker(test_context: Context) -> PathChecker:  # noqa: ARG001
     return PathChecker()
 
 
@@ -32,7 +32,8 @@ def test_sections(checker: PathChecker) -> None:
         checker.calculate_relevant_hash(path)
 
 
-def test_user_place_checker(test_context: Context) -> None:
+@pytest.mark.usefixtures("test_context")
+def test_user_place_checker() -> None:
     checker = UserPlaceChecker()
     with Path.tempfile() as path:
         path.text = '<bookmark href="https://www.example.com">'
@@ -40,14 +41,18 @@ def test_user_place_checker(test_context: Context) -> None:
 
 
 @patch("cli.capture_output_lines", return_value=[""])
-def test_rclone_checker(_: MagicMock, test_context: Context) -> None:
+@pytest.mark.usefixtures("test_context")
+def test_rclone_checker(mocked_run: MagicMock) -> None:
     checker = RcloneChecker()
     with Path.tempfile() as path:
         checker.calculate_relevant_hash(path)
+    mocked_run.assert_called()
 
 
 @patch("cli.capture_output_lines", return_value=[""])
-def test_kwallet_checker(_: MagicMock, test_context: Context) -> None:
+@pytest.mark.usefixtures("test_context")
+def test_kwallet_checker(mocked_run: MagicMock) -> None:
     checker = KwalletChecker()
     with Path.tempfile() as path:
         checker.calculate_relevant_hash(path)
+    mocked_run.assert_called()

@@ -1,8 +1,8 @@
 import cli
 
-from ..backups import Backup
-from ..context import context
-from ..models import Action, Path
+from backup.backups import Backup
+from backup.context import context
+from backup.models import Action, Path
 
 
 def main() -> None:

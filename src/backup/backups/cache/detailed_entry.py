@@ -1,8 +1,9 @@
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from ...context import context
-from ...models import Path
+from backup.context import context
+from backup.models import Path
+
 from . import entry
 from .checker.detailed import Checker
 from .checker.path import extract_hash_path
@@ -49,8 +50,8 @@ class Entry(entry.Entry):
         if self.source.is_relative_to(context.profiles_path):
             check_key = self.source.relative_to(context.profiles_path)
             check_key = check_key.relative_to(check_key.parts[0])
-        elif self.source.is_relative_to(context.profiles_source_root):  # noqa
-            check_key = self.source.relative_to(context.profiles_source_root)  # noqa
+        elif self.source.is_relative_to(context.profiles_source_root):
+            check_key = self.source.relative_to(context.profiles_source_root)
         else:
             check_key = self.relative
         return check_key

@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+import contextlib
+import typing
 from dataclasses import dataclass
 from functools import cached_property
+from typing import cast
 
 import cli
 
 from .change import Change, ChangeType
 from .path import Path
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterator  # pragma: nocover
 
 
 @dataclass
@@ -48,7 +53,7 @@ class PrintChange:
     def whitespace(self) -> str:
         return self.indent * self.indent_count
 
-    def print(self, show_diff: bool = False) -> None:
+    def print(self, *, show_diff: bool = False) -> None:
         not_usable_width = self.whitespace + self.symbol + " " + "-"
         available_width = cli.console.width - len(not_usable_width)
         message_chunks = [
@@ -107,21 +112,15 @@ class PrintChange:
                     change_type = None
 
             if change_type is not None:
-                line = line[1:].strip()
+                diff_line = line[1:].strip()
                 if change_type != ChangeType.preserved:
-                    line = f"{change_type.symbol} {line}"
-                yield f"[{change_type.color}]{line}"
+                    diff_line = f"{change_type.symbol} {diff_line}"
+                yield f"[{change_type.color}]{diff_line}"
 
     def generate_path_lines(self) -> Iterator[str]:
-        assert self.change.source is not None
-        assert self.change.dest is not None
-        source = (
-            self.change.source
-            if self.change.type == ChangeType.created
-            else self.change.dest
-        )
+        source = cast(Path, self.change.source)
+        dest = cast(Path, self.change.dest)
+        source = source if self.change.type == ChangeType.created else dest
         full_path = source / self.change.path
-        try:
+        with contextlib.suppress(UnicodeDecodeError):
             yield from full_path.lines
-        except UnicodeDecodeError:  # pragma: nocover
-            pass

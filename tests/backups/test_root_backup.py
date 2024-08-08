@@ -9,7 +9,7 @@ from backup.models import Path
 
 @pytest.fixture()
 def mocked_backup_with_root_dest(
-    mocked_backup_with_filled_content: MainBackup,
+    mocked_backup_with_filled_content: MainBackup,  # noqa: ARG001
 ) -> Iterator[Backup]:
     backup = Backup()
     cli.run("rm -r", backup.dest)
@@ -36,14 +36,16 @@ def test_pull(mocked_backup_with_root_dest: Backup) -> None:
     assert backup.dest.content_hash == dest_hash
 
 
-def test_extract_path(mocked_backup_with_root_dest: Backup) -> None:
+@pytest.mark.usefixtures("mocked_backup_with_root_dest")
+def test_extract_path() -> None:
     path = Path("0.txt")
     backup = Backup(path=path)
     paths = list(backup.extract_root_paths(reverse=False))
     assert paths == [path]
 
 
-def test_extract_directory(mocked_backup_with_root_dest: Backup) -> None:
+@pytest.mark.usefixtures("mocked_backup_with_root_dest")
+def test_extract_directory() -> None:
     backup = Backup(directory=Path(""))
     paths = list(backup.extract_root_paths(reverse=False))
     assert paths == [Path("**")]

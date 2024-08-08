@@ -39,12 +39,6 @@ class ContextList(AbstractContextManager[None]):
             item.__exit__(exception_type, exception_value, traceback)
 
 
-def provision_path() -> Iterator[Path]:
-    with Path.tempfile() as path:
-        yield path
-    assert not path.exists()
-
-
 def provision_directory() -> Iterator[Path]:
     with Path.tempdir() as path:
         yield path
@@ -52,26 +46,21 @@ def provision_directory() -> Iterator[Path]:
 
 
 @pytest.fixture()
-def path() -> Iterator[Path]:
-    yield from provision_path()
-
-
-@pytest.fixture()
-def directory(path: Path) -> Iterator[Path]:
+def directory() -> Iterator[Path]:
     yield from provision_directory()
 
 
 @pytest.fixture(scope="session", autouse=True)
-def setup_rclone() -> None:
+def _setup_rclone() -> None:
     check_setup()
 
 
 @pytest.fixture(scope="session", autouse=True)
-def context() -> Iterator[Context]:
+def context() -> Context:
     os.environ["USERNAME"] = (
         "runner" if "GITHUB_ACTIONS" in os.environ else os.getlogin()
     )
-    yield context_
+    return context_
 
 
 def generate_context_managers(
@@ -84,7 +73,9 @@ def generate_context_managers(
 
 
 def mock_under_test_root(
-    root: Path, path: Path, name: str | None = None
+    root: Path,
+    path: Path,
+    name: str | None = None,
 ) -> AbstractContextManager[Any]:
     if name is None:
         name = path.name.lower()
@@ -146,14 +137,14 @@ def mocked_storage(context: Context) -> Iterator[None]:
         yield None
 
 
-@pytest.fixture
-def mocked_backup(test_context: Context) -> Backup:
+@pytest.fixture()
+def mocked_backup(test_context: Context) -> Backup:  # noqa: ARG001
     backup = Backup()
     backup.sub_check_path = backup.source
     return backup
 
 
-@pytest.fixture
+@pytest.fixture()
 def mocked_backup_with_filled_content(mocked_backup: Backup) -> Backup:
     fill_directories(mocked_backup)
     return mocked_backup

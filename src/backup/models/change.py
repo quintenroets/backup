@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import cli
 from simple_classproperty import classproperty
+from typing_extensions import Self
 
 from .path import Path
 
@@ -20,10 +21,10 @@ class ChangeType(Enum):
     @classproperty
     def symbol_mapper(cls) -> dict[str, ChangeType]:
         return {
-            "+": ChangeType.created,
-            "*": ChangeType.modified,
-            "-": ChangeType.deleted,
-            "=": ChangeType.preserved,
+            "+": cls.created,
+            "*": cls.modified,
+            "-": cls.deleted,
+            "=": cls.preserved,
         }
 
     @classmethod
@@ -37,14 +38,14 @@ class ChangeType(Enum):
         return {v: k for k, v in cls.symbol_mapper.items()}
 
     @classmethod
-    def from_symbol(cls, symbol: str) -> ChangeType:
+    def from_symbol(cls, symbol: str) -> Self:
         change_type = cls.symbol_mapper[symbol]
-        return cast(ChangeType, change_type)
+        return cast(Self, change_type)
 
     @property
-    def color(self) -> ChangeType:
+    def color(self) -> str:
         color = self.color_mapper[self.symbol]
-        return cast(ChangeType, color)
+        return cast(str, color)
 
     @property
     def symbol(self) -> str:
@@ -59,7 +60,7 @@ class ChangeType(Enum):
         symbols = list(self.symbol_mapper.keys())
         return symbols.index(self.symbol)
 
-    def __lt__(self, other: ChangeType) -> bool:
+    def __lt__(self, other: Self) -> bool:
         return self.sort_order.__lt__(other.sort_order)
 
 
@@ -73,11 +74,14 @@ class Change:
 
     @classmethod
     def from_pattern(
-        cls, pattern: str, source: Path | None = None, dest: Path | None = None
-    ) -> Change:
+        cls,
+        pattern: str,
+        source: Path | None = None,
+        dest: Path | None = None,
+    ) -> Self:
         type_ = ChangeType.from_symbol(pattern[0])
         path = Path(pattern[2:])
-        return Change(path, type_, source, dest)
+        return cls(path, type_, source, dest)
 
     @property
     def message(self) -> str:
@@ -89,25 +93,24 @@ class Change:
 
     @property
     def skip_print(self) -> bool:
-        assert self.source is not None
-        return (self.source / self.path).is_relative_to(Path.hashes)  # noqa
+        source = cast(Path, self.source)
+        return (source / self.path).is_relative_to(Path.hashes)
 
     def print(self) -> None:
         cli.console.print(self.message, end="")
 
-    def get_diff_lines(self, color: bool = True) -> list[str]:
+    def get_diff_lines(self, *, color: bool = True) -> list[str]:
         max_lines = self.max_diff_lines_per_file
-        assert self.source is not None
-        assert self.dest is not None
-        return calculate_diff(
-            self.path, self.source, self.dest, color=color, max_lines=max_lines
-        )
+        source = cast(Path, self.source)
+        dest = cast(Path, self.dest)
+        return calculate_diff(self.path, source, dest, color=color, max_lines=max_lines)
 
 
 def calculate_diff(
     path: Path,
     source_root: Path,
     dest_root: Path,
+    *,
     color: bool = True,
     max_lines: int = 20,
 ) -> list[str]:
@@ -122,4 +125,4 @@ def calculate_diff(
 def run_diff(*args: Any, **kwargs: Any) -> None:
     diff_lines = calculate_diff(*args, **kwargs)
     message = "\n".join(diff_lines)
-    print(message)
+    cli.console.print(message)

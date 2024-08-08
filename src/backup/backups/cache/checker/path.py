@@ -85,8 +85,8 @@ class RetrievedContentChecker(PathChecker):
         yield content_hash
 
     def calculate_content_hash(self) -> str:
-        import hashlib  # , autoimport
-        import json  # , autoimport
+        import hashlib
+        import json
 
         content_generator = self.retrieve_content()
         content = tuple(content_generator)

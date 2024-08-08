@@ -1,9 +1,9 @@
 import cli
 
-from ..models import Path
+from backup.models import Path
 
 
-def check_setup(install: bool = True) -> None:
+def check_setup(*, install: bool = True) -> None:
     path = Path.rclone_config
     if not path.exists():
         download_config_file(path)

@@ -2,7 +2,8 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from ....models import Path
+from backup.models import Path
+
 from .path import (
     CommentsRemovedChecker,
     KwalletChecker,
@@ -14,7 +15,7 @@ from .path import (
 
 def calculate_checkers() -> dict[Path, PathChecker]:
     checkers_iterator = generate_checkers()
-    return {path: checker for path, checker in checkers_iterator}
+    return dict(checkers_iterator)
 
 
 def generate_checkers() -> Iterator[tuple[Path, PathChecker]]:

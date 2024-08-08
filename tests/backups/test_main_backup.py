@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from backup.backups import Backup
@@ -17,7 +17,8 @@ def test_diff(mocked_backup_with_filled_content: Backup) -> None:
 
 
 def test_show_diff(
-    mocked_backup_with_filled_content: Backup, test_context: Context
+    mocked_backup_with_filled_content: Backup,
+    test_context: Context,
 ) -> None:
     test_context.options.show_file_diffs = True
     mocked_backup_with_filled_content.run_action(Action.push)
@@ -46,25 +47,29 @@ def test_push_with_indent(mocked_backup_with_filled_content: Backup) -> None:
 
 
 def test_push_with_profile(
-    mocked_backup_with_filled_content: Backup, test_context: Context
+    mocked_backup_with_filled_content: Backup,
+    test_context: Context,
 ) -> None:
     path = test_context.profiles_path / Defaults.create_profile_paths()[0]
     path.touch()
     verify_push(mocked_backup_with_filled_content)
 
 
-def test_pull(mocked_backup_with_filled_content: Backup, test_context: Context) -> None:
+@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+def test_pull(test_context: Context) -> None:
     verify_pull(test_context)
 
 
 def test_pull_with_sub_path(
-    mocked_backup_with_filled_content: Backup, test_context: Context
+    mocked_backup_with_filled_content: Backup,
+    test_context: Context,
 ) -> None:
     verify_pull(test_context, backup=mocked_backup_with_filled_content)
 
 
 def test_pull_with_profile(
-    mocked_backup_with_filled_content: Backup, test_context: Context
+    mocked_backup_with_filled_content: Backup,
+    test_context: Context,
 ) -> None:
     profile_path = (
         test_context.config.backup_dest
@@ -77,7 +82,7 @@ def test_pull_with_profile(
 
 def test_malformed_filters_indicated(mocked_backup: Backup) -> None:
     mocked_backup.filter_rules = ["????"]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Invalid paths:"):
         mocked_backup.capture_status()
 
 
@@ -107,34 +112,37 @@ def verify_pull(context: Context, backup: Backup | None = None) -> None:
     backup.run_action(Action.pull)
 
 
-@patch("xattr.xattr.set")
-def test_detailed_checker(_: MagicMock, test_context: Context) -> None:
+def test_detailed_checker(test_context: Context) -> None:
     path = test_context.profiles_source_root / ".config" / "gtkrc"
     path.touch()
-    Backup().run_action(Action.push)
-    path.text = "#"
-    Backup().run_action(Action.push)
+    with patch("xattr.xattr.set"):
+        Backup().run_action(Action.push)
+        path.text = "#"
+        Backup().run_action(Action.push)
 
 
-@patch("xattr.xattr.set")
-def test_detailed_checker_hash_path(_: MagicMock, test_context: Context) -> None:
+def test_detailed_checker_hash_path(test_context: Context) -> None:
     path = test_context.profiles_source_root / ".config" / "rclone" / "rclone.conf"
     path.touch()
-    Backup().run_action(Action.push)
-    path.text = " "
-    Backup().run_action(Action.push)
+    with patch("xattr.xattr.set"):
+        Backup().run_action(Action.push)
+        path.text = " "
+        Backup().run_action(Action.push)
 
 
-def test_after_pull(mocked_backup: Backup, test_context: Context) -> None:
+@pytest.mark.usefixtures("test_context")
+def test_after_pull(mocked_backup: Backup) -> None:
     Path.selected_resume_pdf.touch()
     path = Path.selected_resume_pdf.relative_to(mocked_backup.source)
     mocked_backup.paths = [path]
     mocked_backup.after_pull()
 
 
-def test_profile_parent_sub_check_path(
-    mocked_backup_with_filled_content: Backup, test_context_with_sub_check_path: Context
-) -> None:
+@pytest.mark.usefixtures(
+    "mocked_backup_with_filled_content",
+    "test_context_with_sub_check_path",
+)
+def test_profile_parent_sub_check_path() -> None:
     backup = Backup()
     backup.dest.mkdir(parents=True)
     verify_push(backup)

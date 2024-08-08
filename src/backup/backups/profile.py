@@ -1,10 +1,10 @@
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from .. import backup
-from ..context import context
-from ..models import Path
-from ..utils import parser
+from backup import backup
+from backup.context import context
+from backup.models import Path
+from backup.utils import parser
 
 
 @dataclass
@@ -25,7 +25,8 @@ class Backup(backup.Backup):
 
     def generate_paths(self) -> Iterator[Path]:
         rules = parser.Rules(
-            context.storage.profile_paths, root=context.extract_profiles_source_root()
+            context.storage.profile_paths,
+            root=context.extract_profiles_source_root(),
         )
         for rule in rules:
             source_path = self.source / rule.path

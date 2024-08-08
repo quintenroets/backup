@@ -6,9 +6,7 @@ from backup.backups.cache.detailed_entry import Entry
 from backup.context import Context
 
 
-@patch("cli.capture_output_lines", return_value=[""])
-@patch("xattr.xattr.set")
-def test_detailed_checker(_: MagicMock, __: MagicMock, test_context: Context) -> None:
+def test_detailed_checker(test_context: Context) -> None:
     path = test_context.profiles_source_root / ".config" / "gtkrc"
     entry = Entry(
         source_root=test_context.config.backup_source,
@@ -25,7 +23,9 @@ def test_detailed_checker(_: MagicMock, __: MagicMock, test_context: Context) ->
 @patch("cli.capture_output_lines", return_value=[""])
 @patch("xattr.xattr.set")
 def test_detailed_checker_hash_path(
-    _: MagicMock, __: MagicMock, test_context: Context
+    mocked_xattr: MagicMock,
+    mocked_run: MagicMock,
+    test_context: Context,
 ) -> None:
     path = test_context.profiles_source_root / ".config" / "rclone" / "rclone.conf"
     path.touch()
@@ -40,3 +40,5 @@ def test_detailed_checker_hash_path(
     entry.dest.touch()
     path.text = " "
     assert entry.only_volatile_content_changed()
+    mocked_run.assert_called()
+    mocked_xattr.assert_called()

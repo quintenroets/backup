@@ -1,8 +1,9 @@
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
-from ..models import Path
+from backup.models import Path
+
 from . import commands
 
 
@@ -26,7 +27,9 @@ class Backup(commands.Backup):
             date_str = " ".join(parts[1:3]).split(".")[0]
             path_str = " ".join(parts[3:])
             if path_str:
-                date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+                date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").astimezone(
+                    tz=timezone.utc,
+                )
                 path = Path(path_str)
                 yield path, date
 
@@ -43,7 +46,8 @@ class Backup(commands.Backup):
                 dest_path.unlink()
 
     def process_dest_info(
-        self, dest_info: Iterator[tuple[Path, datetime]]
+        self,
+        dest_info: Iterator[tuple[Path, datetime]],
     ) -> Iterator[Path]:
         for relative_path, date in dest_info:
             path = self.dest / relative_path

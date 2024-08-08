@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .. import backup
+from backup import backup
 
 
 @dataclass

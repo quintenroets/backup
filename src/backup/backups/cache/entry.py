@@ -3,18 +3,18 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from ...context import context
-from ...models import Path
+from backup.context import context
+from backup.models import Path
 
 
 @dataclass
 class Entry:
     source_root: Path
     dest_root: Path
-    source: Path = None  # type: ignore
+    source: Path = None  # type: ignore[assignment]
     existing: Path = field(init=False)
     relative: Path = field(init=False)
-    dest: Path = None  # type: ignore
+    dest: Path = None  # type: ignore[assignment]
     changed: bool | None = None
     relative_browser_path: ClassVar[Path] = (
         Path.HOME / context.config.browser_folder

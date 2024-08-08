@@ -13,8 +13,7 @@ T = TypeVar("T", bound="Path")
 
 
 class Path(superpathlib.Path):
-    @property  # type: ignore
-    # type : ignore
+    @property  # type: ignore[override]
     def mtime(self) -> int:
         """
         Remote filesystem is only precise up to one second and mtime is used to compare
@@ -30,8 +29,8 @@ class Path(superpathlib.Path):
     def with_export_suffix(self: T) -> T:
         return self.with_suffix(".pdf")
 
-    def extract_date(self, check_tag: bool = False) -> datetime:
-        from datetime import datetime
+    def extract_date(self, *, check_tag: bool = False) -> datetime:
+        from datetime import datetime, timezone
 
         mtime = self.mtime
 
@@ -41,9 +40,9 @@ class Path(superpathlib.Path):
             if tag:
                 mtime = int(tag)
 
-        return datetime.fromtimestamp(mtime)
+        return datetime.fromtimestamp(mtime, tz=timezone.utc)
 
-    def has_date(self, date: datetime, check_tag: bool = False) -> bool:
+    def has_date(self, date: datetime, *, check_tag: bool = False) -> bool:
         path_date = self.extract_date(check_tag=check_tag)
         return self.extract_date_tuple(date) == self.extract_date_tuple(path_date)
 

@@ -2,12 +2,12 @@ import json
 
 import pytest
 from backup.backup import Backup
-from backup.backups import Backup as MainBackup
 from backup.context.context import Context
 from backup.models import Change, ChangeType, Path
 
 
-def test_status(mocked_backup_with_filled_content: MainBackup) -> None:
+@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+def test_status() -> None:
     backup = Backup()
     status = backup.capture_status(quiet=True)
 
@@ -32,9 +32,8 @@ def test_push() -> None:
     assert backup.source.content_hash == hash_value
 
 
-def test_pull(
-    mocked_backup_with_filled_content: MainBackup,
-) -> None:
+@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+def test_pull() -> None:
     backup = Backup()
     hash_value = backup.dest.content_hash
     backup.capture_pull()
@@ -43,7 +42,8 @@ def test_pull(
     assert backup.dest.content_hash == hash_value
 
 
-def test_ls(mocked_backup_with_filled_content: MainBackup) -> None:
+@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+def test_ls() -> None:
     backup = Backup()
     path = next(path for path in backup.source.iterdir() if path.is_file())
     file_info = backup.capture_output("lsjson", path)
@@ -51,15 +51,15 @@ def test_ls(mocked_backup_with_filled_content: MainBackup) -> None:
     assert parsed_file_info[0]["Name"] == path.name
 
 
-def test_single_file_copy(mocked_backup_with_filled_content: MainBackup) -> None:
+@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+def test_single_file_copy() -> None:
     backup = Backup()
     path = next(backup.source.iterdir())
     backup.capture_output("copyto", path, backup.dest / path.relative_to(backup.source))
 
 
-def test_all_options(
-    test_context: Context, mocked_backup_with_filled_content: MainBackup
-) -> None:
+@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+def test_all_options(test_context: Context) -> None:
     overwrite_newer = test_context.config.overwrite_newer
     test_context.config.overwrite_newer = False
     backup = Backup()
@@ -67,9 +67,8 @@ def test_all_options(
     test_context.config.overwrite_newer = overwrite_newer
 
 
-def test_show_diff(
-    mocked_backup_with_filled_content: Backup, test_context: Context
-) -> None:
+@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+def test_show_diff(test_context: Context) -> None:
     backup = Backup()
     (backup.source / "0.txt").lines = ["same", "different"]
     (backup.dest / "0.txt").lines = ["same", "different2"]
@@ -80,11 +79,13 @@ def test_show_diff(
     test_context.options.show_file_diffs = False
 
 
-def test_path_used(mocked_backup: Backup) -> None:
+@pytest.mark.usefixtures("mocked_backup")
+def test_path_used() -> None:
     path = Path("dummy.txt")
     assert Backup(path=path).paths == (path,)
 
 
-def test_directory_used(mocked_backup_with_filled_content: Backup) -> None:
+@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+def test_directory_used() -> None:
     directory = Path("dummy")
     assert Backup(directory=directory).paths == (directory / "**",)

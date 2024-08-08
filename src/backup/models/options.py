@@ -22,7 +22,7 @@ class Help:
 class Options:
     action: Annotated[Action, typer.Argument(help=Help.action)] = Action.push
     paths: Annotated[list[Path], typer.Argument(help=Help.paths)] = field(
-        default_factory=list
+        default_factory=list,
     )
     configure: Annotated[bool, typer.Option(help=Help.configure)] = False
     confirm_push: Annotated[bool, typer.Option(help=Help.configure)] = True

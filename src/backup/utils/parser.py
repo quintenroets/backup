@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+import typing
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..models import Path
+from typing_extensions import Self
+
+from backup.models import Path
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterator  # pragma: nocover
 
 
 @dataclass
@@ -21,15 +26,17 @@ class RuleConfig:
     VERSION_KEYWORD: str = field(repr=False, default="__VERSION__")
 
     @classmethod
-    def from_list(cls, items: list[dict[Any, Any]] | None, root: Path) -> RuleConfig:
-        rules = RuleConfig()
+    def from_list(cls, items: list[dict[Any, Any]] | None, root: Path) -> Self:
+        rules = cls()
         if items is not None:
             for item in items:
                 rules.add_item(item, root)
         return rules
 
     def add_item(
-        self, item: dict[Any, Any] | str | tuple[str, ...], root: Path
+        self,
+        item: dict[Any, Any] | str | tuple[str, ...],
+        root: Path,
     ) -> None:
         names, content = (
             next(iter(item.items())) if isinstance(item, dict) else (item, [])
@@ -67,7 +74,7 @@ class RuleConfig:
 class Rules:
     include_rules: list[Any] | None = None
     exclude_rules: list[Any] | None = None
-    root: Path = Path()
+    root: Path = field(default_factory=Path)
 
     def __iter__(self) -> Iterator[PathRule]:
         yield from self.parse()
@@ -82,7 +89,9 @@ class Rules:
         yield from self.generate_rules(include_rules, exclude_rules)
 
     def generate_rules(
-        self, include: RuleConfig, exclude: RuleConfig
+        self,
+        include: RuleConfig,
+        exclude: RuleConfig,
     ) -> Iterator[PathRule]:
         sub_names = include.sub_rules.keys() | exclude.sub_rules.keys()
         for name in sub_names:

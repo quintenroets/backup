@@ -6,10 +6,11 @@ from typing import Any
 
 import cli
 
-from ...context import context
-from ...models import Changes, Path
-from ...utils import parser
-from ..backup import backup
+from backup import backup
+from backup.context import context
+from backup.models import Changes, Path
+from backup.utils import parser
+
 from .detailed_entry import Entry
 
 
@@ -20,7 +21,7 @@ class Backup(backup.Backup):
     visited: set[Path] = field(default_factory=set)
     number_of_entries: int = 0
 
-    def status(self, reverse: bool = False) -> Changes:
+    def status(self, *, reverse: bool = False) -> Changes:
         self.paths = list(self.generate_changed_paths())
         return super().capture_status(reverse=reverse) if self.paths else Changes([])
 
@@ -75,17 +76,17 @@ class Backup(backup.Backup):
         if not any_include:
             # include everything else if no include rules
             root = Path()
-            yield parser.PathRule(root, True)
+            yield parser.PathRule(root, include=True)
 
     def generate_entry_rules(self) -> Iterator[parser.PathRule]:
         self.check_config_path()
         root = context.config.backup_source
         rules = list(
-            parser.Rules(self.include_dict, context.storage.excludes, root=root)
+            parser.Rules(self.include_dict, context.storage.excludes, root=root),
         )
         if self.overlapping_sub_path is not None:
             path = context.config.cache_path.relative_to(root)
-            rules.insert(0, parser.PathRule(path, False))
+            rules.insert(0, parser.PathRule(path, include=False))
         if self.sub_check_path is not None:
             relative_source = self.source.relative_to(root)
             for rule in rules:

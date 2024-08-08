@@ -3,9 +3,8 @@ from typing import cast
 import cli
 
 from backup.backups.remote import Backup
-
-from ..context import context
-from ..models import Path
+from backup.context import context
+from backup.models import Path
 
 
 def export_changes() -> bool:

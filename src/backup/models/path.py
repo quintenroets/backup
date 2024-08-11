@@ -183,7 +183,7 @@ class Path(superpathlib.Path):
     @classmethod
     @classproperty
     def remote(cls: type[T]) -> T:
-        return cls("backup:")
+        return cls("backupmaster:")
 
     @classmethod
     @classproperty

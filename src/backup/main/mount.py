@@ -20,7 +20,7 @@ class Help:
 
 @dataclass
 class Mounter:
-    remote: Annotated[str, typer.Option(help=Help.remote)] = "backup"
+    remote: Annotated[str, typer.Option(help=Help.remote)] = "backupmaster"
     path: Annotated[Path, typer.Option(help=Help.path)] = field(default_factory=Path)
     rclone_secret: Annotated[str, typer.Option(help=Help.rclone_secret)] = field(
         default_factory=lambda: context.secrets.rclone,

@@ -25,7 +25,7 @@ class Mounter:
     rclone_secret: Annotated[str, typer.Option(help=Help.rclone_secret)] = field(
         default_factory=lambda: context.secrets.rclone,
     )
-    cache_mode: str = "write"
+    cache_mode: str = "writes"
 
     def run(self) -> None:
         """

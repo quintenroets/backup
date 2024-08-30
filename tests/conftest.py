@@ -70,6 +70,7 @@ def generate_context_managers(
     root = directories[0]
     yield mock_under_test_root(root=root, path=Path.config)
     yield mock_under_test_root(root=root, path=Path.resume)
+    yield patch("cli.track_progress", new=lambda *args, **_: args[0])
 
 
 def mock_under_test_root(

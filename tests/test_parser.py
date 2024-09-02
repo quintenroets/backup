@@ -1,4 +1,5 @@
 import pytest
+
 from backup.models import Path
 from backup.utils.parser import Rules
 

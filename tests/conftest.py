@@ -9,13 +9,13 @@ from unittest.mock import PropertyMock, patch
 
 import cli
 import pytest
+from package_utils.storage import CachedFileContent
+
 from backup.backups.backup import Backup
 from backup.context import context as context_
 from backup.context.context import Context
 from backup.models import Path
 from backup.utils.setup import check_setup
-from package_utils.storage import CachedFileContent
-
 from tests import mocks
 from tests.mocks.methods import mocked_method
 from tests.mocks.storage import Storage
@@ -45,7 +45,7 @@ def provision_directory() -> Iterator[Path]:
     assert not path.exists()
 
 
-@pytest.fixture()
+@pytest.fixture
 def directory() -> Iterator[Path]:
     yield from provision_directory()
 
@@ -85,7 +85,7 @@ def mock_under_test_root(
     return patch.object(Path, name, new_callable=mocked_path)
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_context(context: Context) -> Iterator[Context]:
     directories = [Path.tempdir() for _ in range(2)]
     restored_directories = (
@@ -107,7 +107,7 @@ def test_context(context: Context) -> Iterator[Context]:
         ) = restored_directories
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_context_with_sub_check_path(test_context: Context) -> Iterator[Context]:
     test_context.options.sub_check = True
     sub_check_path = (
@@ -138,14 +138,14 @@ def mocked_storage(context: Context) -> Iterator[None]:
         yield None
 
 
-@pytest.fixture()
+@pytest.fixture
 def mocked_backup(test_context: Context) -> Backup:  # noqa: ARG001
     backup = Backup()
     backup.sub_check_path = backup.source
     return backup
 
 
-@pytest.fixture()
+@pytest.fixture
 def mocked_backup_with_filled_content(mocked_backup: Backup) -> Backup:
     fill_directories(mocked_backup)
     return mocked_backup

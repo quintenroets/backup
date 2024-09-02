@@ -1,11 +1,12 @@
 from collections.abc import Callable, Iterator
 
 import pytest
+
 from backup.models import Path
 from backup.utils import check_setup
 
 
-@pytest.fixture()
+@pytest.fixture
 def restore(directory: Path) -> Callable[[Path], Iterator[None]]:
     def _restore(restored_directory: Path) -> Iterator[None]:
         if restored_directory.exists():
@@ -16,7 +17,7 @@ def restore(directory: Path) -> Callable[[Path], Iterator[None]]:
     return _restore
 
 
-@pytest.fixture()
+@pytest.fixture
 def restore_and_check(
     restore: Callable[[Path], Iterator[None]],
 ) -> Callable[[Path], Iterator[None]]:
@@ -28,7 +29,7 @@ def restore_and_check(
     return _restore_and_check
 
 
-@pytest.fixture()
+@pytest.fixture
 def restore_rclone_config_path(
     restore_and_check: Callable[[Path], Iterator[None]],
 ) -> Iterator[None]:

@@ -1,8 +1,9 @@
 from unittest.mock import MagicMock, patch
 
-from backup.cli import entry_point, mount
 from package_dev_utils.tests.args import cli_args, no_cli_args
 from superpathlib import Path
+
+from backup.cli import entry_point, mount
 
 
 @no_cli_args

@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from backup.backups.cache.checker.path import (
     KwalletChecker,
     PathChecker,
@@ -11,7 +12,7 @@ from backup.context import Context
 from backup.models import Path
 
 
-@pytest.fixture()
+@pytest.fixture
 def checker(test_context: Context) -> PathChecker:  # noqa: ARG001
     return PathChecker()
 

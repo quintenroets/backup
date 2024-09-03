@@ -1,6 +1,7 @@
 import json
 
 import pytest
+
 from backup.backup import Backup
 from backup.context.context import Context
 from backup.models import Change, ChangeType, Path

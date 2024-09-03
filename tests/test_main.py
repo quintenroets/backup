@@ -2,6 +2,7 @@ from collections.abc import Iterator
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from backup.context.context import Context
 from backup.main.main import main
 
@@ -12,7 +13,7 @@ def test_main(mocked_run: MagicMock) -> None:
     mocked_run.assert_called_once()
 
 
-@pytest.fixture()
+@pytest.fixture
 def open_urls_context(test_context: Context) -> Iterator[Context]:
     test_context.options.configure = True
     yield test_context

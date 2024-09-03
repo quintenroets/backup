@@ -1,10 +1,10 @@
 from unittest.mock import patch
 
 import pytest
+
 from backup.backups import Backup
 from backup.context.context import Context
 from backup.models import Action, Path
-
 from tests.mocks.storage import Defaults
 
 

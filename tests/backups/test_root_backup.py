@@ -2,12 +2,13 @@ from collections.abc import Iterator
 
 import cli
 import pytest
+
 from backup.backup import Backup
 from backup.backups import Backup as MainBackup
 from backup.models import Path
 
 
-@pytest.fixture()
+@pytest.fixture
 def mocked_backup_with_root_dest(
     mocked_backup_with_filled_content: MainBackup,  # noqa: ARG001
 ) -> Iterator[Backup]:

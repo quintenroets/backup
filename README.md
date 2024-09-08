@@ -1,5 +1,10 @@
 # Backup
+<<<<<<< HEAD
 [![PyPI version](https://badge.fury.io/py/backupmaster.svg)](https://badge.fury.io/py/backupmaster)
+=======
+[![PyPI version](https://badge.fury.io/py/backup.svg)](https://badge.fury.io/py/backup)
+![PyPI downloads](https://img.shields.io/pypi/dm/backup)
+>>>>>>> template
 ![Python version](https://img.shields.io/badge/python-3.10+-brightgreen)
 ![Operating system](https://img.shields.io/badge/os-linux-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)

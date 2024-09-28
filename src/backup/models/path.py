@@ -171,7 +171,7 @@ class Path(superpathlib.Path):
     @classmethod
     @classproperty
     def main_resume_pdf(cls: type[T]) -> T:
-        path = cls.resume / "Resume Quinten Roets.pdf"
+        path = cls.resume.parent / "Resume Quinten Roets.pdf"
         return cast(T, path)
 
     @classmethod

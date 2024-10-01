@@ -33,7 +33,10 @@ class Backup(paths.Rclone):
 
     @contextmanager
     def prepared_push_runner(self, *, reverse: bool = False) -> Iterator[Runner[str]]:
-        options = "sync", "--create-empty-src-dirs", "--progress"
+        options = ["sync", "--create-empty-src-dirs", "--progress"]
+        dest = self.source if reverse else self.dest
+        if dest.is_root:
+            options.append("--no-update-dir-modtime")
         with self.prepared_runner_with_locations(*options, reverse=reverse) as runner:
             yield runner
 

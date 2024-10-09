@@ -42,12 +42,12 @@ def test_overlapping_source(test_context: Context) -> None:
 
 
 @test_with_tags
-def test_exported_tag_excluded(entry: Entry) -> None:
+def test_exported_tag_excluded(entry: Entry) -> None:  # pragma: nocover
     entry.source.tag = "exported"
     assert entry.exclude()
 
 
 @test_with_tags
-def test_other_tags_included(entry: Entry) -> None:
+def test_other_tags_included(entry: Entry) -> None:  # pragma: nocover
     entry.source.tag = "anything"
     assert not entry.exclude()

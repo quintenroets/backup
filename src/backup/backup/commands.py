@@ -7,7 +7,7 @@ import cli
 from cli.commands.commands import CommandItem
 from cli.commands.runner import Runner
 
-from backup.models import Change, Changes, ChangeType, Path
+from backup.models import Change, Changes, ChangeTypes, Path
 from backup.utils import generate_output_lines
 from backup.utils.error_handling import create_malformed_filters_error
 
@@ -71,7 +71,7 @@ class Backup(paths.Rclone):
     def extract_changes(self, change_results: Iterable[Change]) -> Iterator[Change]:
         no_change_results = []
         for result in change_results:
-            if result.type == ChangeType.preserved:
+            if result.type == ChangeTypes.preserved:
                 no_change_results.append(result)
             else:
                 yield result

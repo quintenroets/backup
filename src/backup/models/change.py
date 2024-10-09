@@ -6,14 +6,14 @@ from typing import Any, cast
 import cli
 from typing_extensions import Self
 
-from .change_type import ChangeType
+from .change_type import ChangeType, ChangeTypes, parse_change_type
 from .path import Path
 
 
 @dataclass(unsafe_hash=True)
 class Change:
     path: Path
-    type: ChangeType = ChangeType.created
+    type: ChangeType = ChangeTypes.created
     source: Path | None = None
     dest: Path | None = None
     max_diff_lines_per_file: int = 20
@@ -25,7 +25,7 @@ class Change:
         source: Path | None = None,
         dest: Path | None = None,
     ) -> Self:
-        type_ = ChangeType.from_symbol(pattern[0])
+        type_ = parse_change_type(symbol=pattern[0])
         path = Path(pattern[2:])
         return cls(path, type_, source, dest)
 

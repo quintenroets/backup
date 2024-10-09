@@ -4,15 +4,15 @@ import pytest
 
 from backup.backup import Backup
 from backup.context.context import Context
-from backup.models import Change, ChangeType, Path
+from backup.models import Change, ChangeTypes, Path
 
 
 @pytest.mark.usefixtures("mocked_backup_with_filled_content")
 def test_status() -> None:
     expected_changes = {
-        Change(Path("0.txt"), ChangeType.modified),
-        Change(Path("1.txt"), ChangeType.created),
-        Change(Path("2.txt"), ChangeType.deleted),
+        Change(Path("0.txt"), ChangeTypes.modified),
+        Change(Path("1.txt"), ChangeTypes.created),
+        Change(Path("2.txt"), ChangeTypes.deleted),
     }
     assert capture_changes() == expected_changes
 

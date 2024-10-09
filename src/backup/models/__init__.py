@@ -1,6 +1,6 @@
 from .action import Action
 from .change import Change
-from .change_type import ChangeType
+from .change_type import ChangeType, ChangeTypes
 from .changes import Changes
 from .config import Config
 from .options import Options

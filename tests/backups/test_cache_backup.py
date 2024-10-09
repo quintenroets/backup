@@ -1,3 +1,4 @@
+import os
 from collections.abc import Iterator
 from typing import Any, cast
 
@@ -7,6 +8,14 @@ from backup.backups.cache.cache import Backup
 from backup.backups.cache.detailed_entry import Entry
 from backup.context import Context
 from backup.models import Path
+
+is_running_in_ci = "GITHUB_ACTIONS" in os.environ
+
+
+test_with_tags = pytest.mark.skipif(
+    is_running_in_ci,
+    reason="XDG Tags are not supported in CI",
+)
 
 
 @pytest.fixture
@@ -32,11 +41,13 @@ def test_overlapping_source(test_context: Context) -> None:
     Backup(source=source).status()
 
 
+@test_with_tags
 def test_exported_tag_excluded(entry: Entry) -> None:
     entry.source.tag = "exported"
     assert entry.exclude()
 
 
+@test_with_tags
 def test_other_tags_included(entry: Entry) -> None:
     entry.source.tag = "anything"
     assert not entry.exclude()

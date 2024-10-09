@@ -19,13 +19,13 @@ test_with_tags = pytest.mark.skipif(
 
 
 @pytest.fixture
-def file() -> Iterator[Path]:
+def file() -> Iterator[Path]:  # pragma: nocover
     with Path.tempfile() as path:
         yield path
 
 
 @pytest.fixture
-def entry(file: Path) -> Entry:
+def entry(file: Path) -> Entry:  # pragma: nocover
     dummy_path = Path()
     return Entry(source_root=file.parent, dest_root=dummy_path, source=file)
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import abc
+import sys
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, cast
@@ -64,8 +66,29 @@ class ChangeType(Enum):
         return self.sort_order.__lt__(other.sort_order)
 
 
+def enable_classproperties(cls: type[Any]) -> None:  # pragma: nocover
+    for name, method in vars(cls).items():
+        if isinstance(method, classmethod):
+            wrapped_method = method.__func__
+            if isinstance(wrapped_method, classproperty):
+                setattr(cls, name, wrapped_method)
+
+
+class PropertyMeta(abc.ABCMeta):
+    def __new__(
+        cls: type[PropertyMeta],
+        name: str,
+        bases: tuple[type, ...],
+        attributes: dict[str, Any],
+    ) -> PropertyMeta:
+        meta_class = super().__new__(cls, name, bases, attributes)
+        if sys.version_info >= (3, 13):
+            enable_classproperties(meta_class)  # pragma: nocover
+        return meta_class
+
+
 @dataclass(unsafe_hash=True)
-class Change:
+class Change(metaclass=PropertyMeta):
     path: Path
     type: ChangeType = ChangeType.created
     source: Path | None = None

@@ -9,18 +9,18 @@ from backup.models import Change, ChangeType, Path
 
 @pytest.mark.usefixtures("mocked_backup_with_filled_content")
 def test_status() -> None:
-    backup = Backup()
-    status = backup.capture_status(quiet=True)
-
-    expected_changes = (
+    expected_changes = {
         Change(Path("0.txt"), ChangeType.modified),
         Change(Path("1.txt"), ChangeType.created),
         Change(Path("2.txt"), ChangeType.deleted),
-    )
-    for change in status:
-        change.source = change.dest = None
-    for change in expected_changes:
-        assert change in status
+    }
+    assert capture_changes() == expected_changes
+
+
+def capture_changes() -> set[Change]:
+    backup = Backup()
+    status = backup.capture_status(quiet=True)
+    return {Change(change.path, change.type) for change in status}
 
 
 @pytest.mark.usefixtures("mocked_backup_with_filled_content")

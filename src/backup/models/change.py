@@ -64,7 +64,7 @@ class ChangeType(Enum):
         return self.sort_order.__lt__(other.sort_order)
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Change:
     path: Path
     type: ChangeType = ChangeType.created

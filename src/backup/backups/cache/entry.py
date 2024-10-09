@@ -1,4 +1,3 @@
-import typing
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import ClassVar
@@ -43,7 +42,7 @@ class Entry:
     def exclude(self) -> bool:
         return (
             (not context.options.include_browser and self.is_browser_config())
-            or typing.cast(bool, self.existing.tag)
+            or (self.existing.tag and self.existing.tag == "exported")
             or (
                 self.existing.size > context.config.max_backup_size
                 and self.relative.suffix != ".zip"

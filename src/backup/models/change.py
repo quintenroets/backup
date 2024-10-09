@@ -1,73 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, cast
 
 import cli
-from simple_classproperty import classproperty
 from typing_extensions import Self
 
+from .change_type import ChangeType, ChangeTypes, parse_change_type
 from .path import Path
 
 
-class ChangeType(Enum):
-    created = "created"
-    modified = "modified"
-    deleted = "deleted"
-    preserved = "preserved"
-
-    @classmethod
-    @classproperty
-    def symbol_mapper(cls) -> dict[str, ChangeType]:
-        return {
-            "+": cls.created,
-            "*": cls.modified,
-            "-": cls.deleted,
-            "=": cls.preserved,
-        }
-
-    @classmethod
-    @classproperty
-    def color_mapper(cls) -> dict[str, str]:
-        return {"+": "green", "*": "blue", "-": "red", "=": "black"}
-
-    @classmethod
-    @classproperty
-    def reverse_symbol_mapper(cls) -> dict[str, str]:
-        return {v: k for k, v in cls.symbol_mapper.items()}
-
-    @classmethod
-    def from_symbol(cls, symbol: str) -> Self:
-        change_type = cls.symbol_mapper[symbol]
-        return cast(Self, change_type)
-
-    @property
-    def color(self) -> str:
-        color = self.color_mapper[self.symbol]
-        return cast(str, color)
-
-    @property
-    def symbol(self) -> str:
-        symbol = self.reverse_symbol_mapper[self]
-        return cast(str, symbol)
-
-    def __str__(self) -> str:
-        return self.symbol
-
-    @property
-    def sort_order(self) -> int:
-        symbols = list(self.symbol_mapper.keys())
-        return symbols.index(self.symbol)
-
-    def __lt__(self, other: Self) -> bool:
-        return self.sort_order.__lt__(other.sort_order)
-
-
-@dataclass
+@dataclass(unsafe_hash=True)
 class Change:
     path: Path
-    type: ChangeType = ChangeType.created
+    type: ChangeType = ChangeTypes.created
     source: Path | None = None
     dest: Path | None = None
     max_diff_lines_per_file: int = 20
@@ -79,7 +25,7 @@ class Change:
         source: Path | None = None,
         dest: Path | None = None,
     ) -> Self:
-        type_ = ChangeType.from_symbol(pattern[0])
+        type_ = parse_change_type(symbol=pattern[0])
         path = Path(pattern[2:])
         return cls(path, type_, source, dest)
 

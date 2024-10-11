@@ -22,8 +22,8 @@ class Backup(paths.Rclone):
             runner.quiet = quiet
             try:
                 return self.capture_changes(runner)
-            except cli.CalledProcessError:
-                raise create_malformed_filters_error(self.filter_rules) from None
+            except cli.CalledProcessError as exception:
+                raise create_malformed_filters_error(self.filter_rules) from exception
 
     def pull(self) -> subprocess.CompletedProcess[str]:
         return self.push(reverse=True)

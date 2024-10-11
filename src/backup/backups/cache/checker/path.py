@@ -119,7 +119,7 @@ class KwalletChecker(RetrievedContentChecker):
 
     @classmethod
     def generate_items(cls) -> Iterator[KwalletItem]:
-        folders = ("Network Management", "Passwords", "ksshaskpass")
+        folders = ("Network Management", "Chromium Keys", "ksshaskpass")
         command = "kwallet-query -l kdewallet -f"
         for folder in folders:
             for item in cli.capture_output_lines(command, folder):

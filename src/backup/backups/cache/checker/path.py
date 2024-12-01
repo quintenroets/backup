@@ -124,7 +124,7 @@ class KwalletChecker(RetrievedContentChecker):
         for folder in folders:
             try:
                 items = cli.capture_output_lines(command, folder)
-            except cli.CalledProcessError:  # noqa: PERF203, pragma: nocover
+            except cli.CalledProcessError:  # pragma: nocover # noqa: PERF203,
                 pass
             else:
                 for item in items:

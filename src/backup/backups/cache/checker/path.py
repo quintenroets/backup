@@ -122,8 +122,13 @@ class KwalletChecker(RetrievedContentChecker):
         folders = ("Network Management", "Chromium Keys", "ksshaskpass")
         command = "kwallet-query -l kdewallet -f"
         for folder in folders:
-            for item in cli.capture_output_lines(command, folder):
-                yield KwalletItem(folder=folder, item=item)
+            try:
+                items = cli.capture_output_lines(command, folder)
+            except cli.CalledProcessError:  # pragma: nocover # noqa: PERF203,
+                pass
+            else:
+                for item in items:
+                    yield KwalletItem(folder=folder, item=item)
 
 
 class RcloneChecker(RetrievedContentChecker):

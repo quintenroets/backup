@@ -20,6 +20,7 @@ class Context(Context_[Options, Config, Secrets]):
         return self.config.backup_dest
 
     def extract_cache_path(self) -> Path:
+        self.config.cache_path.mkdir(parents=True, exist_ok=True)
         return self.config.cache_path
 
     def extract_profiles_source_root(self) -> Path:

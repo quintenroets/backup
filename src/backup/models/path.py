@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, TypeVar, cast
 
 import superpathlib
 from simple_classproperty import classproperty
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from datetime import datetime  # pragma: nocover
@@ -75,17 +76,18 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def source_root(cls: type[T]) -> T:
+    def source_root(cls) -> Self:
         return cls(__file__).parent.parent
 
     @classmethod
     @classproperty
-    def assets(cls: type[T]) -> T:
+    def assets(cls) -> Self:
         path = cls.script_assets / cls.source_root.name
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
+<<<<<<< HEAD
     def hashes(cls: type[T]) -> T:
         path = cls.assets / "hashes"
         return cast(T, path)
@@ -195,3 +197,8 @@ class Path(superpathlib.Path):
     @classproperty
     def backup_source(cls: type[T]) -> T:
         return cls("/")
+=======
+    def config(cls) -> Self:
+        path = cls.assets / "config" / "config.yaml"
+        return cast("Self", path)
+>>>>>>> template

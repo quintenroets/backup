@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, TypeVar, cast
 
 import superpathlib
 from simple_classproperty import classproperty
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from datetime import datetime  # pragma: nocover
@@ -26,7 +27,7 @@ class Path(superpathlib.Path):
         superpathlib.Path.mtime.fset(self, value)  # type: ignore[attr-defined]
 
     @property
-    def with_export_suffix(self: T) -> T:
+    def with_export_suffix(self) -> Self:
         return self.with_suffix(".pdf")
 
     def extract_date(self, *, check_tag: bool = False) -> datetime:
@@ -63,135 +64,135 @@ class Path(superpathlib.Path):
         return os.access(path, os.W_OK)
 
     @property
-    def short_notation(self: T) -> T:
-        path = cast(Path, self)
+    def short_notation(self) -> Self:
+        path = cast("Path", self)
         if not path.is_absolute():
             untyped_path = Path("/") / path
-            path = cast(T, untyped_path)
+            path = cast("Self", untyped_path)
         short_path = (
             path.relative_to(Path.HOME) if path.is_relative_to(Path.HOME) else path
         )
-        return cast(T, short_path)
+        return cast("Self", short_path)
 
     @classmethod
     @classproperty
-    def source_root(cls: type[T]) -> T:
+    def source_root(cls) -> Self:
         return cls(__file__).parent.parent
 
     @classmethod
     @classproperty
-    def assets(cls: type[T]) -> T:
+    def assets(cls) -> Self:
         path = cls.script_assets / cls.source_root.name
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def hashes(cls: type[T]) -> T:
+    def hashes(cls) -> Self:
         path = cls.assets / "hashes"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def backup_cache(cls: type[T]) -> T:
+    def backup_cache(cls) -> Self:
         path = cls.assets / "cache"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def config(cls: type[T]) -> T:
+    def config(cls) -> Self:
         path = cls.assets / "config"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def rclone_command_config(cls: type[T]) -> T:
+    def rclone_command_config(cls) -> Self:
         path = cls.config / "rclone_commands.yaml"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def ignore_names(cls: type[T]) -> T:
+    def ignore_names(cls) -> Self:
         path = cls.config / "ignore_names.yaml"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def ignore_patterns(cls: type[T]) -> T:
+    def ignore_patterns(cls) -> Self:
         path = cls.config / "ignore_patterns.yaml"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def paths_include(cls: type[T]) -> T:
+    def paths_include(cls) -> Self:
         path = cls.config / "include.yaml"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def paths_include_pull(cls: type[T]) -> T:
+    def paths_include_pull(cls) -> Self:
         path = cls.config / "pull_include.yaml"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def paths_exclude(cls: type[T]) -> T:
+    def paths_exclude(cls) -> Self:
         path = cls.config / "exclude.yaml"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def profile_paths(cls: type[T]) -> T:
+    def profile_paths(cls) -> Self:
         path = cls.config / "profiles.yaml"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def number_of_paths(cls: type[T]) -> T:
+    def number_of_paths(cls) -> Self:
         path = cls.assets / "volatile" / "number_of_paths"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def profiles(cls: type[T]) -> T:
+    def profiles(cls) -> Self:
         path = cls.assets / "profiles"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def active_profile(cls: type[T]) -> T:
+    def active_profile(cls) -> Self:
         path = cls.profiles / "active.txt"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def resume(cls: type[T]) -> T:
+    def resume(cls) -> Self:
         path = cls.docs / "Drive" / "resume" / "Resume"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def main_resume_pdf(cls: type[T]) -> T:
+    def main_resume_pdf(cls) -> Self:
         path = cls.resume.parent / "Resume Quinten Roets.pdf"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def selected_resume_pdf(cls: type[T]) -> T:
+    def selected_resume_pdf(cls) -> Self:
         path = Path.resume / "Main" / Path.main_resume_pdf.name
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def remote(cls: type[T]) -> T:
+    def remote(cls) -> Self:
         return cls("backupmaster:")
 
     @classmethod
     @classproperty
-    def rclone_config(cls: type[T]) -> T:
+    def rclone_config(cls) -> Self:
         path = cls.HOME / ".config" / "rclone" / "rclone.conf"
-        return cast(T, path)
+        return cast("Self", path)
 
     @classmethod
     @classproperty
-    def backup_source(cls: type[T]) -> T:
+    def backup_source(cls) -> Self:
         return cls("/")

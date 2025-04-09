@@ -29,7 +29,7 @@ class Backup(syncer.Backup):
         )
 
     def restore_paths(self) -> None:
-        self.paths = cast(list[Path], self.paths)
+        self.paths = cast("list[Path]", self.paths)
         # self.paths expected to be unmodified
         self.paths += self.root_paths
 
@@ -42,7 +42,7 @@ class Backup(syncer.Backup):
         output = (
             super().push(reverse=reverse)
             if self.paths
-            else cast(subprocess.CompletedProcess[str], root_output)
+            else cast("subprocess.CompletedProcess[str]", root_output)
         )
         self.restore_paths()
         return output
@@ -68,7 +68,7 @@ class Backup(syncer.Backup):
 
     def extract_root_paths(self, *, reverse: bool) -> list[Path]:
         paths = list(self.generate_root_paths(reverse=reverse))
-        self.paths = cast(list[Path], self.paths)
+        self.paths = cast("list[Path]", self.paths)
         for path in paths:
             self.paths.remove(path)
         return paths

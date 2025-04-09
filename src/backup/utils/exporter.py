@@ -23,7 +23,7 @@ def export_resume() -> bool:
     if main_resume_updated:
         Path.selected_resume_pdf.copy_to(path, include_properties=False)
         path.mtime = Path.selected_resume_pdf.mtime
-    return cast(bool, main_resume_updated)
+    return cast("bool", main_resume_updated)
 
 
 def export_path(path: Path) -> None:

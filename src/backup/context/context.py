@@ -25,7 +25,7 @@ class Context(Context_[Options, Config, Secrets]):
 
     def extract_profiles_source_root(self) -> Path:
         path = self.config.backup_source / Path.HOME.relative_to(Path.backup_source)
-        return cast(Path, path)
+        return cast("Path", path)
 
     @property
     def profiles_source_root(self) -> Path:
@@ -34,7 +34,7 @@ class Context(Context_[Options, Config, Secrets]):
     @property
     def profiles_path(self) -> Path:
         path = self.config.backup_source / Path.profiles.relative_to(Path.backup_source)
-        return cast(Path, path)
+        return cast("Path", path)
 
     @cached_property
     def username(self) -> str:

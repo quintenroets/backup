@@ -39,7 +39,7 @@ class Change:
 
     @property
     def skip_print(self) -> bool:
-        source = cast(Path, self.source)
+        source = cast("Path", self.source)
         return (source / self.path).is_relative_to(Path.hashes)
 
     def print(self) -> None:
@@ -47,8 +47,8 @@ class Change:
 
     def get_diff_lines(self, *, color: bool = True) -> list[str]:
         max_lines = self.max_diff_lines_per_file
-        source = cast(Path, self.source)
-        dest = cast(Path, self.dest)
+        source = cast("Path", self.source)
+        dest = cast("Path", self.dest)
         return calculate_diff(self.path, source, dest, color=color, max_lines=max_lines)
 
 

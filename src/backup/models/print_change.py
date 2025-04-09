@@ -118,8 +118,8 @@ class PrintChange:
                 yield f"[{change_type.color}]{diff_line}"
 
     def generate_path_lines(self) -> Iterator[str]:
-        source = cast(Path, self.change.source)
-        dest = cast(Path, self.change.dest)
+        source = cast("Path", self.change.source)
+        dest = cast("Path", self.change.dest)
         source = source if self.change.type == ChangeTypes.created else dest
         full_path = source / self.change.path
         with contextlib.suppress(UnicodeDecodeError):

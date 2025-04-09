@@ -87,7 +87,6 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-<<<<<<< HEAD
     def hashes(cls: type[T]) -> T:
         path = cls.assets / "hashes"
         return cast(T, path)
@@ -197,8 +196,3 @@ class Path(superpathlib.Path):
     @classproperty
     def backup_source(cls: type[T]) -> T:
         return cls("/")
-=======
-    def config(cls) -> Self:
-        path = cls.assets / "config" / "config.yaml"
-        return cast("Self", path)
->>>>>>> template

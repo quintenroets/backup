@@ -75,7 +75,7 @@ class PrintStructure:
         if sub_structure.current_level_empty():
             if sub_structure.root is None:
                 sub_structure.root = sub_structure.substructures[0].root
-            root = cast(PrintChange, sub_structure.root)
+            root = cast("PrintChange", sub_structure.root)
             root_path /= root.path
             sub_structure = sub_structure.substructures[0]
             sub_structure.un_indent()

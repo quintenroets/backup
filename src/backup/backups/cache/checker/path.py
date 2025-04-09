@@ -16,7 +16,7 @@ def extract_hash_path(path: Path) -> Path:
         if path.is_relative_to(context.config.cache_path)
         else context.config.backup_source
     )
-    relative_hashes = cast(Path, Path.hashes).relative_to(Path.backup_source)
+    relative_hashes = cast("Path", Path.hashes).relative_to(Path.backup_source)
     return root / relative_hashes / path.name
 
 

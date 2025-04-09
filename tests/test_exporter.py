@@ -9,7 +9,7 @@ from backup.utils import exporter
 
 
 def create_empty_pdf(self: remote.Backup) -> None:
-    path = self.source / cast(Path, self.path)
+    path = self.source / cast("Path", self.path)
     path.touch()
 
 

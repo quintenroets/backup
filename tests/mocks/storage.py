@@ -14,7 +14,7 @@ class Defaults:
     @classmethod
     def create_exclude_rules(cls) -> list[str | dict[str, Any]]:
         paths = cls.create_profile_paths()
-        return cast(list[str | dict[str, Any]], paths)
+        return cast("list[str | dict[str, Any]]", paths)
 
     @classmethod
     def create_profile_paths(cls) -> list[str]:

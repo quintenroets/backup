@@ -3,7 +3,7 @@ name = "backupmaster"
 version = "1.2.21"
 description = "Backup import files across entire disk"
 authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
-license = {text = "MIT"}
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

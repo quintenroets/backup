@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from dataclasses import dataclass, field
 from typing import Annotated
 
@@ -33,3 +34,5 @@ class Options:
     export_resume_changes: bool = False
     no_sync: Annotated[bool, typer.Option(help=Help.no_sync)] = False
     config_path: Path = Path.rclone_command_config
+=======
+>>>>>>> template

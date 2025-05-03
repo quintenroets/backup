@@ -17,8 +17,12 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+<<<<<<< HEAD
     "dirhash >=0.2.1, <1",
     "package-dev-tools >=0.6.0, <1",
+=======
+    "package-dev-tools >=0.7.0, <1",
+>>>>>>> template
     "package-dev-utils >=0.1.6, <1",
     "types-beautifulsoup4 >=4.12.0.20240106, <5",
 ]

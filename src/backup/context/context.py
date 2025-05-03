@@ -40,5 +40,11 @@ class Context(Context_[Options, Config, Secrets]):
     def username(self) -> str:
         return os.getenv("USERNAME", default="")
 
+<<<<<<< HEAD
+=======
+from .config import Config
+from .options import Options
+from .secrets_ import Secrets
+>>>>>>> template
 
 context = Context(Options, Config, Secrets)

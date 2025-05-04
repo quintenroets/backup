@@ -3,8 +3,9 @@ from typing import Annotated
 
 import typer
 
+from backup.models import Path
+
 from .action import Action
-from .path import Path
 
 
 class Help:

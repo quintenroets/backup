@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .path import Path
+from backup.models import Path
 
 
 @dataclass

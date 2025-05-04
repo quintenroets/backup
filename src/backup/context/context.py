@@ -4,8 +4,12 @@ from typing import cast
 
 from package_utils.context import Context as Context_
 
-from backup.models import Config, Options, Path, Secrets
+from backup.models import Path
 from backup.storage.storage import Storage
+
+from .config import Config
+from .options import Options
+from .secrets_ import Secrets
 
 
 class Context(Context_[Options, Config, Secrets]):

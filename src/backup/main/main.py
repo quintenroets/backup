@@ -2,7 +2,8 @@ import cli
 
 from backup.backups import Backup
 from backup.context import context
-from backup.models import Action, Path
+from backup.context.action import Action
+from backup.models import Path
 
 
 def main() -> None:

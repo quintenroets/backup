@@ -1,7 +1,6 @@
-<<<<<<< HEAD
 from dataclasses import dataclass
 
-from .path import Path
+from backup.models import Path
 
 
 @dataclass
@@ -21,5 +20,3 @@ class Config:
     backup_dest: Path = Path.remote
     cache_path: Path = Path.backup_cache
     profiles_source_root: Path = Path.HOME
-=======
->>>>>>> template

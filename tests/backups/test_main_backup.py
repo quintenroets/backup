@@ -3,8 +3,9 @@ from unittest.mock import patch
 import pytest
 
 from backup.backups import Backup
+from backup.context.action import Action
 from backup.context.context import Context
-from backup.models import Action, Path
+from backup.models import Path
 from tests.mocks.storage import Defaults
 
 

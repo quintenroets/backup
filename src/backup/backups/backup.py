@@ -6,7 +6,8 @@ import cli
 
 from backup import backup
 from backup.context import context
-from backup.models import Action, Changes, Path
+from backup.context.action import Action
+from backup.models import Changes, Path
 from backup.models.change import run_diff
 from backup.utils import exporter
 

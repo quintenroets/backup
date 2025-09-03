@@ -14,6 +14,22 @@ T = TypeVar("T", bound="Path")
 
 
 class Path(superpathlib.Path):
+    @property
+    def canonicalized(self) -> Self:
+        return (
+            Path.canonicalized_home / self.relative_to(Path.relative_home)
+            if self.is_relative_to(Path.relative_home)
+            else self
+        )
+
+    @property
+    def decanonicalized(self) -> Self:
+        return (
+            Path.relative_home / self.relative_to(Path.canonicalized_home)
+            if self.is_relative_to(Path.canonicalized_home)
+            else self
+        )
+
     @property  # type: ignore[override]
     def mtime(self) -> int:
         """
@@ -123,8 +139,13 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
+    def profile_prefix(cls) -> str:
+        return cast("str", cls.profile.yaml)
+
+    @classmethod
+    @classproperty
     def paths_include(cls) -> Self:
-        path = cls.config / "include.yaml"
+        path = cls.config / cls.profile_prefix / "include.yaml"
         return cast("Self", path)
 
     @classmethod
@@ -136,13 +157,13 @@ class Path(superpathlib.Path):
     @classmethod
     @classproperty
     def paths_exclude(cls) -> Self:
-        path = cls.config / "exclude.yaml"
+        path = cls.config / cls.profile_prefix / "exclude.yaml"
         return cast("Self", path)
 
     @classmethod
     @classproperty
     def profile_paths(cls) -> Self:
-        path = cls.config / "profiles.yaml"
+        path = cls.config / cls.profile_prefix / "profiles.yaml"
         return cast("Self", path)
 
     @classmethod
@@ -155,6 +176,12 @@ class Path(superpathlib.Path):
     @classproperty
     def profiles(cls) -> Self:
         path = cls.assets / "profiles"
+        return cast("Self", path)
+
+    @classmethod
+    @classproperty
+    def profile(cls) -> Self:
+        path = cls.config / "profile.yaml"
         return cast("Self", path)
 
     @classmethod
@@ -196,3 +223,14 @@ class Path(superpathlib.Path):
     @classproperty
     def backup_source(cls) -> Self:
         return cls("/")
+
+    @classmethod
+    @classproperty
+    def canonicalized_home(cls) -> Self:
+        return cls("home")
+
+    @classmethod
+    @classproperty
+    def relative_home(cls) -> Self:
+        path = cls.HOME.relative_to(cls("/"))
+        return cast("Self", path)

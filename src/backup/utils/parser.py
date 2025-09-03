@@ -42,7 +42,10 @@ class RuleConfig:
             next(iter(item.items())) if isinstance(item, dict) else (item, [])
         )
         if isinstance(names, str):
-            path = (root / names).resolve()
+            full_path = root / names
+            if str(full_path) == "/HOME":
+                full_path = Path.HOME
+            path = full_path.resolve()
             if not path.is_relative_to(root):  # pragma: no cover
                 message = "Currently, only symlinks under the same sub root are allowed"
                 raise ValueError(message)
@@ -101,8 +104,10 @@ class Rules:
                 path = Path(name) / rule.path
                 yield PathRule(path, rule.include)
 
-        rules_dict = {True: include, False: exclude}
-        for rule_include, rules in rules_dict.items():
-            for name in rules.items:
-                path = Path(name)
-                yield PathRule(path, rule_include)
+        yield from self.extract_rules(include, include=True)
+        yield from self.extract_rules(exclude, include=False)
+
+    def extract_rules(self, config: RuleConfig, *, include: bool) -> Iterator[PathRule]:
+        for name in config.items:
+            path = Path(name)
+            yield PathRule(path, include)

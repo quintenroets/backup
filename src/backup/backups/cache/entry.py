@@ -22,12 +22,12 @@ class Entry:
     def __post_init__(self) -> None:
         if self.source is None:
             self.existing = self.dest
-            self.relative = self.dest.relative_to(self.dest_root)
+            self.relative = self.dest.relative_to(self.dest_root).decanonicalized
             self.source = self.source_root / self.relative
         else:
             self.existing = self.source
             self.relative = self.source.relative_to(self.source_root)
-            self.dest = self.dest_root / self.relative
+            self.dest = self.dest_root / self.relative.canonicalized
 
     def is_browser_config(self) -> bool:
         return self.relative.is_relative_to(self.relative_browser_path)

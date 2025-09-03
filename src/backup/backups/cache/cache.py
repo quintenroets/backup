@@ -23,7 +23,28 @@ class Backup(backup.Backup):
 
     def status(self, *, reverse: bool = False) -> Changes:
         self.paths = list(self.generate_changed_paths())
-        return super().capture_status(reverse=reverse) if self.paths else Changes([])
+        home_changes = []
+        if Path.HOME.is_relative_to(self.source):
+            relative_home = Path.HOME.relative_to(self.source)
+            home_paths = [
+                path.relative_to(relative_home)
+                for path in self.paths
+                if path.is_relative_to(relative_home)
+            ]
+            self.paths = [
+                path for path in self.paths if not path.is_relative_to(relative_home)
+            ]
+            if home_paths:
+                home_changes = (
+                    Backup(sub_check_path=relative_home, paths=home_paths)
+                    .capture_status(reverse=reverse)
+                    .changes
+                )
+
+        changes = super().capture_status(reverse=reverse) if self.paths else Changes()
+        changes.changes.extend(home_changes)
+        changes.__post_init__()
+        return changes
 
     def generate_changed_paths(self) -> Iterator[Path]:
         entries: Iterable[Entry] = self.generate_entries()

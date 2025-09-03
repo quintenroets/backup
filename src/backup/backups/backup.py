@@ -1,5 +1,6 @@
 import subprocess
 import sys
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 import cli
@@ -30,7 +31,7 @@ class Backup(backup.Backup):
                 self.diff()
 
     def status(self, *, show: bool = True) -> Changes:
-        self.paths = self.cache_status(quiet=True).paths
+        self.paths = self.scan_changes(quiet=True).paths
         status = super().capture_status() if self.paths else Changes()
         if show:
             status.print()
@@ -41,7 +42,26 @@ class Backup(backup.Backup):
         if not self.paths and not any_include:
             self.paths = self.check_changed_paths(reverse=reverse)
         if self.paths:
-            self.start_push(reverse=reverse)
+            if Path.HOME.is_relative_to(self.source):
+                relative_home = Path.HOME.relative_to(self.source)
+                home_paths = [
+                    path.relative_to(relative_home)
+                    for path in self.paths
+                    if path.is_relative_to(relative_home)
+                ]
+                self.paths = [
+                    path
+                    for path in self.paths
+                    if not path.is_relative_to(relative_home)
+                ]
+            else:
+                home_paths = []
+            if self.paths:
+                self.start_push(reverse=reverse)
+            if home_paths:
+                self.paths = home_paths
+                self.sub_check_path = relative_home
+                self.start_push(reverse=reverse)
 
     def start_push(
         self,
@@ -49,18 +69,16 @@ class Backup(backup.Backup):
         reverse: bool = False,
     ) -> subprocess.CompletedProcess[str] | None:
         backup.Backup(
-            path=self.path,
             paths=self.paths,
             sub_check_path=self.sub_check_path,
         ).push(reverse=reverse)
         return cache.Backup(
-            path=self.path,
             paths=self.paths,
             sub_check_path=self.sub_check_path,
         ).push()
 
     def check_changed_paths(self, *, reverse: bool) -> list[Path]:
-        changes: Changes = self.cache_status(reverse=reverse)
+        changes: Changes = self.scan_changes(reverse=reverse)
         remove_changes = (
             changes
             and context.options.confirm_push
@@ -69,7 +87,12 @@ class Backup(backup.Backup):
         )
         if remove_changes:
             changes.changes = []  # pragma: nocover
-        return changes.paths
+        return [
+            change.source.relative_to(self.source) / change.path
+            if change.source
+            else change.path
+            for change in changes.changes
+        ]
 
     @classmethod
     def ask_confirm(cls, changes: Changes, *, reverse: bool = False) -> bool:
@@ -82,11 +105,14 @@ class Backup(backup.Backup):
             response = changes.ask_confirm(message, show_diff=True)  # pragma: nocover
         return response
 
-    def cache_status(self, *, quiet: bool = False, reverse: bool = False) -> Changes:
-        if context.profiles_source_root.is_relative_to(self.source):
+    def scan_changes(self, *, quiet: bool = False, reverse: bool = False) -> Changes:
+        if (
+            context.profiles_source_root.is_relative_to(self.source)
+            and Path.profile.exists()
+        ):
             profile.Backup().capture_push()
-        cache_backup = cache.Backup(quiet=quiet, sub_check_path=self.sub_check_path)
-        return cache_backup.status(reverse=reverse)
+        backup_ = cache.Backup(quiet=quiet, sub_check_path=self.sub_check_path)
+        return backup_.status(reverse=reverse)
 
     def run_pull(self) -> None:
         if not context.options.no_sync:
@@ -118,20 +144,29 @@ class Backup(backup.Backup):
     def get_sync_message(self) -> str:
         message = "Reading remote filesystem"
         if self.sub_check_path is not None:
-            message += f" at {self.sub_check_path.resolve().short_notation}"
+            path = context.config.backup_source / self.sub_check_path
+            message += f" at {path.resolve().short_notation}"
         return message
 
     def run_remote_sync(self) -> None:
         if not self.filter_rules:
-            self.create_filters()
-        if not context.options.include_browser:
-            self.filter_rules.append(f"- {context.config.browser_pattern}")
+            self.filter_rules = list(self.generate_pull_filters())
         info = self.get_dest_info()
         cache_backup = cache.Backup(
             sub_check_path=self.sub_check_path,
             filter_rules=self.filter_rules,
         )
         cache_backup.update_dest(info)
+        self.create_filters()
+
+    def generate_pull_filters(self) -> Iterator[str]:
+        rules = cache.Backup(sub_check_path=self.sub_check_path).entry_rules()
+        for rule in rules:
+            sign = "+" if rule.include else "-"
+            pattern = f"{sign} /{rule.path}"
+            yield pattern
+            yield f"{pattern}/**"
+        yield "- /**"
 
     def diff(self, paths: list[Path] | None = None) -> None:
         if paths is None:

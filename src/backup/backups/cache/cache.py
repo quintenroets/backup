@@ -1,4 +1,5 @@
 import fnmatch
+from itertools import groupby
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from functools import cached_property
@@ -13,6 +14,7 @@ from backup.utils import parser
 from backup.utils.parser import PathRule
 
 from .detailed_entry import Entry
+from typing import Any, Iterator
 
 
 @dataclass
@@ -22,34 +24,18 @@ class Backup(backup.Backup):
     visited: set[Path] = field(default_factory=set)
     number_of_entries: int = 0
     rules: list[PathRule] = field(default_factory=list)
+    entries: set[Entry] = field(default_factory=set)
 
     def status(self, *, reverse: bool = False) -> Changes:
         self.paths = list(self.generate_changed_paths())
         return super().capture_status(reverse=reverse) if self.paths else Changes()
 
     def generate_changed_paths(self) -> Iterator[Path]:
-        entries: Iterable[Entry] = self.generate_entries()
-        total = context.storage.number_of_paths
-        entries = cli.track_progress(
-            entries,
-            description="Checking",
-            unit="Files",
-            total=total,
-            cleanup_after_finish=True,
-        )
-
-        path_entries = set(entries)
-        for entry in path_entries:
+        for entry in self.entries:
             if entry.is_changed():
                 yield from entry.get_paths()
 
     def generate_entries(self) -> Iterator[Entry]:
-        for path in self.generate_path_entries():
-            yield path
-            self.number_of_entries += 1
-        context.storage.number_of_paths = self.number_of_entries
-
-    def generate_path_entries(self) -> Iterator[Entry]:
         yield from self.generate_source_entries()
         # yield from self.generate_dest_entries()
 

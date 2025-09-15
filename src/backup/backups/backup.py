@@ -1,4 +1,5 @@
 import subprocess
+from backup.utils.itertools import aggregate_iterators_with_progress
 import sys
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -9,10 +10,10 @@ from backup import backup
 from backup.context import context
 from backup.context.action import Action
 from backup.models import Changes, Path
-from backup.models.change import run_diff
 from backup.utils import exporter
 
-from . import cache, profile
+from . import cache
+from ..utils.itertools import aggregate_iterators_with_progress
 
 
 @dataclass
@@ -27,8 +28,6 @@ class Backup(backup.Backup):
                 self.run_push()
             case Action.pull:
                 self.run_pull()
-            case Action.diff:
-                self.diff()
 
     def status(self) -> None:
         for status in list(self.generate_statuses()):
@@ -117,14 +116,23 @@ class Backup(backup.Backup):
     def scan_changes(
         self, *, quiet: bool = False, reverse: bool = False
     ) -> Iterator[Changes]:
-        for item in context.backup_config:
-            backup_ = cache.Backup(
+        backups = [
+            cache.Backup(
                 source=item.source,
                 dest=context.extract_cache_path() / item.dest,
                 quiet=quiet,
                 sub_check_path=self.sub_check_path,
                 rules=item.rules.rules,
             )
+            for item in context.backup_config
+        ]
+        entries = aggregate_iterators_with_progress(
+            (backup_.generate_entries() for backup_ in backups),
+            description="Checking",
+            unit="Files",
+        )
+        for backup_, entries_ in zip(backups, entries):
+            backup_.entries = set(entries_)
             yield backup_.status(reverse=reverse)
 
     def run_pull(self) -> None:
@@ -178,18 +186,3 @@ class Backup(backup.Backup):
             yield pattern
             yield f"{pattern}/**"
         yield "- /**"
-
-    def diff(self, paths: list[Path] | None = None) -> None:
-        if paths is None:
-            status = self.status()
-            paths = [
-                change.path
-                for change in status
-                if context.options.diff_all
-                or cli.confirm(f"Compare {change.message[2:-1]}?", default=True)
-            ]
-        if paths:
-            for path in paths:
-                cli.console.rule(str(path))
-                sub_check_path = self.sub_check_path or ""
-                run_diff(path, self.source, context.config.cache_path / sub_check_path)

@@ -21,6 +21,8 @@ class Backup(syncer.Backup):
         super().__post_init__()
 
     def push(self, *, reverse: bool = False) -> subprocess.CompletedProcess[str]:
+        print(self.source, self.dest)
+        print(self.paths)
         dest = self.source if reverse else self.dest
         return (
             self.process_root_dest(reverse=reverse)

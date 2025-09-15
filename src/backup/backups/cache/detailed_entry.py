@@ -18,7 +18,7 @@ class Entry(entry.Entry):
 
     def only_volatile_content_changed(self) -> bool:
         only_volatile_content_changed = (
-            self.check_key in Checker.checkers and self.relevant_content_unchanged()
+            self.relative in Checker.checkers and self.relevant_content_unchanged()
         )
         if only_volatile_content_changed:
             self.update_cached_dest()
@@ -29,7 +29,7 @@ class Entry(entry.Entry):
         return only_volatile_content_changed
 
     def relevant_content_unchanged(self) -> bool:
-        checker = Checker.checkers[self.check_key]
+        checker = Checker.checkers[self.relative]
         source_hash = checker.calculate_relevant_hash(self.source)
         dest_hash = checker.calculate_relevant_hash(self.dest)
         return source_hash == dest_hash
@@ -44,17 +44,6 @@ class Entry(entry.Entry):
             self.dest.tag = str(self.dest.mtime)
         self.source.copy_to(self.dest, include_properties=False)
         self.dest.touch(mtime=self.source.mtime)
-
-    @property
-    def check_key(self) -> Path:
-        if self.source.is_relative_to(context.profiles_path):
-            check_key = self.source.relative_to(context.profiles_path)
-            check_key = check_key.relative_to(check_key.parts[0])
-        elif self.source.is_relative_to(context.profiles_source_root):
-            check_key = self.source.relative_to(context.profiles_source_root)
-        else:
-            check_key = self.relative
-        return check_key
 
     def get_paths(self) -> Iterator[Path]:
         yield from super().get_paths()

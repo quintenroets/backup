@@ -30,89 +30,102 @@ class Backup(backup.Backup):
             case Action.diff:
                 self.diff()
 
-    def status(self, *, show: bool = True) -> Changes:
-        self.paths = self.scan_changes(quiet=True).paths
-        status = super().capture_status() if self.paths else Changes()
-        if show:
+    def status(self) -> None:
+        for status in list(self.generate_statuses()):
             status.print()
-        return status
+
+    def generate_statuses(self) -> Iterator[Changes]:
+        combined_changes = self.scan_changes(quiet=True)
+        for item, changes in zip(context.backup_config, combined_changes):
+            yield (
+                backup.Backup(
+                    source=item.source,
+                    dest=item.dest,
+                    sub_check_path=self.sub_check_path,
+                    paths=changes.paths,
+                ).capture_status()
+                if changes.paths
+                else Changes()
+            )
 
     def run_push(self, *, reverse: bool = False) -> None:
         any_include = any(rule.startswith("+") for rule in self.filter_rules)
-        if not self.paths and not any_include:
-            self.paths = self.check_changed_paths(reverse=reverse)
-        if self.paths:
-            if Path.HOME.is_relative_to(self.source):
-                relative_home = Path.HOME.relative_to(self.source)
-                home_paths = [
-                    path.relative_to(relative_home)
-                    for path in self.paths
-                    if path.is_relative_to(relative_home)
-                ]
-                self.paths = [
-                    path
-                    for path in self.paths
-                    if not path.is_relative_to(relative_home)
-                ]
-            else:
-                home_paths = []
-            if self.paths:
-                self.start_push(reverse=reverse)
-            if home_paths:
-                self.paths = home_paths
-                self.sub_check_path = relative_home
-                self.start_push(reverse=reverse)
+        paths = self.paths
+        if not paths and not any_include:
+            paths = self.check_changed_paths(reverse=reverse)
+        if paths:
+            self.start_push(paths, reverse=reverse)
 
     def start_push(
         self,
+        paths: list[list[Path]],
         *,
         reverse: bool = False,
     ) -> subprocess.CompletedProcess[str] | None:
-        backup.Backup(
-            paths=self.paths,
-            sub_check_path=self.sub_check_path,
-        ).push(reverse=reverse)
-        return cache.Backup(
-            paths=self.paths,
-            sub_check_path=self.sub_check_path,
-        ).push()
+        for config, paths_ in zip(context.backup_config, paths):
+            if paths_:
+                print(config.source)
+                print(config.dest)
+                print(paths_)
+                backup.Backup(
+                    source=config.source,
+                    dest=context.extract_backup_dest() / config.dest,
+                    paths=paths_,
+                    sub_check_path=self.sub_check_path,
+                ).push(reverse=reverse)
+                cache.Backup(
+                    source=config.source,
+                    dest=context.extract_cache_path() / config.dest,
+                    paths=paths_,
+                    sub_check_path=self.sub_check_path,
+                ).push()
 
-    def check_changed_paths(self, *, reverse: bool) -> list[Path]:
-        changes: Changes = self.scan_changes(reverse=reverse)
+    def check_changed_paths(self, *, reverse: bool) -> list[list[Path]]:
+        changes: list[Changes] = list(self.scan_changes(reverse=reverse))
         remove_changes = (
-            changes
+            any(change for change in changes)
             and context.options.confirm_push
             and sys.stdin.isatty()
             and not self.ask_confirm(changes, reverse=reverse)
         )
         if remove_changes:
-            changes.changes = []  # pragma: nocover
+            changes = []  # pragma: nocover
+
         return [
-            change.source.relative_to(self.source) / change.path
-            if change.source
-            else change.path
-            for change in changes.changes
+            [
+                change.source.relative_to(config.source) / change.path
+                if change.source
+                else change.path
+                for change in changes_.changes
+            ]
+            for config, changes_ in zip(context.backup_config, changes)
         ]
 
     @classmethod
-    def ask_confirm(cls, changes: Changes, *, reverse: bool = False) -> bool:
+    def ask_confirm(cls, changes: list[Changes], *, reverse: bool = False) -> bool:
         message = "Pull?" if reverse else "Push?"
-        response = changes.ask_confirm(
-            message,
-            show_diff=context.options.show_file_diffs,
-        )
+        cli.console.rule("Backup")
+        for change in changes:
+            change.print_structure.print(show_diff=context.options.show_file_diffs)
+        response = cli.confirm(message, default=True)
         if not response and not context.options.show_file_diffs:
-            response = changes.ask_confirm(message, show_diff=True)  # pragma: nocover
+            for change in changes:
+                change.print_structure.print(show_diff=context.options.show_file_diffs)
+            response = cli.confirm(message, default=True)
         return response
 
-    def scan_changes(self, *, quiet: bool = False, reverse: bool = False) -> Changes:
-        if (
-            context.profiles_source_root.is_relative_to(self.source)
-            and Path.profile.exists()
-        ):
-            profile.Backup().capture_push()
-        backup_ = cache.Backup(quiet=quiet, sub_check_path=self.sub_check_path)
-        return backup_.status(reverse=reverse)
+    def scan_changes(
+        self, *, quiet: bool = False, reverse: bool = False
+    ) -> Iterator[Changes]:
+        for item in context.backup_config:
+            backup_ = cache.Backup(
+                source=item.source,
+                dest=context.extract_cache_path() / item.dest,
+                quiet=quiet,
+                sub_check_path=self.sub_check_path,
+                rules=item.rules.rules,
+            )
+            yield backup_.status(reverse=reverse)
 
     def run_pull(self) -> None:
         if not context.options.no_sync:
@@ -126,8 +139,6 @@ class Backup(backup.Backup):
             path = Path.main_resume_pdf
             with cli.status("Uploading new resume pdf"):
                 Backup(path=path, confirm=False).capture_push()
-        if self.contains_change(context.profiles_path):
-            profile.Backup().reload()
 
     def contains_change(self, path: Path) -> bool:
         change = False

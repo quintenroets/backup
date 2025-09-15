@@ -140,12 +140,18 @@ class Path(superpathlib.Path):
     @classmethod
     @classproperty
     def profile_prefix(cls) -> str:
-        return cast("str", cls.profile.yaml)
+        return cast("str", cls.profile.yaml or "")
 
     @classmethod
     @classproperty
     def paths_include(cls) -> Self:
         path = cls.config / cls.profile_prefix / "include.yaml"
+        return cast("Self", path)
+
+    @classmethod
+    @classproperty
+    def backup_config(cls) -> Self:
+        path = cls.config / cls.profile_prefix / "config.yaml"
         return cast("Self", path)
 
     @classmethod

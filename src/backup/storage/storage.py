@@ -26,6 +26,9 @@ class Storage:
         Path.paths_exclude,
         default=[],
     )
+    backup_config: CachedFileContent[list[Any]] = CachedFileContent(
+        Path.backup_config, default=[]
+    )
     profile_paths: CachedFileContent[list[str]] = CachedFileContent(
         Path.profile_paths,
         default=[],

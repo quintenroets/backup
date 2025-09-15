@@ -8,6 +8,7 @@ from backup.models import Path
 from backup.storage.storage import Storage
 
 from .config import Config
+from .backup_config import BackupConfig, load_config
 from .options import Options
 from .secrets_ import Secrets
 
@@ -27,14 +28,6 @@ class Context(Context_[Options, Config, Secrets]):
         self.config.cache_path.mkdir(parents=True, exist_ok=True)
         return self.config.cache_path
 
-    def extract_profiles_source_root(self) -> Path:
-        path = self.config.backup_source / Path.HOME.relative_to(Path.backup_source)
-        return cast("Path", path)
-
-    @property
-    def profiles_source_root(self) -> Path:
-        return self.extract_profiles_source_root()
-
     @property
     def profiles_path(self) -> Path:
         path = self.config.backup_source / Path.profiles.relative_to(Path.backup_source)
@@ -43,6 +36,17 @@ class Context(Context_[Options, Config, Secrets]):
     @cached_property
     def username(self) -> str:
         return os.getenv("USERNAME", default="")
+
+    @cached_property
+    def backup_config(self) -> list[BackupConfig]:
+        return list(
+            load_config(
+                self.storage.backup_config,
+                self.storage.active_profile,
+                self.options.include_browser,
+                self.config.browser_name,
+            )
+        )
 
 
 context = Context(Options, Config, Secrets)

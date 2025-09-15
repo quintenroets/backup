@@ -10,6 +10,7 @@ from backup import backup
 from backup.context import context
 from backup.models import Changes, Path
 from backup.utils import parser
+from backup.utils.parser import PathRule
 
 from .detailed_entry import Entry
 
@@ -20,31 +21,11 @@ class Backup(backup.Backup):
     quiet: bool = True
     visited: set[Path] = field(default_factory=set)
     number_of_entries: int = 0
+    rules: list[PathRule] = field(default_factory=list)
 
     def status(self, *, reverse: bool = False) -> Changes:
         self.paths = list(self.generate_changed_paths())
-        home_changes = []
-        if Path.HOME.is_relative_to(self.source):
-            relative_home = Path.HOME.relative_to(self.source)
-            home_paths = [
-                path.relative_to(relative_home)
-                for path in self.paths
-                if path.is_relative_to(relative_home)
-            ]
-            self.paths = [
-                path for path in self.paths if not path.is_relative_to(relative_home)
-            ]
-            if home_paths:
-                home_changes = (
-                    Backup(sub_check_path=relative_home, paths=home_paths)
-                    .capture_status(reverse=reverse)
-                    .changes
-                )
-
-        changes = super().capture_status(reverse=reverse) if self.paths else Changes()
-        changes.changes.extend(home_changes)
-        changes.__post_init__()
-        return changes
+        return super().capture_status(reverse=reverse) if self.paths else Changes()
 
     def generate_changed_paths(self) -> Iterator[Path]:
         entries: Iterable[Entry] = self.generate_entries()
@@ -70,7 +51,7 @@ class Backup(backup.Backup):
 
     def generate_path_entries(self) -> Iterator[Entry]:
         yield from self.generate_source_entries()
-        yield from self.generate_dest_entries()
+        # yield from self.generate_dest_entries()
 
     def generate_source_entries(self) -> Iterator[Entry]:
         rules = self.entry_rules()
@@ -82,6 +63,7 @@ class Backup(backup.Backup):
             self.visited.add(path)
 
     def generate_dest_entries(self) -> Iterator[Entry]:
+        print(self.dest)
         for dest_path in self.dest.rglob("*"):
             yield self.create_entry(dest=dest_path)
 
@@ -94,28 +76,22 @@ class Backup(backup.Backup):
         for rule in rules:
             any_include |= rule.include
             yield rule
-        if not any_include:
-            # include everything else if no include rules
-            root = Path()
-            yield parser.PathRule(root, include=True)
+        # include everything else if no include rules
+        yield parser.PathRule(Path(), include=not any_include)
 
     def generate_entry_rules(self) -> Iterator[parser.PathRule]:
         self.check_config_path()
-        root = context.config.backup_source
-        rules = list(
-            parser.Rules(self.include_dict, context.storage.excludes, root=root),
-        )
         if self.overlapping_sub_path is not None:
-            path = context.config.cache_path.relative_to(root)
-            rules.insert(0, parser.PathRule(path, include=False))
+            path = context.config.cache_path.relative_to(self.source)
+            self.rules.insert(0, parser.PathRule(path, include=False))
         if self.sub_check_path is not None:
-            relative_source = self.source.relative_to(root)
-            for rule in rules:
+            relative_source = self.source.relative_to(Path(""))
+            for rule in self.rules:
                 if rule.path.is_relative_to(relative_source):
                     rule.path = rule.path.relative_to(relative_source)
                     yield rule
         else:
-            yield from rules
+            yield from self.rules
 
     @classmethod
     def check_config_path(cls) -> None:
@@ -139,19 +115,3 @@ class Backup(backup.Backup):
         if not context.options.include_browser:
             ignore_patterns.append(context.config.browser_pattern)
         return ignore_patterns
-
-    @cached_property
-    def include_dict(self) -> list[str | dict[str, Any]]:
-        includes = context.storage.includes
-        if not context.options.include_browser:
-            self.remove_browser(includes)
-        return includes
-
-    @classmethod
-    def remove_browser(cls, includes: list[str | dict[str, Any]]) -> None:
-        for include in includes:
-            if isinstance(include, dict):
-                key, value = next(iter(include.items()))
-                cls.remove_browser(value)
-                if context.config.browser_name in key:
-                    includes.remove(include)

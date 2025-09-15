@@ -11,7 +11,7 @@ def main() -> None:
     Backup important files across entire disk.
     """
     if context.options.configure:
-        cli.open_urls(Path.config)
+        cli.open_urls(Path.backup_config)
     else:
         backup_files()
 

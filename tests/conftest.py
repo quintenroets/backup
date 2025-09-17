@@ -11,7 +11,7 @@ import cli
 import pytest
 from package_utils.storage import CachedFileContent
 
-from backup.backups.backup import Backup
+from backup.rclone import Rclone as Backup
 from backup.context import context as context_
 from backup.context.context import Context
 from backup.models import Path
@@ -98,7 +98,6 @@ def test_context(context: Context) -> Iterator[Context]:
     with ContextList(context_managers):
         (context.config.backup_source, context.config.backup_dest) = directories
         context.config.cache_path = context.config.backup_source / relative_cache_path
-        context.profiles_source_root.mkdir(parents=True)
         yield context
         (
             context.config.backup_source,
@@ -141,7 +140,7 @@ def mocked_storage(context: Context) -> Iterator[None]:
 @pytest.fixture
 def mocked_backup(test_context: Context) -> Backup:  # noqa: ARG001
     backup = Backup()
-    backup.sub_check_path = backup.source
+    backup.config.sub_check_path = backup.config.source
     return backup
 
 
@@ -153,10 +152,10 @@ def mocked_backup_with_filled_content(mocked_backup: Backup) -> Backup:
 
 def fill_directories(mocked_backup: Backup, content: str = "content") -> None:
     for number in (0, 1):
-        fill(mocked_backup.source, content, number=number)
+        fill(mocked_backup.config.source, content, number=number)
     content2 = content * 2
     for number in (0, 2):
-        fill(mocked_backup.dest, content2, number=number)
+        fill(mocked_backup.config.dest, content2, number=number)
 
 
 def fill(directory: Path, content: str = "content", number: int = 0) -> None:

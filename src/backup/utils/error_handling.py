@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from backup.backup.paths import reserved_characters
+from backup.rclone.filters import reserved_characters
 
 
 def create_malformed_filters_error(filters: list[str]) -> Exception:

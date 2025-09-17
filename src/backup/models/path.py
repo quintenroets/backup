@@ -14,22 +14,6 @@ T = TypeVar("T", bound="Path")
 
 
 class Path(superpathlib.Path):
-    @property
-    def canonicalized(self) -> Self:
-        return (
-            Path.canonicalized_home / self.relative_to(Path.relative_home)
-            if self.is_relative_to(Path.relative_home)
-            else self
-        )
-
-    @property
-    def decanonicalized(self) -> Self:
-        return (
-            Path.relative_home / self.relative_to(Path.canonicalized_home)
-            if self.is_relative_to(Path.canonicalized_home)
-            else self
-        )
-
     @property  # type: ignore[override]
     def mtime(self) -> int:
         """

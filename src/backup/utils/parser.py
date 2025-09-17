@@ -104,7 +104,8 @@ class Rules:
         yield from self.extract_rules(include, include=True)
         yield from self.extract_rules(exclude, include=False)
 
-    def extract_rules(self, config: RuleConfig, *, include: bool) -> Iterator[PathRule]:
+    @classmethod
+    def extract_rules(cls, config: RuleConfig, *, include: bool) -> Iterator[PathRule]:
         for name in config.items:
             path = Path(name)
             yield PathRule(path, include)

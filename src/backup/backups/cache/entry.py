@@ -1,5 +1,5 @@
-from collections.abc import Iterator
 from dataclasses import dataclass, field
+from typing import Iterator
 from typing import ClassVar
 
 from backup.context import context
@@ -22,12 +22,12 @@ class Entry:
     def __post_init__(self) -> None:
         if self.source is None:
             self.existing = self.dest
-            self.relative = self.dest.relative_to(self.dest_root).decanonicalized
+            self.relative = self.dest.relative_to(self.dest_root)
             self.source = self.source_root / self.relative
         else:
             self.existing = self.source
             self.relative = self.source.relative_to(self.source_root)
-            self.dest = self.dest_root / self.relative.canonicalized
+            self.dest = self.dest_root / self.relative
 
     def is_browser_config(self) -> bool:
         return self.relative.is_relative_to(self.relative_browser_path)

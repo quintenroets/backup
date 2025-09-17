@@ -1,4 +1,3 @@
-import os
 from functools import cached_property
 from typing import cast
 
@@ -8,7 +7,6 @@ from backup.models import Path
 from backup.storage.storage import Storage
 
 from .config import Config
-from .backup_config import BackupConfig, load_config
 from .options import Options
 from .secrets_ import Secrets
 
@@ -34,19 +32,16 @@ class Context(Context_[Options, Config, Secrets]):
         return cast("Path", path)
 
     @cached_property
-    def username(self) -> str:
-        return os.getenv("USERNAME", default="")
-
-    @cached_property
-    def backup_config(self) -> list[BackupConfig]:
-        return list(
-            load_config(
-                self.storage.backup_config,
-                self.storage.active_profile,
-                self.options.include_browser,
-                self.config.browser_name,
-            )
-        )
+    def sub_check_path(self) -> Path | None:  # pragma: no cover
+        if self.options.export_resume_changes:
+            sub_check_path = Path.resume
+        elif self.options.sub_check:
+            sub_check_path = Path.cwd()
+        else:
+            sub_check_path = None
+        # if sub_check_path is not None:
+        ## sub_check_path = sub_check_path.relative_to(self.config.backup_source)
+        return cast("Path | None", sub_check_path)
 
 
 context = Context(Options, Config, Secrets)

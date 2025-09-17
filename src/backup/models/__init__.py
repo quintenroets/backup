@@ -4,3 +4,5 @@ from .changes import Changes
 from .path import Path
 from .print_change import PrintChange
 from .print_structure import PrintStructure
+
+from .backup_config import BackupConfig, BackupConfigs, Entries

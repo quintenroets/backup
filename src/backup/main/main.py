@@ -21,4 +21,10 @@ def backup_files() -> None:
     action = (
         Action.pull if context.options.export_resume_changes else context.options.action
     )
-    backup.run_action(action)
+    match action:
+        case Action.status:
+            backup.status()
+        case Action.push:
+            backup.push()
+        case Action.pull:
+            backup.pull()

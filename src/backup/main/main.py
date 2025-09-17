@@ -4,6 +4,7 @@ from backup.backup import Backup
 from backup.context import context
 from backup.context.action import Action
 from backup.models import Path
+from backup.backup.config import load_config
 
 
 def main() -> None:
@@ -17,7 +18,7 @@ def main() -> None:
 
 
 def backup_files() -> None:
-    backup = Backup()
+    backup = Backup(load_config())
     action = (
         Action.pull if context.options.export_resume_changes else context.options.action
     )

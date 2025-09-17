@@ -1,10 +1,11 @@
 from typing import Iterator
 
-from backup.models import Path, BackupConfig, Entries
+from backup.models import Path, BackupConfig, Entries, BackupConfigs
 
 from backup.context import context
 from dataclasses import dataclass, field
 from package_utils.dataclasses.mixins import SerializationMixin
+from backup.rclone import Rclone, RcloneConfig
 
 from typing import Any, TypeVar
 
@@ -18,9 +19,25 @@ class BackupConfigSerialized(SerializationMixin):
     includes: Entries = field(default_factory=list)
     excludes: Entries = field(default_factory=list)
 
+    def __post_init__(self):
+        if self.source is None:
+            self.source = context.extract_backup_source()
+        if self.dest is None:
+            self.dest = context.extract_backup_dest()
 
-def load_config() -> Iterator[BackupConfig]:
-    for item in context.storage.backup_config:
+
+def load_config() -> list[dict[str, Any]]:
+    if not Path.config.exists():
+        Rclone(RcloneConfig(directory=Path.config)).capture_pull()
+    return context.storage.backup_config
+
+
+def parse_config(config: list[dict[str, Any]]) -> BackupConfigs:
+    return BackupConfigs(backups=list(generate_configs(config)))
+
+
+def generate_configs(configs: list[dict[str, Any]]) -> Iterator[BackupConfig]:
+    for item in configs:
         config = BackupConfigSerialized.from_dict(item)
         source = Path.HOME if config.source == "/HOME" else Path(config.source)
         if source.exists():

@@ -1,7 +1,6 @@
 from .change_scanner import ChangeScanner
-from .cache_syncer import CacheSyncer
+from .cache.cache_syncer import CacheSyncer
 from typing import Iterable
-from functools import cached_property
 from collections.abc import Iterator
 from dataclasses import dataclass
 
@@ -11,13 +10,20 @@ from backup.context import context
 from backup.models import Changes, Path, BackupConfigs
 from backup.rclone import RcloneConfig, Rclone
 from backup.utils import exporter
+from typing import Any
 
-
-from .config import load_config
+from functools import cached_property
+from .config import parse_config
 
 
 @dataclass
 class Backup:
+    config: list[dict[str, Any]]
+
+    @cached_property
+    def backup_configs(self) -> BackupConfigs:
+        return parse_config(self.config)
+
     def status(self) -> None:
         changes = ChangeScanner(self.backup_configs).calculate_changes()
         statuses = [
@@ -59,12 +65,6 @@ class Backup:
     def sync_remote_changes(self) -> None:
         for item in self.backup_configs.backups:
             CacheSyncer(item).sync_remote_changes()
-
-    @cached_property
-    def backup_configs(self) -> BackupConfigs:
-        if not Path.config.exists():
-            Rclone(RcloneConfig(directory=Path.config)).capture_pull()
-        return BackupConfigs(backups=list(load_config()))
 
     def generate_rclone_configs(
         self, changes: Iterable[Changes]

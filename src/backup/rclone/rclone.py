@@ -50,7 +50,7 @@ class Rclone:
 
     def export_pdfs(self) -> str:
         return self.cli_runner(action="copy", reverse=True).capture_output(
-            "--drive_export-formats", "pdf"
+            "--drive-export-formats", "pdf"
         )
 
     def capture_status(self, *, quiet: bool = False, reverse: bool = False) -> Changes:

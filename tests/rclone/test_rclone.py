@@ -13,6 +13,13 @@ from backup.models import Change, ChangeTypes, Path
 import pytest
 
 
+def test_malformed_filters_indicated() -> None:
+    rclone = Rclone()
+    rclone.config.filter_rules = ["????"]
+    with pytest.raises(ValueError, match="Invalid paths:"):
+        rclone.capture_status()
+
+
 @pytest.mark.parametrize("backup_class", [Rclone])
 def test_setup_trigger(backup_class: type[Rclone]) -> None:
     with patch("backup.utils.setup.check_setup") as mocked_setup:
@@ -25,7 +32,7 @@ def test_rclone_command() -> None:
     rclone.run("version")
 
 
-@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+@pytest.mark.usefixtures("mocked_rclone_with_filled_content")
 def test_status() -> None:
     expected_changes = {
         Change(Path("0.txt"), ChangeTypes.modified),
@@ -41,7 +48,7 @@ def capture_changes() -> set[Change]:
     return {Change(change.path, change.type) for change in status}
 
 
-@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+@pytest.mark.usefixtures("mocked_rclone_with_filled_content")
 def test_push() -> None:
     backup = Rclone()
     hash_value = backup.config.source.content_hash
@@ -51,7 +58,7 @@ def test_push() -> None:
     assert backup.config.source.content_hash == hash_value
 
 
-@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+@pytest.mark.usefixtures("mocked_rclone_with_filled_content")
 def test_pull() -> None:
     backup = Rclone()
     hash_value = backup.config.dest.content_hash
@@ -61,7 +68,7 @@ def test_pull() -> None:
     assert backup.config.dest.content_hash == hash_value
 
 
-@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+@pytest.mark.usefixtures("mocked_rclone_with_filled_content")
 def test_ls() -> None:
     backup = Rclone()
     path = next(path for path in backup.config.source.iterdir() if path.is_file())
@@ -70,7 +77,7 @@ def test_ls() -> None:
     assert parsed_file_info[0]["Name"] == path.name
 
 
-@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+@pytest.mark.usefixtures("mocked_rclone_with_filled_content")
 def test_single_file_copy() -> None:
     backup = Rclone()
     path = next(backup.config.source.iterdir())
@@ -79,7 +86,7 @@ def test_single_file_copy() -> None:
     )
 
 
-@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+@pytest.mark.usefixtures("mocked_rclone_with_filled_content")
 def test_all_options(test_context: Context) -> None:
     overwrite_newer = test_context.config.overwrite_newer
     test_context.config.overwrite_newer = False
@@ -88,7 +95,7 @@ def test_all_options(test_context: Context) -> None:
     test_context.config.overwrite_newer = overwrite_newer
 
 
-@pytest.mark.usefixtures("mocked_backup_with_filled_content")
+@pytest.mark.usefixtures("mocked_rclone_with_filled_content")
 def test_show_diff(test_context: Context) -> None:
     backup = Rclone()
     (backup.config.source / "0.txt").lines = ["same", "different"]
@@ -101,8 +108,8 @@ def test_show_diff(test_context: Context) -> None:
 
 
 @pytest.fixture
-def mocked_backup_with_root_dest(
-    mocked_backup_with_filled_content: Rclone,  # noqa: ARG001
+def mocked_rclone_with_root_dest(
+    mocked_rclone_with_filled_content: Rclone,  # noqa: ARG001
 ) -> Iterator[Rclone]:
     backup = Rclone()
     cli.run("rm -r", backup.config.dest)
@@ -111,36 +118,36 @@ def mocked_backup_with_root_dest(
     cli.run("sudo rm -r", backup.config.dest)
 
 
-def test_push_to_root_dest(mocked_backup_with_root_dest: Rclone) -> None:
-    source_hash = mocked_backup_with_root_dest.config.source.content_hash
-    mocked_backup_with_root_dest.push()
-    assert not mocked_backup_with_root_dest.capture_status().paths
-    assert mocked_backup_with_root_dest.config.source.content_hash == source_hash
+def test_push_to_root_dest(mocked_rclone_with_root_dest: Rclone) -> None:
+    source_hash = mocked_rclone_with_root_dest.config.source.content_hash
+    mocked_rclone_with_root_dest.push()
+    assert not mocked_rclone_with_root_dest.capture_status().paths
+    assert mocked_rclone_with_root_dest.config.source.content_hash == source_hash
 
 
-def test_pull_to_root_source(mocked_backup_with_root_dest: Rclone) -> None:
+def test_pull_to_root_source(mocked_rclone_with_root_dest: Rclone) -> None:
     config = RcloneConfig(
-        source=mocked_backup_with_root_dest.config.dest,
-        dest=mocked_backup_with_root_dest.config.source,
+        source=mocked_rclone_with_root_dest.config.dest,
+        dest=mocked_rclone_with_root_dest.config.source,
     )
     rclone = Rclone(config)
     dest_hash = rclone.config.dest.content_hash
     rclone.pull()
-    assert not mocked_backup_with_root_dest.capture_status().paths
+    assert not mocked_rclone_with_root_dest.capture_status().paths
     assert rclone.config.dest.content_hash == dest_hash
 
 
 def test_pull_with_specified_paths(
-    mocked_backup_with_filled_content: Rclone,
+    mocked_rclone_with_filled_content: Rclone,
 ) -> None:
-    paths = mocked_backup_with_filled_content.capture_status().paths
+    paths = mocked_rclone_with_filled_content.capture_status().paths
     config = RcloneConfig(
-        source=mocked_backup_with_filled_content.config.dest,
-        dest=mocked_backup_with_filled_content.config.source,
+        source=mocked_rclone_with_filled_content.config.dest,
+        dest=mocked_rclone_with_filled_content.config.source,
         paths=paths,
     )
     rclone = Rclone(config)
     dest_hash = rclone.config.dest.content_hash
     rclone.pull()
-    assert not mocked_backup_with_filled_content.capture_status().paths
+    assert not mocked_rclone_with_filled_content.capture_status().paths
     assert rclone.config.dest.content_hash == dest_hash

@@ -5,8 +5,8 @@ from backup.context import context
 from backup.models import Path
 
 from . import entry
-from .checker.detailed import Checker
-from .checker.path import extract_hash_path
+from .checkers.detailed import Checker
+from .checkers.path import extract_hash_path
 
 
 @dataclass

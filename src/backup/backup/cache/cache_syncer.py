@@ -20,8 +20,7 @@ class CacheSyncer:
     date_end: str = "]  /"
 
     def sync_remote_changes(self) -> None:
-        path = self.backup_config.source / context.sub_check_path or ""
-        message = f"Reading remote filesystem at {path.resolve().short_notation}"
+        message = f"Reading remote filesystem at {self.backup_config.source.resolve().short_notation}"
         with cli.status(message):
             self.run_remote_sync()
 

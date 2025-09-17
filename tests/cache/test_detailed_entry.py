@@ -1,13 +1,14 @@
 from unittest.mock import MagicMock, patch
 
-from backup.backups.cache.checker.detailed import RcloneChecker
-from backup.backups.cache.checker.path import extract_hash_path
-from backup.backups.cache.detailed_entry import Entry
+from backup.backup.cache.checkers.detailed import RcloneChecker
+from backup.backup.cache.checkers.path import extract_hash_path
+from backup.backup.cache.detailed_entry import Entry
 from backup.context import Context
+from backup.backup import Backup
 
 
-def test_detailed_checker(test_context: Context) -> None:
-    path = test_context.profiles_source_root / ".config" / "gtkrc"
+def test_detailed_checker(test_context: Context, mocked_backup: Backup) -> None:
+    path = mocked_backup.backup_configs.backups[0].source / ".config" / "gtkrc"
     entry = Entry(
         source_root=test_context.config.backup_source,
         dest_root=test_context.config.backup_dest,
@@ -26,8 +27,14 @@ def test_detailed_checker_hash_path(
     mocked_xattr: MagicMock,
     mocked_run: MagicMock,
     test_context: Context,
+    mocked_backup: Backup,
 ) -> None:
-    path = test_context.profiles_source_root / ".config" / "rclone" / "rclone.conf"
+    path = (
+        mocked_backup.backup_configs.backups[0].source
+        / ".config"
+        / "rclone"
+        / "rclone.conf"
+    )
     path.touch()
     entry = Entry(
         source_root=test_context.config.backup_source,

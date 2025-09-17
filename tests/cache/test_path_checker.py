@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from backup.backups.cache.checker.path import (
+from backup.backup.cache.checkers.path import (
     KwalletChecker,
     PathChecker,
     RcloneChecker,

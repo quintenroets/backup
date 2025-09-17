@@ -1,4 +1,5 @@
 import os
+from backup.backup import Backup
 import sys
 from collections.abc import Iterator
 from contextlib import AbstractContextManager
@@ -11,14 +12,14 @@ import cli
 import pytest
 from package_utils.storage import CachedFileContent
 
-from backup.rclone import Rclone as Backup
+from backup.rclone import Rclone
 from backup.context import context as context_
 from backup.context.context import Context
 from backup.models import Path
 from backup.utils.setup import check_setup
 from tests import mocks
 from tests.mocks.methods import mocked_method
-from tests.mocks.storage import Storage
+from backup.storage import Storage
 
 
 @dataclass
@@ -138,26 +139,43 @@ def mocked_storage(context: Context) -> Iterator[None]:
 
 
 @pytest.fixture
-def mocked_backup(test_context: Context) -> Backup:  # noqa: ARG001
-    backup = Backup()
-    backup.config.sub_check_path = backup.config.source
-    return backup
+def mocked_rclone(test_context: Context) -> Rclone:  # noqa: ARG001
+    rclone = Rclone()
+    rclone.config.sub_check_path = rclone.config.source
+    return rclone
 
 
 @pytest.fixture
-def mocked_backup_with_filled_content(mocked_backup: Backup) -> Backup:
-    fill_directories(mocked_backup)
-    return mocked_backup
+def mocked_rclone_with_filled_content(mocked_rclone: Rclone) -> Rclone:
+    fill_directories(mocked_rclone)
+    return mocked_rclone
 
 
-def fill_directories(mocked_backup: Backup, content: str = "content") -> None:
+def fill_directories(mocked_rclone: Rclone, content: str = "content") -> None:
     for number in (0, 1):
-        fill(mocked_backup.config.source, content, number=number)
+        fill(mocked_rclone.config.source, content, number=number)
     content2 = content * 2
     for number in (0, 2):
-        fill(mocked_backup.config.dest, content2, number=number)
+        fill(mocked_rclone.config.dest, content2, number=number)
 
 
 def fill(directory: Path, content: str = "content", number: int = 0) -> None:
     path = directory / f"{number}.txt"
     path.text = content
+
+
+@pytest.fixture
+def backup_config() -> list[dict[str, Any]]:
+    return [{"includes": [""], "excludes": ["dummy.txt", "dummy_directory"]}]
+
+
+@pytest.fixture
+def mocked_backup(mocked_rclone: Rclone, backup_config: list[dict[str, Any]]) -> Backup:  # noqa: ARG001
+    return Backup(backup_config)
+
+
+@pytest.fixture
+def mocked_backup_with_filled_content(
+    mocked_rclone_with_filled_content: Rclone, backup_config: list[dict[str, Any]]
+) -> Backup:  # noqa: ARG001
+    return Backup(backup_config)

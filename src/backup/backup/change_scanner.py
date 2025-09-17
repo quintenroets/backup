@@ -7,7 +7,7 @@ import cli
 from backup.context import context
 from backup.models import Changes, BackupConfigs
 
-from .cache_scanner import CacheScanner
+from .cache.cache_scanner import CacheScanner
 from ..utils.itertools import aggregate_iterators_with_progress
 
 

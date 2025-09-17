@@ -8,7 +8,7 @@ from backup.models import Changes, Path, BackupConfig
 from backup.utils import parser
 from backup.utils.parser import Rules
 
-from .cache.detailed_entry import Entry
+from .detailed_entry import Entry
 from typing import Any, Iterator
 
 
@@ -79,23 +79,10 @@ class CacheScanner:
             self.backup_config.excludes,
             self.backup_config.source,
         ).rules
-        self.check_config_path()
         if self.config.overlapping_sub_path is not None:
             path = context.config.cache_path.relative_to(Path("/"))
-            rules.insert(0, parser.PathRule(path, include=False))
-        if self.config.sub_check_path is not None:
-            relative_source = self.config.source.relative_to(self.config.source)
-            for rule in rules:
-                if rule.path.is_relative_to(relative_source):
-                    rule.path = rule.path.relative_to(relative_source)
-                    yield rule
-        else:
-            yield from rules
-
-    @classmethod
-    def check_config_path(cls) -> None:
-        if not Path.config.exists():
-            Rclone(RcloneConfig(directory=Path.config)).capture_pull()
+            yield parser.PathRule(path, include=False)
+        yield from rules
 
     def exclude_root(self, path: Path) -> bool:
         return (

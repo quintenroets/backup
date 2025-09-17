@@ -62,6 +62,8 @@ class Backup:
 
     @cached_property
     def backup_configs(self) -> BackupConfigs:
+        if not Path.config.exists():
+            Rclone(RcloneConfig(directory=Path.config)).capture_pull()
         return BackupConfigs(backups=list(load_config()))
 
     def generate_rclone_configs(

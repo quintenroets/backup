@@ -1,6 +1,6 @@
 import cli
 
-from backup.backups import Backup
+from backup.backup import Backup
 from backup.context import context
 from backup.context.action import Action
 from backup.models import Path

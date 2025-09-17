@@ -128,32 +128,8 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def paths_include(cls) -> Self:
-        path = cls.config / cls.profile_prefix / "include.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
     def backup_config(cls) -> Self:
         path = cls.config / cls.profile_prefix / "config.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def paths_include_pull(cls) -> Self:
-        path = cls.config / "pull_include.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def paths_exclude(cls) -> Self:
-        path = cls.config / cls.profile_prefix / "exclude.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def profile_paths(cls) -> Self:
-        path = cls.config / cls.profile_prefix / "profiles.yaml"
         return cast("Self", path)
 
     @classmethod
@@ -213,14 +189,3 @@ class Path(superpathlib.Path):
     @classproperty
     def backup_source(cls) -> Self:
         return cls("/")
-
-    @classmethod
-    @classproperty
-    def canonicalized_home(cls) -> Self:
-        return cls("home")
-
-    @classmethod
-    @classproperty
-    def relative_home(cls) -> Self:
-        path = cls.HOME.relative_to(cls("/"))
-        return cast("Self", path)

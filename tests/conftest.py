@@ -96,7 +96,7 @@ def test_backup_config() -> Iterator[BackupConfig]:
         yield BackupConfig(
             source=directories[0],
             dest=directories[1],
-            cache=relative_cache_path,
+            cache=directories[0] / relative_cache_path,
             includes=[""],
             excludes=["dummy.txt", "dummy_directory"],
         )

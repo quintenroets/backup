@@ -11,7 +11,7 @@ from backup.syncer import SyncConfig, Syncer
 from backup.utils import parser
 from backup.utils.parser import Rules
 
-from .detailed_entry import Entry
+from .entry import Entry
 
 
 @dataclass
@@ -65,7 +65,7 @@ class CacheScanner:
             self.visited.add(dest_path)
 
     def create_entry(self, **kwargs: Any) -> Entry:
-        return Entry(self.config.source, self.config.dest, **kwargs)
+        return Entry(self.backup_config, **kwargs)
 
     def generate_entry_rules(self) -> Iterator[parser.PathRule]:
         rules = Rules(

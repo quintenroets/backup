@@ -1,9 +1,10 @@
 import os
+from backup.backup.config import BackupConfig
 from collections.abc import Iterator
 
 import pytest
 
-from backup.backup.cache.detailed_entry import Entry
+from backup.backup.cache.entry import Entry
 from backup.models import Path
 
 is_running_in_ci = "GITHUB_ACTIONS" in os.environ
@@ -24,7 +25,8 @@ def file() -> Iterator[Path]:  # pragma: nocover
 @pytest.fixture
 def entry(file: Path) -> Entry:  # pragma: nocover
     dummy_path = Path()
-    return Entry(source_root=file.parent, dest_root=dummy_path, source=file)
+    config = BackupConfig(source=file.parent, dest=dummy_path, cache=dummy_path)
+    return Entry(config, source=file)
 
 
 @test_with_tags

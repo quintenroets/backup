@@ -8,19 +8,12 @@ import cli
 
 from backup.context import context
 from backup.models import Path
+from backup.backup.config import BackupConfig
 
 
-def extract_hash_path(path: Path) -> Path:
-    root = Path.hashes
-    """
-    root = (
-        context.config.cache_path
-        if False and path.is_relative_to(context.config.cache_path)
-        else context.config.backup_source
-    )
-    """
-    relative_hashes = cast("Path", Path.hashes).relative_to(Path.backup_source)
-    return root / relative_hashes / path.name
+def extract_hash_path(path: Path, config: BackupConfig) -> Path:
+    root = config.cache if path.is_relative_to(config.cache) else config.source
+    return root / Path.hashes.relative_to(Path.backup_source) / path.name
 
 
 @dataclass
@@ -31,15 +24,15 @@ class PathChecker:
     def __post_init__(self) -> None:
         self.ignore_sections_str = [f"[{section}]" for section in self.ignore_sections]
 
-    def calculate_relevant_hash(self, path: Path) -> int:
+    def calculate_relevant_hash(self, path: Path, config: BackupConfig) -> int:
         if path.exists():
-            content_items = self.extract_content(path)
+            content_items = self.extract_content(path, config)
             content = tuple(content_items)
         else:
             content = None
         return hash(content)
 
-    def extract_content(self, path: Path) -> Iterator[str]:
+    def extract_content(self, path: Path, _: BackupConfig) -> Iterator[str]:
         for section in self.extract_sections(path):
             if section[0] not in self.ignore_sections_str:
                 for line in section:
@@ -64,7 +57,7 @@ class CommentsRemovedChecker(PathChecker):
 class UserPlaceChecker(PathChecker):
     tag_ignore_names: tuple[str, ...] = ("tags", "kdeconnect")
 
-    def extract_content(self, path: Path) -> Iterator[str]:
+    def extract_content(self, path: Path, _: BackupConfig) -> Iterator[str]:
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(path.text, features="xml")
@@ -75,12 +68,12 @@ class UserPlaceChecker(PathChecker):
 
 
 class RetrievedContentChecker(PathChecker):
-    def extract_content(self, path: Path) -> Iterator[str]:
-        hash_path = extract_hash_path(path)
+    def extract_content(self, path: Path, config: BackupConfig) -> Iterator[str]:
+        hash_path = extract_hash_path(path, config)
         # compare generated hash with saved hash
         content_hash = (
             hash_path.text
-            if False and hash_path.is_relative_to(context.config.cache_path)
+            if hash_path.is_relative_to(config.cache)
             else self.calculate_content_hash()
         )
         if content_hash != hash_path.text:

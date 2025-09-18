@@ -8,52 +8,57 @@ from backup.backup.cache.checkers.path import (
     RcloneChecker,
     UserPlaceChecker,
 )
-from backup.context import Context
 from backup.models import Path
+from backup.backup.config import BackupConfig
 
 
 @pytest.fixture
-def checker(test_context: Context) -> PathChecker:  # noqa: ARG001
+def checker() -> PathChecker:
     return PathChecker()
 
 
-def test_non_existing_file(checker: PathChecker) -> None:
+def test_non_existing_file(
+    checker: PathChecker, test_backup_config: BackupConfig
+) -> None:
     with Path.tempfile(create=False) as path:
-        assert checker.calculate_relevant_hash(path) == hash(None)
+        assert checker.calculate_relevant_hash(path, test_backup_config) == hash(None)
 
 
-def test_empty_file(checker: PathChecker) -> None:
+def test_empty_file(checker: PathChecker, test_backup_config: BackupConfig) -> None:
     with Path.tempfile() as path:
-        assert checker.calculate_relevant_hash(path) == hash(())
+        assert checker.calculate_relevant_hash(path, test_backup_config) == hash(())
 
 
-def test_sections(checker: PathChecker) -> None:
+def test_sections(checker: PathChecker, test_backup_config: BackupConfig) -> None:
     with Path.tempfile() as path:
         path.lines = ["[header]", "content"]
-        checker.calculate_relevant_hash(path)
+        checker.calculate_relevant_hash(path, test_backup_config)
 
 
-@pytest.mark.usefixtures("test_context")
-def test_user_place_checker() -> None:
+def test_user_place_checker(test_backup_config: BackupConfig) -> None:
     checker = UserPlaceChecker()
     with Path.tempfile() as path:
         path.text = '<bookmark href="https://www.example.com">'
-        checker.calculate_relevant_hash(path)
+        checker.calculate_relevant_hash(path, test_backup_config)
 
 
 @patch("cli.capture_output_lines", return_value=[""])
 @pytest.mark.usefixtures("test_context")
-def test_syncer_checker(mocked_run: MagicMock) -> None:
+def test_rclone_checker(
+    mocked_run: MagicMock, test_backup_config: BackupConfig
+) -> None:
     checker = RcloneChecker()
     with Path.tempfile() as path:
-        checker.calculate_relevant_hash(path)
+        checker.calculate_relevant_hash(path, test_backup_config)
     mocked_run.assert_called()
 
 
 @patch("cli.capture_output_lines", return_value=[""])
 @pytest.mark.usefixtures("test_context")
-def test_kwallet_checker(mocked_run: MagicMock) -> None:
+def test_kwallet_checker(
+    mocked_run: MagicMock, test_backup_config: BackupConfig
+) -> None:
     checker = KwalletChecker()
     with Path.tempfile() as path:
-        checker.calculate_relevant_hash(path)
+        checker.calculate_relevant_hash(path, test_backup_config)
     mocked_run.assert_called()

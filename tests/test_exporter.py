@@ -3,18 +3,18 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from backup.rclone import Rclone
 from backup.models import Path
+from backup.syncer import Syncer
 from backup.utils import exporter
 
 
-def create_empty_pdf(self: Rclone) -> None:
+def create_empty_pdf(self: Syncer) -> None:
     path = self.config.source / cast("Path", self.config.path)
     path.touch()
 
 
 @patch("xattr.xattr.set")
-@patch.object(Rclone, "export_pdfs", autospec=True)
+@patch.object(Syncer, "export_pdfs", autospec=True)
 @pytest.mark.usefixtures("test_context")
 def test_export(mocked_export: MagicMock, mocked_xattr: MagicMock) -> None:
     mocked_export.side_effect = create_empty_pdf
@@ -30,7 +30,6 @@ def add_mocked_document() -> None:
 
 
 @patch("cli.run")
-@pytest.mark.usefixtures("test_context")
-def test_export_pdfs(mocked_run: MagicMock) -> None:
-    Rclone().export_pdfs()
+def test_export_pdfs(mocked_run: MagicMock, mocked_syncer: Syncer) -> None:
+    mocked_syncer.export_pdfs()
     mocked_run.assert_not_called()

@@ -2,9 +2,9 @@ from typing import cast
 
 import cli
 
-from backup.rclone import Rclone, RcloneConfig
 from backup.context import context
 from backup.models import Path
+from backup.syncer import SyncConfig, Syncer
 
 
 def export_resume() -> bool:
@@ -23,8 +23,8 @@ def export_resume() -> bool:
 
 
 def export_path(path: Path) -> None:
-    relative_path = path.with_export_suffix.relative_to(context.config.backup_source)
-    config = RcloneConfig(path=relative_path, dest=Path.remote)
-    Rclone(config).export_pdfs()
+    relative_path = path.with_export_suffix.relative_to(Path.backup_source)
+    config = SyncConfig(path=relative_path)
+    Syncer(config).export_pdfs()
     path.with_export_suffix.mtime = path.mtime
     path.with_export_suffix.tag = "exported"

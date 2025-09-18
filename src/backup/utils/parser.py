@@ -1,8 +1,8 @@
 from __future__ import annotations
-from functools import cached_property
 
 import typing
 from dataclasses import dataclass, field
+from functools import cached_property
 from typing import Any
 
 from typing_extensions import Self

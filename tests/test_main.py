@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from backup.context.action import Action
 from backup.context.context import Context
 from backup.main.main import main
-from backup.context.action import Action
 
 
 def test_main(test_context: Context) -> None:

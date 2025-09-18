@@ -1,60 +1,64 @@
-from .change_scanner import ChangeScanner
-from .cache.cache_syncer import CacheSyncer
-from typing import Iterable
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
+from functools import cached_property
+from typing import Any
 
 import cli
 
 from backup.context import context
-from backup.models import Changes, Path, BackupConfigs
-from backup.rclone import RcloneConfig, Rclone
+from backup.models import Changes, Path
+from backup.syncer import SyncConfig, Syncer
 from backup.utils import exporter
-from typing import Any
 
-from functools import cached_property
-from .config import parse_config
+from .cache.cache_syncer import CacheSyncer
+from .change_scanner import ChangeScanner
+from .config import BackupConfig, parse_config
 
 
 @dataclass
 class Backup:
-    config: list[dict[str, Any]]
+    config: dict[str, Any]
 
     @cached_property
-    def backup_configs(self) -> BackupConfigs:
+    def backup_configs(self) -> list[BackupConfig]:
         return parse_config(self.config)
 
     def status(self) -> None:
         changes = ChangeScanner(self.backup_configs).calculate_changes()
         statuses = [
-            Rclone(config).capture_status()
-            for config in self.generate_rclone_configs(changes)
+            Syncer(config).capture_status()
+            for config in self.generate_sync_configs(changes)
         ]
         for status in statuses:
             status.print()
 
     def push(self, *, reverse: bool = False) -> list[Changes]:
         changes = ChangeScanner(self.backup_configs).check_changes(reverse=reverse)
-        dest = context.extract_backup_dest()
-        cache_ = context.extract_cache_path()
-        for config in self.generate_rclone_configs(changes):
-            Rclone(config.with_dest_root(dest)).push(reverse=reverse)
-            Rclone(config.with_dest_root(cache_)).push()
+        cache_configs = self.generate_sync_configs(changes)
+        remote_configs = self.generate_sync_configs(changes, cache=False)
+        for cache, remote in zip(cache_configs, remote_configs):
+            Syncer(remote).push(reverse=reverse)
+            Syncer(cache).push()
         return changes
 
     def pull(self) -> None:
         if not context.options.no_sync:
             self.sync_remote_changes()
         changes = self.push(reverse=True)
-        if changes and any(changes):
-            if self.contains_change(Path.resume, changes) and exporter.export_resume():
-                config = RcloneConfig(path=Path.main_resume_pdf)
-                with cli.status("Uploading new resume pdf"):
-                    Rclone(config).capture_push()
+        should_upload_resume = (
+            changes
+            and any(changes)
+            and self.contains_change(Path.resume, changes)
+            and exporter.export_resume()
+        )
+        if should_upload_resume:
+            config = SyncConfig(path=Path.main_resume_pdf)
+            with cli.status("Uploading new resume pdf"):
+                Syncer(config).capture_push()
 
     def contains_change(self, path: Path, changes: list[Changes]) -> bool:
         changed = False
-        for change, config in zip(changes, self.backup_configs.backups):
+        for change, config in zip(changes, self.backup_configs, strict=False):
             if path.is_relative_to(config.source):
                 relative_path = path.relative_to(config.source)
                 changed |= any(
@@ -63,16 +67,16 @@ class Backup:
         return changed
 
     def sync_remote_changes(self) -> None:
-        for item in self.backup_configs.backups:
+        for item in self.backup_configs:
             CacheSyncer(item).sync_remote_changes()
 
-    def generate_rclone_configs(
-        self, changes: Iterable[Changes]
-    ) -> Iterator[RcloneConfig]:
-        for item, change in zip(self.backup_configs.backups, changes):
+    def generate_sync_configs(
+        self, changes: Iterable[Changes], cache: bool = True
+    ) -> Iterator[SyncConfig]:
+        for item, change in zip(self.backup_configs, changes, strict=False):
             if change.paths:
-                yield RcloneConfig(
+                yield SyncConfig(
                     source=item.source,
-                    dest=item.dest,
+                    dest=item.cache if cache else item.dest,
                     paths=change.paths,
                 )

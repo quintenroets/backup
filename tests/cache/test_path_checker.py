@@ -43,7 +43,7 @@ def test_user_place_checker() -> None:
 
 @patch("cli.capture_output_lines", return_value=[""])
 @pytest.mark.usefixtures("test_context")
-def test_rclone_checker(mocked_run: MagicMock) -> None:
+def test_syncer_checker(mocked_run: MagicMock) -> None:
     checker = RcloneChecker()
     with Path.tempfile() as path:
         checker.calculate_relevant_hash(path)

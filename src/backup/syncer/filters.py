@@ -3,20 +3,23 @@ from dataclasses import dataclass, field
 
 from backup.models import Path
 
-from .config import RcloneConfig
+from .sync_config import SyncConfig
 
 reserved_characters = "\\", "[", "]", "*", "**", "?", "{", "}"
 
 
 @dataclass
 class FiltersCreator:
-    config: RcloneConfig
+    config: SyncConfig
     path_separator: str = field(default="/", repr=False)
 
     def create_filters_from_paths(self) -> None:
         self.config.filter_rules = list(self.generate_filters_from_paths())
 
     def generate_filters_from_paths(self) -> Iterator[str]:
+        if self.config.overlapping_sub_path is not None:
+            yield f"- /{self.config.overlapping_sub_path}/**"
+
         if self.config.directory is not None:
             self.config.path = self.config.directory / "**"
         if self.config.path is not None:
@@ -32,9 +35,6 @@ class FiltersCreator:
 
         if self.config.paths:
             yield "- *"
-        elif self.config.overlapping_sub_path is not None:
-            yield f"- /{self.config.overlapping_sub_path}/**"
-            yield "+ *"
 
     def escape(self, path: Path) -> str:
         # backslash character needs to be first in sequence

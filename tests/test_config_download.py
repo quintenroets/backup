@@ -37,7 +37,7 @@ def restore_rclone_config_path(
 
 
 @pytest.mark.usefixtures("restore_rclone_config_path")
-def test_rclone_config_download() -> None:
+def test_syncer_config_download() -> None:
     Path.rclone_config.unlink(missing_ok=True)
     check_setup()
     assert Path.rclone_config.lines[0] == "# Encrypted rclone configuration File"

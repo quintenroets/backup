@@ -1,16 +1,15 @@
-from backup.models import BackupConfig
-from .cache_scanner import CacheScanner
-
-
-from datetime import datetime
 from collections.abc import Iterator
 from dataclasses import dataclass
+from datetime import datetime
 
 import cli
 
+from backup.backup.config import BackupConfig
 from backup.context import context
 from backup.models import Path
-from backup.rclone import RcloneConfig, Rclone
+from backup.syncer import SyncConfig, Syncer
+
+from .cache_scanner import CacheScanner
 
 
 @dataclass
@@ -20,24 +19,23 @@ class CacheSyncer:
     date_end: str = "]  /"
 
     def sync_remote_changes(self) -> None:
-        message = f"Reading remote filesystem at {self.backup_config.source.resolve().short_notation}"
-        with cli.status(message):
+        path = self.backup_config.source.resolve().short_notation
+        with cli.status(f"Reading remote filesystem at {path}"):
             self.run_remote_sync()
 
     def run_remote_sync(self) -> None:
         filter_rules = list(self.generate_pull_filters())
-        config = RcloneConfig(
-            source=context.extract_cache_path() / self.backup_config.source,
-            dest=context.extract_backup_dest() / self.backup_config.dest,
-            filter_rules=filter_rules,
+        config = SyncConfig(
+            self.backup_config.cache, self.backup_config.dest, filter_rules=filter_rules
         )
-        remote_pairs = Rclone(config).generate_paths_with_time()
+        remote_pairs = Syncer(config).generate_paths_with_time()
         remote_pairs = self.modify_changed_paths(remote_pairs)
         remote_paths = {path for path, _ in remote_pairs}
         self.remove_paths_missing_in_remote(remote_paths, config)
 
     def modify_changed_paths(
-        self, pairs: Iterator[tuple[Path, datetime]]
+        self,
+        pairs: Iterator[tuple[Path, datetime]],
     ) -> Iterator[tuple[Path, datetime]]:
         for path, date in pairs:
             cache_path = self.backup_config.source / path
@@ -55,9 +53,11 @@ class CacheSyncer:
         path.touch(mtime=path.mtime + 1)
 
     def remove_paths_missing_in_remote(
-        self, remote_paths: set[Path], config: RcloneConfig
+        self,
+        remote_paths: set[Path],
+        config: SyncConfig,
     ) -> None:
-        pairs = Rclone(config).generate_paths_with_time(config.source)
+        pairs = Syncer(config).generate_paths_with_time(config.source)
         for path, _ in pairs:
             if path not in remote_paths:
                 (self.backup_config.source / path).unlink()

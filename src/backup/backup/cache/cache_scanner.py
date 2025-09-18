@@ -1,15 +1,17 @@
 import fnmatch
-from backup.rclone import Rclone, RcloneConfig
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from functools import cached_property
+from typing import Any
 
+from backup.backup.config import BackupConfig
 from backup.context import context
-from backup.models import Changes, Path, BackupConfig
+from backup.models import Changes, Path
+from backup.syncer import SyncConfig, Syncer
 from backup.utils import parser
 from backup.utils.parser import Rules
 
 from .detailed_entry import Entry
-from typing import Any, Iterator
 
 
 @dataclass
@@ -20,10 +22,9 @@ class CacheScanner:
     entries: set[Entry] = field(default_factory=set)
 
     @property
-    def config(self) -> RcloneConfig:
-        dest = context.extract_cache_path()
-        return RcloneConfig(
-            source=self.backup_config.source, dest=dest / self.backup_config.dest
+    def config(self) -> SyncConfig:
+        return SyncConfig(
+            source=self.backup_config.source, dest=self.backup_config.cache
         )
 
     def calculate_changes(self, *, reverse: bool = False) -> Changes:
@@ -34,13 +35,15 @@ class CacheScanner:
             if entry.is_changed()
         ]
         return (
-            Rclone(self.config.with_paths(paths)).capture_status(reverse=reverse)
+            Syncer(self.config.with_paths(paths)).capture_status(
+                reverse=reverse, is_cache=True
+            )
             if paths
             else Changes()
         )
 
     def generate_entries(self) -> Iterator[Entry]:
-        rules = self.entry_rules()
+        rules = self.generate_entry_rules()
         for rule in rules:
             source_path = self.config.source / rule.path
             dest_path = self.config.dest / rule.path
@@ -55,7 +58,7 @@ class CacheScanner:
                     for entry_path in source_path.find(exclude=self.exclude_root):
                         yield self.create_entry(source=entry_path)
                     for entry_path in dest_path.find(
-                        exclude=lambda path_: path_ in self.visited
+                        exclude=lambda path_: path_ in self.visited,
                     ):
                         yield self.create_entry(dest=entry_path)
             self.visited.add(source_path)
@@ -64,25 +67,16 @@ class CacheScanner:
     def create_entry(self, **kwargs: Any) -> Entry:
         return Entry(self.config.source, self.config.dest, **kwargs)
 
-    def entry_rules(self) -> Iterator[parser.PathRule]:
-        any_include = False
-        rules = self.generate_entry_rules()
-        for rule in rules:
-            any_include |= rule.include
-            yield rule
-        # include everything else if no include rules
-        yield parser.PathRule(Path(), include=False)
-
     def generate_entry_rules(self) -> Iterator[parser.PathRule]:
         rules = Rules(
             self.backup_config.includes,
             self.backup_config.excludes,
             self.backup_config.source,
-        ).rules
+        )
         if self.config.overlapping_sub_path is not None:
-            path = context.config.cache_path.relative_to(Path("/"))
-            yield parser.PathRule(path, include=False)
-        yield from rules
+            yield parser.PathRule(self.config.overlapping_sub_path, include=False)
+        yield from rules.rules
+        yield parser.PathRule(Path(), include=False)
 
     def exclude_root(self, path: Path) -> bool:
         return (

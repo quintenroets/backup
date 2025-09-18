@@ -1,10 +1,10 @@
 import cli
 
 from backup.backup import Backup
+from backup.backup.config import load_config
 from backup.context import context
 from backup.context.action import Action
 from backup.models import Path
-from backup.backup.config import load_config
 
 
 def main() -> None:

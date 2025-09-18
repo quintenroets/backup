@@ -1,10 +1,10 @@
+from collections.abc import Iterable, Iterator
 from itertools import groupby
+from typing import Any, TypeVar
 
 import cli
 
 from backup.context import context
-
-from typing import Any, Iterator, TypeVar, Iterable
 
 K = TypeVar("K")
 V = TypeVar("V")

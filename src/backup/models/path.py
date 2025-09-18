@@ -105,8 +105,8 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def rclone_command_config(cls) -> Self:
-        path = cls.config / "rclone_commands.yaml"
+    def syncer_command_config(cls) -> Self:
+        path = cls.config / "syncer_commands.yaml"
         return cast("Self", path)
 
     @classmethod

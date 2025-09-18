@@ -1,5 +1,5 @@
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Iterator
 from typing import ClassVar
 
 from backup.context import context
@@ -15,9 +15,7 @@ class Entry:
     relative: Path = field(init=False)
     dest: Path = None  # type: ignore[assignment]
     changed: bool | None = None
-    relative_browser_path: ClassVar[Path] = (
-        Path.HOME / context.config.browser_folder
-    ).relative_to(context.config.backup_source)
+    relative_browser_path: ClassVar[Path] = context.config.browser_folder
 
     def __post_init__(self) -> None:
         if self.source is None:

@@ -4,16 +4,17 @@ from dataclasses import dataclass
 
 import cli
 
+from backup.backup.config import BackupConfig
 from backup.context import context
-from backup.models import Changes, BackupConfigs
+from backup.models import Changes
+from backup.utils.itertools import aggregate_iterators_with_progress
 
 from .cache.cache_scanner import CacheScanner
-from ..utils.itertools import aggregate_iterators_with_progress
 
 
 @dataclass
 class ChangeScanner:
-    backup_configs: BackupConfigs
+    backup_configs: list[BackupConfig]
 
     def check_changes(self, *, reverse: bool) -> list[Changes]:
         changes: list[Changes] = list(self.calculate_changes(reverse=reverse))
@@ -26,17 +27,18 @@ class ChangeScanner:
         return [] if remove_changes else changes
 
     def calculate_changes(
-        self, *, quiet: bool = False, reverse: bool = False
+        self,
+        *,
+        quiet: bool = False,
+        reverse: bool = False,
     ) -> Iterator[Changes]:
-        scanners = [
-            CacheScanner(backup, quiet=quiet) for backup in self.backup_configs.backups
-        ]
+        scanners = [CacheScanner(backup, quiet=quiet) for backup in self.backup_configs]
         entries = aggregate_iterators_with_progress(
             (scanner.generate_entries() for scanner in scanners),
             description="Checking",
             unit="Files",
         )
-        for scanner, entries_ in zip(scanners, entries):
+        for scanner, entries_ in zip(scanners, entries, strict=False):
             scanner.entries = set(entries_)
             yield scanner.calculate_changes(reverse=reverse)
 

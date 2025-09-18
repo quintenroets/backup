@@ -42,7 +42,7 @@ def generate_checkers() -> Iterator[tuple[Path, PathChecker]]:
         "plasmashellrc": PathChecker(
             ignore_sections=("PlasmaTransientsConfig",),
         ),
-        "rclone/rclone.conf": RcloneChecker(),
+        "rclone/clone.conf": RcloneChecker(),
     }
     local_checkers = {
         "user-places.xbel": UserPlaceChecker(),

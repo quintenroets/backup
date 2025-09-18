@@ -19,7 +19,8 @@ class Storage:
         default=[],
     )
     backup_config: CachedFileContent[list[Any]] = CachedFileContent(
-        Path.backup_config, default=[]
+        Path.backup_config,
+        default=[],
     )
     active_profile: CachedFileContent[str] = CachedFileContent(
         Path.active_profile,

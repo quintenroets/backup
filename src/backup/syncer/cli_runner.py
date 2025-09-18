@@ -1,24 +1,23 @@
+import itertools
 import os
 import subprocess
-import itertools
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 
 from cli.commands.commands import CommandItem
 from cli.commands.runner import Runner
-from .filters import FiltersCreator
 
 from backup.context import context
 from backup.models import Path
 
-
-from .config import RcloneConfig
+from .filters import FiltersCreator
+from .sync_config import SyncConfig
 
 
 @dataclass
 class CliRunner:
-    config: RcloneConfig
+    config: SyncConfig
     push: bool = False
     action: str | None = None
     reverse: bool = False
@@ -48,7 +47,9 @@ class CliRunner:
             yield Runner(command, root=self.root, kwargs=kwargs)
 
     def generate_command_parts(
-        self, filters_path: Path, *args: tuple[CommandItem]
+        self,
+        filters_path: Path,
+        *args: tuple[CommandItem],
     ) -> Iterator[CommandItem]:
         if self.root:
             yield "-E"

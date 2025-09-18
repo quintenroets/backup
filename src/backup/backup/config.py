@@ -1,63 +1,93 @@
-from typing import Iterator
+from collections.abc import Iterator
+from dataclasses import dataclass, field
+from encodings.rot_13 import rot13
+from typing import Any, TypeVar
 
-from backup.models import Path, BackupConfig, Entries, BackupConfigs
+from package_utils.dataclasses.mixins import SerializationMixin
 
 from backup.context import context
-from dataclasses import dataclass, field
-from package_utils.dataclasses.mixins import SerializationMixin
-from backup.rclone import Rclone, RcloneConfig
+from backup.models import Path
+from backup.syncer import SyncConfig, Syncer
 
-from typing import Any, TypeVar
+Entries = list[str | dict[str, "Entries"] | Any]
+
 
 T = TypeVar("T")
 
 
 @dataclass
-class BackupConfigSerialized(SerializationMixin):
-    source: str | None = None
-    dest: str | None = None
+class SerializedEntryConfig(SerializationMixin):
+    source: str = ""
+    dest: str = ""
     includes: Entries = field(default_factory=list)
     excludes: Entries = field(default_factory=list)
 
-    def __post_init__(self):
-        if self.source is None:
-            self.source = context.extract_backup_source()
-        if self.dest is None:
-            self.dest = context.extract_backup_dest()
+
+@dataclass
+class SerializedBackupConfig(SerializationMixin):
+    syncs: list[SerializedEntryConfig]
+    source: str = "/"
+    dest: str = "/"
+    cache: str = str(Path.backup_cache)
+
+
+@dataclass
+class BackupConfig:
+    source: Path
+    dest: Path
+    cache: Path
+    includes: Entries = field(default_factory=list)
+    excludes: Entries = field(default_factory=list)
+
+
+class EntryParser:
+    def __init__(self, config: SerializedBackupConfig) -> None:
+        dest = config.source if config.dest == "/" else config.dest
+        self.source = Path(config.source)
+        self.dest = Path(dest)
+        self.cache = Path(config.cache)
+        self.cache.mkdir(parents=True, exist_ok=True)
+
+    def parse_entry(self, entry: SerializedEntryConfig) -> BackupConfig | None:
+        source = self.source / Path(entry.source)
+        if source == Path("/") / "HOME":
+            source = Path.HOME
+        if source.exists():
+            return self._parse_entry(entry, source)
+
+    def _parse_entry(self, entry: SerializedEntryConfig, source: Path):
+        dest = Path(entry.dest)
+        if dest.name == "__PROFILE__":
+            dest = dest.with_name(context.storage.active_profile)
+        if not context.options.include_browser:
+            remove_browser(entry.includes, context.config.browser_name)
+        sub_path = (
+            Path("")
+            if context.sub_check_path is None
+            else context.sub_check_path.relative_to(source)
+        )
+        entry.includes = extract_sub_entries(entry.includes, sub_path)
+        entry.excludes = extract_sub_entries(entry.excludes, sub_path)
+        if entry.includes:
+            return BackupConfig(
+                source / sub_path,
+                self.dest / dest / sub_path,
+                self.cache / dest / sub_path,
+                entry.includes,
+                entry.excludes,
+            )
 
 
 def load_config() -> list[dict[str, Any]]:
     if not Path.config.exists():
-        Rclone(RcloneConfig(directory=Path.config)).capture_pull()
+        Syncer(SyncConfig(directory=Path.config)).capture_pull()
     return context.storage.backup_config
 
 
-def parse_config(config: list[dict[str, Any]]) -> BackupConfigs:
-    return BackupConfigs(backups=list(generate_configs(config)))
-
-
-def generate_configs(configs: list[dict[str, Any]]) -> Iterator[BackupConfig]:
-    for item in configs:
-        config = BackupConfigSerialized.from_dict(item)
-        source = Path.HOME if config.source == "/HOME" else Path(config.source)
-        if source.exists():
-            dest = (
-                source.relative_to(Path("/"))
-                if config.dest is None
-                else Path(config.dest)
-            )
-            if dest.name == "__PROFILE__":
-                dest = dest.with_name(context.storage.active_profile)
-            if not context.options.include_browser:
-                remove_browser(config.includes, context.config.browser_name)
-            if context.sub_check_path is not None:
-                sub_path = context.sub_check_path.relative_to(source)
-                config.includes = extract_sub_entries(config.includes, sub_path)
-                config.excludes = extract_sub_entries(config.excludes, sub_path)
-                source /= sub_path
-                dest /= sub_path
-            if config.includes:
-                yield BackupConfig(source, dest, config.includes, config.excludes)
+def parse_config(config_dict: dict[str, Any]) -> list[BackupConfig]:
+    config = SerializedBackupConfig.from_dict(config_dict)
+    parser = EntryParser(config)
+    return [parser.parse_entry(entry) for entry in config.syncs if entry]
 
 
 def remove_browser(includes: list[str | dict[str, Any]], browser_name: str) -> None:

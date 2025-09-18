@@ -11,11 +11,14 @@ from backup.models import Path
 
 
 def extract_hash_path(path: Path) -> Path:
+    root = Path.hashes
+    """
     root = (
         context.config.cache_path
-        if path.is_relative_to(context.config.cache_path)
+        if False and path.is_relative_to(context.config.cache_path)
         else context.config.backup_source
     )
+    """
     relative_hashes = cast("Path", Path.hashes).relative_to(Path.backup_source)
     return root / relative_hashes / path.name
 
@@ -77,7 +80,7 @@ class RetrievedContentChecker(PathChecker):
         # compare generated hash with saved hash
         content_hash = (
             hash_path.text
-            if hash_path.is_relative_to(context.config.cache_path)
+            if False and hash_path.is_relative_to(context.config.cache_path)
             else self.calculate_content_hash()
         )
         if content_hash != hash_path.text:

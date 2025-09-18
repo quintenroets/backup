@@ -14,8 +14,8 @@ from backup.utils.setup import check_setup
 class Help:
     remote = "name of remote to mount"
     path = "local path to mount remote to"
-    rclone_secret = "decryption key for rclone configuration"  # noqa: S105
-    cache_mode = "vfs-cache-mode option for rclone"
+    rclone_secret = "decryption key for syncer configuration"  # noqa: S105
+    cache_mode = "vfs-cache-mode option for syncer"
 
 
 @dataclass

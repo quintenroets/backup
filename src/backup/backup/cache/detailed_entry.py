@@ -17,6 +17,7 @@ class Entry(entry.Entry):
         return super().exclude() or self.only_volatile_content_changed()
 
     def only_volatile_content_changed(self) -> bool:
+        return False
         only_volatile_content_changed = (
             self.relative in Checker.checkers and self.relevant_content_unchanged()
         )

@@ -4,9 +4,8 @@ from datetime import datetime
 
 import cli
 
-from backup.backup.config import BackupConfig
 from backup.context import context
-from backup.models import Path
+from backup.models import Path, BackupConfig
 from backup.syncer import SyncConfig, Syncer
 
 from .cache_scanner import CacheScanner
@@ -63,10 +62,9 @@ class CacheSyncer:
                 (self.backup_config.source / path).unlink()
 
     def generate_pull_filters(self) -> Iterator[str]:
-        rules = CacheScanner(self.backup_config).generate_entry_rules()
+        rules = CacheScanner(self.backup_config).generate_rules()
         for rule in rules:
             sign = "+" if rule.include else "-"
             pattern = f"{sign} /{rule.path}"
             yield pattern
             yield f"{pattern}/**"
-        yield "- /**"

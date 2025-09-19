@@ -4,12 +4,10 @@ from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Any
 
-from backup.backup.config import BackupConfig
 from backup.context import context
-from backup.models import Changes, Path
+from backup.models import Changes, Path, BackupConfig, PathRule
 from backup.syncer import SyncConfig, Syncer
 from backup.utils import parser
-from backup.utils.parser import Rules
 
 from .entry import Entry
 
@@ -43,8 +41,7 @@ class CacheScanner:
         )
 
     def generate_entries(self) -> Iterator[Entry]:
-        rules = self.generate_entry_rules()
-        for rule in rules:
+        for rule in self.generate_rules():
             source_path = self.config.source / rule.path
             dest_path = self.config.dest / rule.path
             if rule.include:
@@ -64,19 +61,13 @@ class CacheScanner:
             self.visited.add(source_path)
             self.visited.add(dest_path)
 
+    def generate_rules(self) -> Iterator[PathRule]:
+        if self.config.overlapping_sub_path is not None:
+            yield PathRule(self.config.overlapping_sub_path, include=False)
+        yield from self.backup_config.rules
+
     def create_entry(self, **kwargs: Any) -> Entry:
         return Entry(self.backup_config, **kwargs)
-
-    def generate_entry_rules(self) -> Iterator[parser.PathRule]:
-        rules = Rules(
-            self.backup_config.includes,
-            self.backup_config.excludes,
-            self.backup_config.source,
-        )
-        if self.config.overlapping_sub_path is not None:
-            yield parser.PathRule(self.config.overlapping_sub_path, include=False)
-        yield from rules.rules
-        yield parser.PathRule(Path(), include=False)
 
     def exclude_root(self, path: Path) -> bool:
         return (

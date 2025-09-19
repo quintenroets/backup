@@ -1,5 +1,4 @@
 import os
-from backup.backup.config import BackupConfig
 import sys
 from collections.abc import Iterator
 from contextlib import AbstractContextManager
@@ -15,7 +14,7 @@ from package_utils.storage import CachedFileContent
 from backup.backup import Backup
 from backup.context import context as context_
 from backup.context.context import Context
-from backup.models import Path
+from backup.models import Path, BackupConfig
 from backup.storage import Storage
 from backup.syncer import Syncer, SyncConfig
 from backup.utils.setup import check_setup
@@ -88,18 +87,31 @@ def mock_under_test_root(
 
 
 @pytest.fixture
-def test_backup_config() -> Iterator[BackupConfig]:
+def mocked_backup() -> Iterator[Backup]:  # noqa: ARG001
     directories = [Path.tempdir() for _ in range(2)]
     context_managers = list(generate_context_managers(directories))
     relative_cache_path = Path.backup_cache.relative_to(Path.backup_source)
+    item = {"includes": [""], "excludes": ["dummy.txt", "dummy_directory"]}
+    config = {
+        "source": str(directories[0]),
+        "dest": str(directories[1]),
+        "cache": str(directories[0] / relative_cache_path),
+        "syncs": [item],
+    }
     with ContextList(context_managers):
-        yield BackupConfig(
-            source=directories[0],
-            dest=directories[1],
-            cache=directories[0] / relative_cache_path,
-            includes=[""],
-            excludes=["dummy.txt", "dummy_directory"],
-        )
+        yield Backup(config)
+
+
+@pytest.fixture
+def mocked_backup_with_filled_content(
+    mocked_syncer_with_filled_content: Syncer, mocked_backup
+) -> Backup:
+    return mocked_backup
+
+
+@pytest.fixture
+def test_backup_config(mocked_backup: Backup) -> BackupConfig:
+    return mocked_backup.backup_configs[0]
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -144,25 +156,3 @@ def fill_directories(mocked_syncer: Syncer, content: str = "content") -> None:
 def fill(directory: Path, content: str = "content", number: int = 0) -> None:
     path = directory / f"{number}.txt"
     path.text = content
-
-
-@pytest.fixture
-def mocked_backup(test_backup_config: BackupConfig) -> Backup:  # noqa: ARG001
-    item = {
-        "includes": test_backup_config.includes,
-        "excludes": test_backup_config.excludes,
-    }
-    config = {
-        "source": str(test_backup_config.source),
-        "dest": str(test_backup_config.dest),
-        "cache": str(test_backup_config.cache),
-        "syncs": [item],
-    }
-    return Backup(config)
-
-
-@pytest.fixture
-def mocked_backup_with_filled_content(
-    mocked_syncer_with_filled_content: Syncer, mocked_backup
-) -> Backup:
-    return mocked_backup

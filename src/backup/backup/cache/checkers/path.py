@@ -7,8 +7,7 @@ from typing import Any, cast
 import cli
 
 from backup.context import context
-from backup.models import Path
-from backup.backup.config import BackupConfig
+from backup.models import Path, BackupConfig
 
 
 def extract_hash_path(path: Path, config: BackupConfig) -> Path:

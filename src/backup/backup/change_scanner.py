@@ -4,9 +4,8 @@ from dataclasses import dataclass
 
 import cli
 
-from backup.backup.config import BackupConfig
 from backup.context import context
-from backup.models import Changes
+from backup.models import Changes, BackupConfig
 from backup.utils.itertools import aggregate_iterators_with_progress
 
 from .cache.cache_scanner import CacheScanner

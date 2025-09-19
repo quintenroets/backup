@@ -1,10 +1,8 @@
 from unittest.mock import patch
-from backup.backup.config import BackupConfig
 
 
 from backup.backup import Backup
-from backup.context.context import Context
-from backup.models import Path
+from backup.models import Path, BackupConfig
 
 
 def test_status(mocked_backup_with_filled_content: Backup) -> None:

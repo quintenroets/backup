@@ -6,13 +6,13 @@ from typing import Any
 import cli
 
 from backup.context import context
-from backup.models import Changes, Path
+from backup.models import Changes, Path, BackupConfig
 from backup.syncer import SyncConfig, Syncer
 from backup.utils import exporter
 
 from .cache.cache_syncer import CacheSyncer
 from .change_scanner import ChangeScanner
-from .config import BackupConfig, parse_config
+from backup.utils.parser.config import parse_config
 
 
 @dataclass
@@ -21,7 +21,7 @@ class Backup:
 
     @cached_property
     def backup_configs(self) -> list[BackupConfig]:
-        return parse_config(self.config)
+        return list(parse_config(self.config))
 
     def status(self) -> None:
         changes = ChangeScanner(self.backup_configs).calculate_changes()

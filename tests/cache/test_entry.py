@@ -1,11 +1,10 @@
 import os
-from backup.backup.config import BackupConfig
 from collections.abc import Iterator
 
 import pytest
 
 from backup.backup.cache.entry import Entry
-from backup.models import Path
+from backup.models import Path, BackupConfig
 
 is_running_in_ci = "GITHUB_ACTIONS" in os.environ
 

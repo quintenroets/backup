@@ -8,8 +8,7 @@ from backup.backup.cache.checkers.path import (
     RcloneChecker,
     UserPlaceChecker,
 )
-from backup.models import Path
-from backup.backup.config import BackupConfig
+from backup.models import Path, BackupConfig
 
 
 @pytest.fixture

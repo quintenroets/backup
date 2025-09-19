@@ -1,43 +1,18 @@
 from collections.abc import Iterator
+from backup.models import BackupConfig
 from dataclasses import dataclass, field
-from encodings.rot_13 import rot13
 from typing import Any, TypeVar
 
-from package_utils.dataclasses.mixins import SerializationMixin
 
 from backup.context import context
-from backup.models import Path
+from backup.models import Path, SerializedBackupConfig, SerializedEntryConfig
 from backup.syncer import SyncConfig, Syncer
+from .rules import RuleParser
 
 Entries = list[str | dict[str, "Entries"] | Any]
 
 
 T = TypeVar("T")
-
-
-@dataclass
-class SerializedEntryConfig(SerializationMixin):
-    source: str = ""
-    dest: str = ""
-    includes: Entries = field(default_factory=list)
-    excludes: Entries = field(default_factory=list)
-
-
-@dataclass
-class SerializedBackupConfig(SerializationMixin):
-    syncs: list[SerializedEntryConfig]
-    source: str = "/"
-    dest: str = "/"
-    cache: str = str(Path.backup_cache)
-
-
-@dataclass
-class BackupConfig:
-    source: Path
-    dest: Path
-    cache: Path
-    includes: Entries = field(default_factory=list)
-    excludes: Entries = field(default_factory=list)
 
 
 class EntryParser:
@@ -66,16 +41,15 @@ class EntryParser:
             if context.sub_check_path is None
             else context.sub_check_path.relative_to(source)
         )
-        entry.includes = extract_sub_entries(entry.includes, sub_path)
-        entry.excludes = extract_sub_entries(entry.excludes, sub_path)
-        if entry.includes:
-            return BackupConfig(
-                source / sub_path,
-                self.dest / dest / sub_path,
-                self.cache / dest / sub_path,
-                entry.includes,
-                entry.excludes,
-            )
+        rules = RuleParser(
+            source, sub_path, entry.includes, entry.excludes
+        ).parse_rules()
+        return BackupConfig(
+            source / sub_path,
+            self.dest / dest / sub_path,
+            self.cache / dest / sub_path,
+            rules,
+        )
 
 
 def load_config() -> list[dict[str, Any]]:
@@ -84,10 +58,13 @@ def load_config() -> list[dict[str, Any]]:
     return context.storage.backup_config
 
 
-def parse_config(config_dict: dict[str, Any]) -> list[BackupConfig]:
+def parse_config(config_dict: dict[str, Any]) -> Iterator[BackupConfig]:
     config = SerializedBackupConfig.from_dict(config_dict)
     parser = EntryParser(config)
-    return [parser.parse_entry(entry) for entry in config.syncs if entry]
+    for entry in config.syncs:
+        parsed_entry = parser.parse_entry(entry)
+        if any(rule.include for rule in parsed_entry.rules):
+            yield parsed_entry
 
 
 def remove_browser(includes: list[str | dict[str, Any]], browser_name: str) -> None:

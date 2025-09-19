@@ -1,5 +1,7 @@
 from __future__ import annotations
+from backup.syncer import SyncConfig
 
+from backup.models import BackupConfig, Entries
 import typing
 from dataclasses import dataclass, field
 from functools import cached_property
@@ -7,16 +9,10 @@ from typing import Any
 
 from typing_extensions import Self
 
-from backup.models import Path
+from backup.models import Path, PathRule
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator  # pragma: nocover
-
-
-@dataclass
-class PathRule:
-    path: Path
-    include: bool
 
 
 @dataclass
@@ -71,27 +67,34 @@ class RuleConfig:
 
 
 @dataclass
-class Rules:
-    include_rules: list[Any] | None = None
-    exclude_rules: list[Any] | None = None
-    root: Path = field(default_factory=Path)
+class RuleParser:
+    root: Path
+    sub_path: Path = Path("")
+    includes: Entries = field(default_factory=list)
+    excludes: Entries = field(default_factory=list)
 
-    def __iter__(self) -> Iterator[PathRule]:
-        yield from self.parse()
+    def parse_rules(self) -> list[PathRule]:
+        return list(self.parse())
 
     def get_paths(self) -> Iterator[Path]:
         for rule in self.parse():
             yield rule.path
 
     def parse(self) -> Iterator[PathRule]:
-        include_rules = RuleConfig.from_list(self.include_rules, self.root)
-        exclude_rules = RuleConfig.from_list(self.exclude_rules, self.root)
-        yield from self.generate_rules(include_rules, exclude_rules)
+        include_rules = RuleConfig.from_list(self.includes, self.root)
+        exclude_rules = RuleConfig.from_list(self.excludes, self.root)
+        parent_seen = False
+        for rule in self.generate_rules(include_rules, exclude_rules):
+            if rule.path.is_relative_to(self.sub_path):
+                yield PathRule(rule.path.relative_to(self.sub_path), rule.include)
+            elif self.sub_path.is_relative_to(rule.path) and not parent_seen:
+                parent_seen = True
+                yield PathRule(Path(), include=rule.include)
+        if not parent_seen:
+            yield PathRule(Path(), include=False)
 
     def generate_rules(
-        self,
-        include: RuleConfig,
-        exclude: RuleConfig,
+        self, include: RuleConfig, exclude: RuleConfig
     ) -> Iterator[PathRule]:
         sub_names = include.sub_rules.keys() | exclude.sub_rules.keys()
         for name in sub_names:
@@ -104,12 +107,6 @@ class Rules:
         yield from self.extract_rules(include, include=True)
         yield from self.extract_rules(exclude, include=False)
 
-    @classmethod
-    def extract_rules(cls, config: RuleConfig, *, include: bool) -> Iterator[PathRule]:
+    def extract_rules(self, config: RuleConfig, *, include: bool) -> Iterator[PathRule]:
         for name in config.items:
-            path = Path(name)
-            yield PathRule(path, include)
-
-    @cached_property
-    def rules(self) -> list[PathRule]:
-        return list(self.parse())
+            yield PathRule(Path(name), include)

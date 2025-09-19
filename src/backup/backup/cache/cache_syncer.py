@@ -18,7 +18,7 @@ class CacheSyncer:
     date_end: str = "]  /"
 
     def sync_remote_changes(self) -> None:
-        path = self.backup_config.source.resolve().short_notation
+        path = str(self.backup_config.dest).split(":")[-1]
         with cli.status(f"Reading remote filesystem at {path}"):
             self.run_remote_sync()
 
@@ -37,18 +37,20 @@ class CacheSyncer:
         pairs: Iterator[tuple[Path, datetime]],
     ) -> Iterator[tuple[Path, datetime]]:
         for path, date in pairs:
-            cache_path = self.backup_config.source / path
+            cache_path = self.backup_config.cache / path
             changed = not cache_path.exists() or not cache_path.has_date(date)
             if changed:
                 changed = not cache_path.has_date(date, check_tag=True)
             if changed:
-                self.change_path(path)
+                self.change_path(cache_path)
             yield path, date
 
     def change_path(self, path: Path) -> None:
         # change content and mtime trigger update
-        cache_path = self.backup_config.source / path
-        path.text = "" if cache_path.size else " "
+        source_path = self.backup_config.source / path.relative_to(
+            self.backup_config.cache
+        )
+        path.text = "" if source_path.size else " "
         path.touch(mtime=path.mtime + 1)
 
     def remove_paths_missing_in_remote(
@@ -59,7 +61,7 @@ class CacheSyncer:
         pairs = Syncer(config).generate_paths_with_time(config.source)
         for path, _ in pairs:
             if path not in remote_paths:
-                (self.backup_config.source / path).unlink()
+                (self.backup_config.cache / path).unlink()
 
     def generate_pull_filters(self) -> Iterator[str]:
         rules = CacheScanner(self.backup_config).generate_rules()

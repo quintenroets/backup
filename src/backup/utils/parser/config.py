@@ -1,12 +1,15 @@
 from collections.abc import Iterator
-from backup.models import BackupConfig
-from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
-
 from backup.context import context
-from backup.models import Path, SerializedBackupConfig, SerializedEntryConfig
+from backup.models import (
+    BackupConfig,
+    Path,
+    SerializedBackupConfig,
+    SerializedEntryConfig,
+)
 from backup.syncer import SyncConfig, Syncer
+
 from .rules import RuleParser
 
 Entries = list[str | dict[str, "Entries"] | Any]
@@ -27,10 +30,9 @@ class EntryParser:
         source = self.source / Path(entry.source)
         if source == Path("/") / "HOME":
             source = Path.HOME
-        if source.exists():
-            return self._parse_entry(entry, source)
+        return self._parse_entry(entry, source) if source.exists() else None
 
-    def _parse_entry(self, entry: SerializedEntryConfig, source: Path):
+    def _parse_entry(self, entry: SerializedEntryConfig, source: Path) -> BackupConfig:
         dest = Path(entry.dest)
         if dest.name == "__PROFILE__":
             dest = dest.with_name(context.storage.active_profile)
@@ -42,7 +44,10 @@ class EntryParser:
             else context.sub_check_path.relative_to(source)
         )
         rules = RuleParser(
-            source, sub_path, entry.includes, entry.excludes
+            source,
+            sub_path,
+            entry.includes,
+            entry.excludes,
         ).parse_rules()
         return BackupConfig(
             source / sub_path,

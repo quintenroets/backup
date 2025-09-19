@@ -1,5 +1,4 @@
-from collections.abc import Iterable
-from typing import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 
 from cli.commands.commands import CommandItem
@@ -18,7 +17,7 @@ class SyncConfig:
     path: Path | None = None
     directory: Path | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.sub_check_path is not None:
             sub_check_path = self.sub_check_path
             if sub_check_path.is_relative_to(self.source):
@@ -31,14 +30,16 @@ class SyncConfig:
         return next(self.generate_overlapping_sub_paths(), None)
 
     def generate_overlapping_sub_paths(self) -> Iterator[Path]:
-        pairs = [(self.source, self.dest), (self.dest, self.source)]
-        for first, second in pairs:
-            if first.is_relative_to(second):
-                path = first.relative_to(second)
-                while path.name == second.name:
-                    path = path.parent
-                    second = second.parent
-                yield path
+        yield from self.generate_overlapping_sub_path(self.source, self.dest)
+        yield from self.generate_overlapping_sub_path(self.dest, self.source)
+
+    def generate_overlapping_sub_path(self, source: Path, dest: Path) -> Iterator[Path]:
+        if source.is_relative_to(dest):
+            path = source.relative_to(dest)
+            while path.name == dest.name:
+                path = path.parent
+                dest = dest.parent
+            yield path
 
     def with_paths(self, paths: Iterable[Path]) -> "SyncConfig":
         return SyncConfig(

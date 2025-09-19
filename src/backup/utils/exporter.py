@@ -2,7 +2,6 @@ from typing import cast
 
 import cli
 
-from backup.context import context
 from backup.models import Path
 from backup.syncer import SyncConfig, Syncer
 

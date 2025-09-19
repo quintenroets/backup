@@ -8,7 +8,7 @@ from backup.backup.cache.checkers.path import (
     RcloneChecker,
     UserPlaceChecker,
 )
-from backup.models import Path, BackupConfig
+from backup.models import BackupConfig, Path
 
 
 @pytest.fixture
@@ -17,7 +17,8 @@ def checker() -> PathChecker:
 
 
 def test_non_existing_file(
-    checker: PathChecker, test_backup_config: BackupConfig
+    checker: PathChecker,
+    test_backup_config: BackupConfig,
 ) -> None:
     with Path.tempfile(create=False) as path:
         assert checker.calculate_relevant_hash(path, test_backup_config) == hash(None)
@@ -44,7 +45,8 @@ def test_user_place_checker(test_backup_config: BackupConfig) -> None:
 @patch("cli.capture_output_lines", return_value=[""])
 @pytest.mark.usefixtures("test_context")
 def test_rclone_checker(
-    mocked_run: MagicMock, test_backup_config: BackupConfig
+    mocked_run: MagicMock,
+    test_backup_config: BackupConfig,
 ) -> None:
     checker = RcloneChecker()
     with Path.tempfile() as path:
@@ -55,7 +57,8 @@ def test_rclone_checker(
 @patch("cli.capture_output_lines", return_value=[""])
 @pytest.mark.usefixtures("test_context")
 def test_kwallet_checker(
-    mocked_run: MagicMock, test_backup_config: BackupConfig
+    mocked_run: MagicMock,
+    test_backup_config: BackupConfig,
 ) -> None:
     checker = KwalletChecker()
     with Path.tempfile() as path:

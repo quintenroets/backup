@@ -6,13 +6,13 @@ from typing import Any
 import cli
 
 from backup.context import context
-from backup.models import Changes, Path, BackupConfig
+from backup.models import BackupConfig, Changes, Path
 from backup.syncer import SyncConfig, Syncer
 from backup.utils import exporter
+from backup.utils.parser.config import parse_config
 
 from .cache.cache_syncer import CacheSyncer
 from .change_scanner import ChangeScanner
-from backup.utils.parser.config import parse_config
 
 
 @dataclass
@@ -36,7 +36,7 @@ class Backup:
         changes = ChangeScanner(self.backup_configs).check_changes(reverse=reverse)
         cache_configs = self.generate_sync_configs(changes)
         remote_configs = self.generate_sync_configs(changes, cache=False)
-        for cache, remote in zip(cache_configs, remote_configs):
+        for cache, remote in zip(cache_configs, remote_configs, strict=False):
             Syncer(remote).push(reverse=reverse)
             Syncer(cache).push()
         return changes
@@ -71,7 +71,10 @@ class Backup:
             CacheSyncer(item).sync_remote_changes()
 
     def generate_sync_configs(
-        self, changes: Iterable[Changes], cache: bool = True
+        self,
+        changes: Iterable[Changes],
+        *,
+        cache: bool = True,
     ) -> Iterator[SyncConfig]:
         for item, change in zip(self.backup_configs, changes, strict=False):
             if change.paths:

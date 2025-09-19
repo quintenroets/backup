@@ -4,7 +4,7 @@ from collections.abc import Iterator
 import pytest
 
 from backup.backup.cache.entry import Entry
-from backup.models import Path, BackupConfig
+from backup.models import BackupConfig, Path
 
 is_running_in_ci = "GITHUB_ACTIONS" in os.environ
 

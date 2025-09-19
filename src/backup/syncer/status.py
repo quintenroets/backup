@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 import cli
 from cli.commands.runner import Runner
 
-from backup.context import context
 from backup.models import Change, Changes, ChangeTypes, Path
 from backup.utils import generate_output_lines
 from backup.utils.error_handling import create_malformed_filters_error

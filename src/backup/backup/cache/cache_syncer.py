@@ -4,8 +4,7 @@ from datetime import datetime
 
 import cli
 
-from backup.context import context
-from backup.models import Path, BackupConfig
+from backup.models import BackupConfig, Path
 from backup.syncer import SyncConfig, Syncer
 
 from .cache_scanner import CacheScanner
@@ -25,7 +24,9 @@ class CacheSyncer:
     def run_remote_sync(self) -> None:
         filter_rules = list(self.generate_pull_filters())
         config = SyncConfig(
-            self.backup_config.cache, self.backup_config.dest, filter_rules=filter_rules
+            self.backup_config.cache,
+            self.backup_config.dest,
+            filter_rules=filter_rules,
         )
         remote_pairs = Syncer(config).generate_paths_with_time()
         remote_pairs = self.modify_changed_paths(remote_pairs)
@@ -48,7 +49,7 @@ class CacheSyncer:
     def change_path(self, path: Path) -> None:
         # change content and mtime trigger update
         source_path = self.backup_config.source / path.relative_to(
-            self.backup_config.cache
+            self.backup_config.cache,
         )
         path.text = "" if source_path.size else " "
         path.touch(mtime=path.mtime + 1)

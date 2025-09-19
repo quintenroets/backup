@@ -1,14 +1,13 @@
 import json
-from backup.syncer import SyncConfig
-from backup.context import context
 from collections.abc import Iterator
 from unittest.mock import patch
 
 import cli
 import pytest
 
+from backup.context import context
 from backup.models import Change, ChangeTypes, Path
-from backup.syncer import Syncer
+from backup.syncer import SyncConfig, Syncer
 
 
 def test_malformed_filters_indicated(mocked_syncer: Syncer) -> None:

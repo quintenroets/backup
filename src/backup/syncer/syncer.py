@@ -55,7 +55,11 @@ class Syncer:
         )
 
     def capture_status(
-        self, *, quiet: bool = False, reverse: bool = False, is_cache: bool = False
+        self,
+        *,
+        quiet: bool = False,
+        reverse: bool = False,
+        is_cache: bool = False,
     ) -> Changes:
         runner_factory = self.cli_runner(action="check", reverse=reverse)
         with runner_factory.create_runner("--combined", "-") as runner:

@@ -1,18 +1,11 @@
 from collections.abc import Iterator
-from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 from backup.context import context
-from backup.models import Path
+from backup.models import BackupConfig, Path
 
-from . import entry
 from .checkers.detailed import Checker
 from .checkers.path import extract_hash_path
-from dataclasses import dataclass, field
-from typing import ClassVar
-
-from backup.context import context
-from backup.models import Path, BackupConfig
 
 
 @dataclass

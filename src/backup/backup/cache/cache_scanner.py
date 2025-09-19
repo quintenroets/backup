@@ -5,9 +5,8 @@ from functools import cached_property
 from typing import Any
 
 from backup.context import context
-from backup.models import Changes, Path, BackupConfig, PathRule
+from backup.models import BackupConfig, Changes, Path, PathRule
 from backup.syncer import SyncConfig, Syncer
-from backup.utils import parser
 
 from .entry import Entry
 
@@ -22,7 +21,8 @@ class CacheScanner:
     @property
     def config(self) -> SyncConfig:
         return SyncConfig(
-            source=self.backup_config.source, dest=self.backup_config.cache
+            source=self.backup_config.source,
+            dest=self.backup_config.cache,
         )
 
     def calculate_changes(self, *, reverse: bool = False) -> Changes:
@@ -34,7 +34,8 @@ class CacheScanner:
         ]
         return (
             Syncer(self.config.with_paths(paths)).capture_status(
-                reverse=reverse, is_cache=True
+                reverse=reverse,
+                is_cache=True,
             )
             if paths
             else Changes()

@@ -1,15 +1,12 @@
 from __future__ import annotations
-from backup.syncer import SyncConfig
 
-from backup.models import BackupConfig, Entries
 import typing
 from dataclasses import dataclass, field
-from functools import cached_property
 from typing import Any
 
 from typing_extensions import Self
 
-from backup.models import Path, PathRule
+from backup.models import Entries, Path, PathRule
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator  # pragma: nocover
@@ -69,7 +66,7 @@ class RuleConfig:
 @dataclass
 class RuleParser:
     root: Path
-    sub_path: Path = Path("")
+    sub_path: Path = field(default_factory=lambda: Path(""))
     includes: Entries = field(default_factory=list)
     excludes: Entries = field(default_factory=list)
 
@@ -94,7 +91,9 @@ class RuleParser:
             yield PathRule(Path(), include=False)
 
     def generate_rules(
-        self, include: RuleConfig, exclude: RuleConfig
+        self,
+        include: RuleConfig,
+        exclude: RuleConfig,
     ) -> Iterator[PathRule]:
         sub_names = include.sub_rules.keys() | exclude.sub_rules.keys()
         for name in sub_names:

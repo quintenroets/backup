@@ -1,6 +1,5 @@
-from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Any, TypeVar
+from typing import Any
 
 from package_utils.dataclasses.mixins import SerializationMixin
 

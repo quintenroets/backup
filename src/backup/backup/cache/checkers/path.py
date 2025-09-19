@@ -2,12 +2,12 @@ import itertools
 import os
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
 import cli
 
 from backup.context import context
-from backup.models import Path, BackupConfig
+from backup.models import BackupConfig, Path
 
 
 def extract_hash_path(path: Path, config: BackupConfig) -> Path:

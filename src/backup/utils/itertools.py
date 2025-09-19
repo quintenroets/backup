@@ -1,33 +1,32 @@
 from collections.abc import Iterable, Iterator
 from itertools import groupby
-from typing import Any, TypeVar
+from typing import TypeVar
 
 import cli
 
 from backup.context import context
 
-K = TypeVar("K")
-V = TypeVar("V")
+T = TypeVar("T")
 
 
-def count_items(items: Iterator[Any]) -> Iterator[Any]:
+def count_items(items: Iterator[T]) -> Iterator[T]:
     number_of_entries = 0
-    for number_of_entries, item in enumerate(items, start=1):
+    for number_of_entries, item in enumerate(items, start=1):  # noqa: B007
         yield item
     context.storage.number_of_paths = number_of_entries
 
 
-def extract_pairs(sources: Iterable[Iterator[Any]]):
+def extract_pairs(sources: Iterable[Iterator[T]]) -> Iterator[int, T]:
     for i, values in enumerate(sources):
         for value in values:
             yield i, value
 
 
 def aggregate_iterators_with_progress(
-    sources: Iterable[Iterator[Any]],
+    sources: Iterable[Iterator[T]],
     description: str,
     unit: str,
-) -> Iterator[Iterator[V]]:
+) -> Iterator[Iterator[T]]:
     pairs = cli.track_progress(
         count_items(extract_pairs(sources)),
         description=description,

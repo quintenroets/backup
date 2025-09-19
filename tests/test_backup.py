@@ -1,8 +1,7 @@
 from unittest.mock import patch
 
-
 from backup.backup import Backup
-from backup.models import Path, BackupConfig
+from backup.models import BackupConfig, Path
 
 
 def test_status(mocked_backup_with_filled_content: Backup) -> None:
@@ -40,7 +39,8 @@ def test_pull(
 
 
 def test_pull_with_sub_path(
-    mocked_backup_with_filled_content: Backup, test_backup_config: BackupConfig
+    mocked_backup_with_filled_content: Backup,
+    test_backup_config: BackupConfig,
 ) -> None:
     verify_pull(test_backup_config, backup=mocked_backup_with_filled_content)
 

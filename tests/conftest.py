@@ -14,9 +14,9 @@ from package_utils.storage import CachedFileContent
 from backup.backup import Backup
 from backup.context import context as context_
 from backup.context.context import Context
-from backup.models import Path, BackupConfig
+from backup.models import BackupConfig, Path
 from backup.storage import Storage
-from backup.syncer import Syncer, SyncConfig
+from backup.syncer import SyncConfig, Syncer
 from backup.utils.setup import check_setup
 from tests import mocks
 from tests.mocks.methods import mocked_method
@@ -87,7 +87,7 @@ def mock_under_test_root(
 
 
 @pytest.fixture
-def mocked_backup() -> Iterator[Backup]:  # noqa: ARG001
+def mocked_backup() -> Iterator[Backup]:
     directories = [Path.tempdir() for _ in range(2)]
     context_managers = list(generate_context_managers(directories))
     relative_cache_path = Path.backup_cache.relative_to(Path.backup_source)
@@ -104,7 +104,8 @@ def mocked_backup() -> Iterator[Backup]:  # noqa: ARG001
 
 @pytest.fixture
 def mocked_backup_with_filled_content(
-    mocked_syncer_with_filled_content: Syncer, mocked_backup
+    mocked_syncer_with_filled_content: Syncer,  # noqa: ARG001
+    mocked_backup: Backup,
 ) -> Backup:
     return mocked_backup
 
@@ -134,7 +135,7 @@ def mocked_storage(test_context: Context) -> Iterator[None]:
 
 
 @pytest.fixture
-def mocked_syncer(test_backup_config: BackupConfig) -> Syncer:  # noqa: ARG001
+def mocked_syncer(test_backup_config: BackupConfig) -> Syncer:
     config = SyncConfig(source=test_backup_config.source, dest=test_backup_config.dest)
     return Syncer(config)
 

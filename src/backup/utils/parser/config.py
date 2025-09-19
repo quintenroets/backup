@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from backup.context import context
 from backup.models import (
@@ -26,13 +26,10 @@ class EntryParser:
         self.cache = Path(config.cache)
         self.cache.mkdir(parents=True, exist_ok=True)
 
-    def parse_entry(self, entry: SerializedEntryConfig) -> BackupConfig | None:
+    def parse_entry(self, entry: SerializedEntryConfig) -> BackupConfig:
         source = self.source / Path(entry.source)
         if source == Path("/") / "HOME":
             source = Path.HOME
-        return self._parse_entry(entry, source) if source.exists() else None
-
-    def _parse_entry(self, entry: SerializedEntryConfig, source: Path) -> BackupConfig:
         dest = Path(entry.dest)
         if dest.name == "__PROFILE__":
             dest = dest.with_name(context.storage.active_profile)
@@ -57,10 +54,10 @@ class EntryParser:
         )
 
 
-def load_config() -> list[dict[str, Any]]:
+def load_config() -> dict[str, Any]:
     if not Path.config.exists():
         Syncer(SyncConfig(directory=Path.config)).capture_pull()
-    return context.storage.backup_config
+    return cast("dict[str, Any]", context.storage.backup_config)
 
 
 def parse_config(config_dict: dict[str, Any]) -> Iterator[BackupConfig]:
@@ -68,7 +65,10 @@ def parse_config(config_dict: dict[str, Any]) -> Iterator[BackupConfig]:
     parser = EntryParser(config)
     for entry in config.syncs:
         parsed_entry = parser.parse_entry(entry)
-        if any(rule.include for rule in parsed_entry.rules):
+        should_use = parsed_entry.source.exists() and any(
+            rule.include for rule in parsed_entry.rules
+        )
+        if should_use:
             yield parsed_entry
 
 
@@ -88,7 +88,10 @@ def extract_sub_entries(entries: Entries, path: Path) -> Entries:
     return entries
 
 
-def generate_sub_entries(entries: Entries, path: Path) -> Entries:
+def generate_sub_entries(
+    entries: Entries,
+    path: Path,
+) -> Iterator[str | dict[str, Any]]:
     name = path.parts[0]
     for entry in entries:
         entry_name = next(iter(entry.keys())) if isinstance(entry, dict) else entry

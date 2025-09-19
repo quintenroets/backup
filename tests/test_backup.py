@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from backup.backup import Backup
-from backup.models import BackupConfig, Path
+from backup.models import BackupConfig, Path, PathRule
 
 
 def test_status(mocked_backup_with_filled_content: Backup) -> None:
@@ -80,5 +80,7 @@ def test_detailed_checker_hash_path(mocked_backup: Backup) -> None:
 def test_after_pull(mocked_backup: Backup) -> None:
     Path.selected_resume_pdf.touch()
     path = Path.selected_resume_pdf.relative_to(mocked_backup.backup_configs[0].source)
-    mocked_backup.paths = [path]
+    rule = PathRule(path, include=True)
+    mocked_backup.backup_configs[0].rules.append(rule)
     mocked_backup.pull()
+    mocked_backup.backup_configs[0].rules.pop(-1)

@@ -16,7 +16,7 @@ def count_items(items: Iterator[T]) -> Iterator[T]:
     context.storage.number_of_paths = number_of_entries
 
 
-def extract_pairs(sources: Iterable[Iterator[T]]) -> Iterator[int, T]:
+def extract_pairs(sources: Iterable[Iterator[T]]) -> Iterator[tuple[int, T]]:
     for i, values in enumerate(sources):
         for value in values:
             yield i, value

@@ -20,7 +20,7 @@ class RuleConfig:
     VERSION_KEYWORD: str = field(repr=False, default="__VERSION__")
 
     @classmethod
-    def from_list(cls, items: list[dict[Any, Any]] | None, root: Path) -> Self:
+    def from_list(cls, items: Entries, root: Path) -> Self:
         rules = cls()
         if items is not None:
             for item in items:

@@ -17,8 +17,7 @@ from .sync_config import SyncConfig
 class Syncer:
     config: SyncConfig = field(default_factory=lambda: SyncConfig())
 
-    @classmethod
-    def __post_init__(cls) -> None:
+    def __post_init__(self) -> None:
         setup.check_setup()
 
     def cli_runner(

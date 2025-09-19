@@ -2,7 +2,7 @@ import itertools
 import os
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import cli
 
@@ -12,7 +12,7 @@ from backup.models import BackupConfig, Path
 
 def extract_hash_path(path: Path, config: BackupConfig) -> Path:
     root = config.cache if path.is_relative_to(config.cache) else config.source
-    return root / Path.hashes.relative_to(Path.backup_source) / path.name
+    return cast("Path", root / Path.hashes.relative_to(Path.backup_source) / path.name)
 
 
 @dataclass

@@ -49,7 +49,7 @@ class CliRunner:
     def generate_command_parts(
         self,
         filters_path: Path,
-        *args: tuple[CommandItem],
+        *args: CommandItem,
     ) -> Iterator[CommandItem]:
         if self.root:
             yield "-E"

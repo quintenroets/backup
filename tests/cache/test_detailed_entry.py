@@ -36,3 +36,4 @@ def test_detailed_checker_hash_path(
     assert entry.only_volatile_content_changed()
     mocked_run.assert_called()
     mocked_xattr.assert_called()
+    assert len(list(entry.get_paths())) == 2

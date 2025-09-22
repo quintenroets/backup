@@ -4,6 +4,7 @@ import pytest
 
 from backup.models import Path
 from backup.utils import check_setup
+from backup.utils.parser.config import load_config
 
 
 @pytest.fixture
@@ -36,8 +37,20 @@ def restore_rclone_config_path(
     yield from restore_and_check(Path.rclone_config.parent)
 
 
+@pytest.fixture
+def restore_config_path(
+    restore_and_check: Callable[[Path], Iterator[None]],
+) -> Iterator[None]:
+    yield from restore_and_check(Path.config)
+
+
 @pytest.mark.usefixtures("restore_rclone_config_path")
 def test_syncer_config_download() -> None:
     Path.rclone_config.unlink(missing_ok=True)
     check_setup()
     assert Path.rclone_config.lines[0] == "# Encrypted rclone configuration File"
+
+
+@pytest.mark.usefixtures("restore_config_path")
+def test_backup_config_download() -> None:
+    load_config()

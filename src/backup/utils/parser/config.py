@@ -79,34 +79,3 @@ def remove_browser(includes: list[str | dict[str, Any]], browser_name: str) -> N
             remove_browser(value, browser_name)
             if browser_name in key:
                 includes.remove(include)
-
-
-def extract_sub_entries(entries: Entries, path: Path) -> Entries:
-    while path.parts and entries:
-        entries = list(generate_sub_entries(entries, path))
-        path = path.relative_to(Path(path.parts[0]))
-    return entries
-
-
-def generate_sub_entries(
-    entries: Entries,
-    path: Path,
-) -> Iterator[str | dict[str, Any]]:
-    name = path.parts[0]
-    for entry in entries:
-        entry_name = next(iter(entry.keys())) if isinstance(entry, dict) else entry
-        if entry_name == ".":
-            entry_name = ""
-        entry_path = Path(entry_name)
-        if not entry_name or entry_path.parts[0] == name:
-            relative_name = (
-                str(entry_path.relative_to(name)) if entry_name else entry_name
-            )
-            if isinstance(entry, str):
-                yield relative_name
-            else:
-                sub_entries = next(iter(entry.values()))
-                if entry_name == name:
-                    yield from sub_entries
-                else:
-                    yield {relative_name: sub_entries}

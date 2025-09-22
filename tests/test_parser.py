@@ -1,6 +1,10 @@
+from unittest.mock import patch
+
 import pytest
 
+from backup.context import Context
 from backup.models import Path
+from backup.utils.parser.config import parse_config
 from backup.utils.parser.rules import RuleParser
 
 
@@ -11,3 +15,16 @@ def test_parser() -> None:
     parsed_paths = list(rules.get_paths())
     expected_path = Path("a/b")
     assert expected_path in parsed_paths
+
+
+def test_config_parser(test_context: Context) -> None:
+    sync = {
+        "includes": [{".config": ["git", {"chromium": ["Default"]}]}],
+        "source": "/HOME",
+        "dest": "/__PROFILE__",
+    }
+    config = {"syncs": [sync]}
+    sub_check_path = Path.HOME / ".config"
+    with patch.object(test_context, "sub_check_path", sub_check_path):
+        parsed_config = list(parse_config(config))
+    assert parsed_config

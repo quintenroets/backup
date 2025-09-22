@@ -69,7 +69,6 @@ def generate_context_managers(
 ) -> Iterator[AbstractContextManager[Any]]:
     yield from directories
     root = directories[0]
-    yield mock_under_test_root(root=root, path=Path.config)
     yield mock_under_test_root(root=root, path=Path.resume)
     yield patch("cli.track_progress", new=lambda *args, **_: args[0])
 
@@ -136,7 +135,11 @@ def mocked_storage(test_context: Context) -> Iterator[None]:
 
 @pytest.fixture
 def mocked_syncer(test_backup_config: BackupConfig) -> Syncer:
-    config = SyncConfig(source=test_backup_config.source, dest=test_backup_config.dest)
+    config = SyncConfig(
+        source=test_backup_config.source,
+        dest=test_backup_config.dest,
+        sub_check_path=test_backup_config.source,
+    )
     return Syncer(config)
 
 

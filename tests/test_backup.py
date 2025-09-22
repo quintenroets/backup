@@ -16,6 +16,12 @@ def test_push(mocked_backup_with_filled_content: Backup) -> None:
     verify_push(mocked_backup_with_filled_content)
 
 
+def test_push_with_reversed_cache(mocked_backup_with_filled_content: Backup) -> None:
+    config = mocked_backup_with_filled_content.backup_configs[0]
+    config.source, config.cache = config.cache, config.source
+    verify_push(mocked_backup_with_filled_content)
+
+
 def test_push_with_indent(mocked_backup_with_filled_content: Backup) -> None:
     directory = (
         mocked_backup_with_filled_content.backup_configs[0].source / "sub" / "directory"

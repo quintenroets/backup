@@ -135,3 +135,12 @@ def test_pull_with_specified_paths(
     syncer.pull()
     assert not mocked_syncer_with_filled_content.capture_status().paths
     assert syncer.config.dest.content_hash == dest_hash
+
+
+def test_overlapping_sub_path(mocked_syncer: Syncer) -> None:
+    source = mocked_syncer.config.source
+    config = SyncConfig(
+        source=mocked_syncer.config.source,
+        dest=source / "sub_path" / source.name,
+    )
+    assert config.overlapping_sub_path is not None

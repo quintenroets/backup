@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import cast
 
 import cli
 from typing_extensions import Self
@@ -66,9 +66,3 @@ def calculate_diff(
     if color:
         diff_command = *diff_command, "--color=always"
     return cli.capture_output_lines(*diff_command, check=False)[2 : 2 + max_lines]
-
-
-def run_diff(*args: Any, **kwargs: Any) -> None:
-    diff_lines = calculate_diff(*args, **kwargs)
-    message = "\n".join(diff_lines)
-    cli.console.print(message)

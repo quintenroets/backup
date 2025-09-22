@@ -30,16 +30,8 @@ class SyncConfig:
         return next(self.generate_overlapping_sub_paths(), None)
 
     def generate_overlapping_sub_paths(self) -> Iterator[Path]:
-        yield from self.generate_overlapping_sub_path(self.source, self.dest)
-        yield from self.generate_overlapping_sub_path(self.dest, self.source)
-
-    def generate_overlapping_sub_path(self, source: Path, dest: Path) -> Iterator[Path]:
-        if source.is_relative_to(dest):
-            path = source.relative_to(dest)
-            while path.name == dest.name:
-                path = path.parent
-                dest = dest.parent
-            yield path
+        yield from generate_overlapping_sub_path(self.source, self.dest)
+        yield from generate_overlapping_sub_path(self.dest, self.source)
 
     def with_paths(self, paths: Iterable[Path]) -> "SyncConfig":
         return SyncConfig(
@@ -50,11 +42,11 @@ class SyncConfig:
             paths=list(paths),
         )
 
-    def with_dest_root(self, dest: Path) -> "SyncConfig":
-        return SyncConfig(
-            source=self.source,
-            dest=dest / self.dest,
-            sub_check_path=self.sub_check_path,
-            options=self.options,
-            paths=self.paths,
-        )
+
+def generate_overlapping_sub_path(source: Path, dest: Path) -> Iterator[Path]:
+    if source.is_relative_to(dest):
+        path = source.relative_to(dest)
+        while path.name == dest.name:
+            path = path.parent
+            dest = dest.parent
+        yield path

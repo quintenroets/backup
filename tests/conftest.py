@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Any
+from typing import Any, cast
 from unittest.mock import PropertyMock, patch
 
 import cli
@@ -129,7 +129,7 @@ def mocked_storage(test_context: Context) -> Iterator[None]:
     ]
     patched_storage = patch.object(test_context, "storage", new_callable=mock_storage)
     patches = [patched_storage, *patched_cli_methods, *patched_methods]
-    with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:  # type: ignore[attr-defined]
+    with ContextList(cast("list[AbstractContextManager[Any]]", patches)):
         yield None
 
 

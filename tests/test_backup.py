@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import pytest
+
 from backup.backup import Backup
 from backup.models import BackupConfig, Path, PathRule
 
@@ -12,14 +14,32 @@ def test_empty_push(mocked_backup: Backup) -> None:
     mocked_backup.push()
 
 
+@pytest.fixture
+def mocked_backup_with_include_path(
+    mocked_backup_with_filled_content: Backup,
+) -> Backup:
+    mocked_backup_with_filled_content.backup_configs[0].rules.append(
+        PathRule(Path("0.txt"), include=True),
+    )
+    return mocked_backup_with_filled_content
+
+
 def test_push(mocked_backup_with_filled_content: Backup) -> None:
     verify_push(mocked_backup_with_filled_content)
 
 
+def test_push_with_include_path(mocked_backup_with_include_path: Backup) -> None:
+    verify_push(mocked_backup_with_include_path)
+
+
 def test_push_with_reversed_cache(mocked_backup_with_filled_content: Backup) -> None:
-    config = mocked_backup_with_filled_content.backup_configs[0]
-    config.source, config.cache = config.cache, config.source
-    verify_push(mocked_backup_with_filled_content)
+    verify_push(mocked_backup_with_filled_content, reverse_cache=True)
+
+
+def test_push_with_reversed_cache_and_include_path(
+    mocked_backup_with_include_path: Backup,
+) -> None:
+    verify_push(mocked_backup_with_include_path, reverse_cache=True)
 
 
 def test_push_with_indent(mocked_backup_with_filled_content: Backup) -> None:
@@ -51,7 +71,10 @@ def test_pull_with_sub_path(
     verify_pull(test_backup_config, backup=mocked_backup_with_filled_content)
 
 
-def verify_push(backup: Backup) -> None:
+def verify_push(backup: Backup, *, reverse_cache: bool = False) -> None:
+    if reverse_cache:
+        config = backup.backup_configs[0]
+        config.source, config.cache = config.cache, config.source
     backup.push()
     backup.push()
 

@@ -17,14 +17,23 @@ def test_parser() -> None:
     assert expected_path in parsed_paths
 
 
-def test_config_parser(test_context: Context) -> None:
+def test_config_parser() -> None:
+    verify_config_parser()
+
+
+def test_config_parser_with_sub_check_path(test_context: Context) -> None:
+    sub_check_path = Path.HOME / ".config"
+    with patch.object(test_context, "sub_check_path", sub_check_path):
+        verify_config_parser()
+
+
+def verify_config_parser() -> None:
     sync = {
         "includes": [{".config": ["git", {"chromium": ["Default"]}]}],
+        "excludes": [""],
         "source": "/HOME",
         "dest": "/__PROFILE__",
     }
     config = {"syncs": [sync]}
-    sub_check_path = Path.HOME / ".config"
-    with patch.object(test_context, "sub_check_path", sub_check_path):
-        parsed_config = list(parse_config(config))
+    parsed_config = list(parse_config(config))
     assert parsed_config

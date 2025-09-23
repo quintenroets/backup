@@ -38,7 +38,7 @@ def test_status(mocked_syncer_with_filled_content: Syncer) -> None:
 
 
 def capture_changes(syncer: Syncer) -> set[Change]:
-    status = syncer.capture_status(quiet=True)
+    status = syncer.capture_status(quiet=True, is_cache=True)
     return {Change(change.path, change.type) for change in status}
 
 
@@ -47,7 +47,7 @@ def test_push(mocked_syncer_with_filled_content: Syncer) -> None:
     hash_value = syncer.config.source.content_hash
     syncer.capture_push()
     syncer.push()
-    assert not syncer.capture_status().paths
+    assert_no_differences(syncer)
     assert syncer.config.source.content_hash == hash_value
 
 
@@ -56,7 +56,7 @@ def test_pull(mocked_syncer_with_filled_content: Syncer) -> None:
     hash_value = syncer.config.dest.content_hash
     syncer.capture_pull()
     syncer.pull()
-    assert not syncer.capture_status().paths
+    assert_no_differences(syncer)
     assert syncer.config.dest.content_hash == hash_value
 
 
@@ -71,11 +71,8 @@ def test_ls(mocked_syncer_with_filled_content: Syncer) -> None:
 def test_single_file_copy(mocked_syncer_with_filled_content: Syncer) -> None:
     syncer = mocked_syncer_with_filled_content
     path = next(syncer.config.source.iterdir())
-    syncer.capture_output(
-        "copyto",
-        path,
-        syncer.config.dest / path.relative_to(syncer.config.source),
-    )
+    dest = syncer.config.dest / path.relative_to(syncer.config.source)
+    syncer.capture_output("copyto", path, dest)
 
 
 def test_all_options(mocked_syncer_with_filled_content: Syncer) -> None:
@@ -90,7 +87,7 @@ def test_show_diff(mocked_syncer_with_filled_content: Syncer) -> None:
     (syncer.config.source / "0.txt").lines = ["same", "different"]
     (syncer.config.dest / "0.txt").lines = ["same", "different2"]
     context.options.show_file_diffs = True
-    changes = syncer.capture_status()
+    changes = syncer.capture_status(quiet=True, is_cache=True)
     changes.ask_confirm(message="message", show_diff=True)
     changes.changes[0].print()
     context.options.show_file_diffs = False
@@ -122,18 +119,21 @@ def test_pull_to_root_source(mocked_syncer_with_root_dest: Syncer) -> None:
     syncer = Syncer(config)
     dest_hash = syncer.config.dest.content_hash
     syncer.pull()
-    assert not syncer.capture_status().paths
+    assert_no_differences(syncer)
     assert syncer.config.dest.content_hash == dest_hash
 
 
 def test_pull_with_specified_paths(
     mocked_syncer_with_filled_content: Syncer,
 ) -> None:
-    paths = mocked_syncer_with_filled_content.capture_status().paths
+    paths = mocked_syncer_with_filled_content.capture_status(
+        quiet=True,
+        is_cache=True,
+    ).paths
     syncer = Syncer(mocked_syncer_with_filled_content.config.with_paths(paths))
     dest_hash = syncer.config.dest.content_hash
     syncer.pull()
-    assert not mocked_syncer_with_filled_content.capture_status().paths
+    assert_no_differences(mocked_syncer_with_filled_content)
     assert syncer.config.dest.content_hash == dest_hash
 
 
@@ -144,3 +144,7 @@ def test_overlapping_sub_path(mocked_syncer: Syncer) -> None:
         dest=source / "sub_path" / source.name,
     )
     assert config.overlapping_sub_path is not None
+
+
+def assert_no_differences(syncer: Syncer) -> None:
+    assert not syncer.capture_status(quiet=True, is_cache=True).paths

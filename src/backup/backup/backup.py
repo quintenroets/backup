@@ -52,13 +52,12 @@ class Backup:
             and exporter.export_resume()
         )
         if should_upload_resume:
-            config = SyncConfig(path=Path.main_resume_pdf)
             with cli.status("Uploading new resume pdf"):
-                Syncer(config).capture_push()
+                Syncer(SyncConfig(path=Path.main_resume_pdf)).capture_push()
 
     def contains_change(self, path: Path, changes: list[Changes]) -> bool:
         changed = False
-        for change, config in zip(changes, self.backup_configs, strict=False):
+        for change, config in zip(changes, self.backup_configs, strict=True):
             if path.is_relative_to(config.source):
                 relative_path = path.relative_to(config.source)
                 changed |= any(

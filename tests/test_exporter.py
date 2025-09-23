@@ -1,21 +1,22 @@
 from typing import cast
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from backup.models import Path
 from backup.syncer import Syncer
 from backup.utils import exporter
 
 
-def create_empty_pdf(self: Syncer) -> None:
-    path = self.config.source / cast("Path", self.config.path)
+def create_empty_pdf(syncer: Syncer) -> None:
+    path = syncer.config.source / cast("Path", syncer.config.path)
     path.touch()
+
+
+def add_mocked_document() -> None:
+    Path.selected_resume_pdf.with_suffix(".docx").touch()
 
 
 @patch("xattr.xattr.set")
 @patch.object(Syncer, "export_pdfs", autospec=True)
-@pytest.mark.usefixtures("test_context")
 def test_export(mocked_export: MagicMock, mocked_xattr: MagicMock) -> None:
     mocked_export.side_effect = create_empty_pdf
     add_mocked_document()
@@ -23,10 +24,6 @@ def test_export(mocked_export: MagicMock, mocked_xattr: MagicMock) -> None:
     for path in Path.resume.rglob("*.docx"):
         assert path.with_suffix(".pdf").mtime == path.mtime
     mocked_xattr.assert_called()
-
-
-def add_mocked_document() -> None:
-    Path.selected_resume_pdf.with_suffix(".docx").touch()
 
 
 @patch("cli.run")

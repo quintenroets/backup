@@ -4,6 +4,7 @@ import pytest
 
 from backup.backup import Backup
 from backup.models import BackupConfig, Path, PathRule
+from backup.syncer import Syncer
 
 
 def test_status(mocked_backup_with_filled_content: Backup) -> None:
@@ -108,8 +109,14 @@ def test_detailed_checker_hash_path(mocked_backup: Backup) -> None:
 
 def test_after_pull(mocked_backup: Backup) -> None:
     Path.selected_resume_pdf.touch()
-    path = Path.selected_resume_pdf.relative_to(mocked_backup.backup_configs[0].source)
-    rule = PathRule(path, include=True)
-    mocked_backup.backup_configs[0].rules.append(rule)
-    mocked_backup.pull()
-    mocked_backup.backup_configs[0].rules.pop(-1)
+    config = mocked_backup.backup_configs[0]
+    path = Path.selected_resume_pdf.relative_to(config.source)
+    config.rules.append(PathRule(path, include=True))
+
+    with (
+        patch("backup.utils.exporter.export_resume") as patched_export,
+        patch.object(Syncer, "capture_push", autospec=True) as patched_push,
+    ):
+        mocked_backup.pull()
+    patched_export.assert_called_once()
+    patched_push.assert_called_once()

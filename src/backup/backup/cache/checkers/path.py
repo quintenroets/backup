@@ -12,7 +12,7 @@ from backup.models import BackupConfig, Path
 
 def extract_hash_path(path: Path, config: BackupConfig) -> Path:
     root = config.cache if path.is_relative_to(config.cache) else config.source
-    return cast("Path", root / Path.hashes.relative_to(Path.backup_source) / path.name)
+    return cast("Path", root / Path.hashes.relative_to(config.source) / path.name)
 
 
 @dataclass

@@ -94,12 +94,6 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def syncer_command_config(cls) -> Self:
-        path = cls.config / "syncer_commands.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
     def ignore_names(cls) -> Self:
         path = cls.config / "ignore_names.yaml"
         return cast("Self", path)

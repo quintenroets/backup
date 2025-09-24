@@ -8,7 +8,7 @@ from backup.context import context
 from backup.models import BackupConfig, Changes
 from backup.utils.itertools import aggregate_iterators_with_progress
 
-from .cache.cache_scanner import CacheScanner
+from .cache import CacheScanner
 
 
 @dataclass
@@ -39,7 +39,7 @@ class ChangeScanner:
             description="Checking",
             unit="Files",
         )
-        for scanner, entries_ in zip(scanners, entries, strict=False):
+        for scanner, entries_ in zip(scanners, entries, strict=True):
             scanner.entries = set(entries_)
             yield scanner.calculate_changes(reverse=reverse)
 

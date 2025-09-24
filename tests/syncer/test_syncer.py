@@ -16,16 +16,14 @@ def test_malformed_filters_indicated(mocked_syncer: Syncer) -> None:
         mocked_syncer.capture_status()
 
 
-@pytest.mark.parametrize("syncer_class", [Syncer])
-def test_setup_trigger(syncer_class: type[Syncer]) -> None:
+def test_setup_trigger() -> None:
     with patch("backup.utils.setup.check_setup") as mocked_setup:
-        syncer_class()
+        Syncer()
         mocked_setup.assert_called_once()
 
 
 def test_syncer_command() -> None:
-    syncer = Syncer()
-    syncer.run("version")
+    Syncer().run("version")
 
 
 def test_status(mocked_syncer_with_filled_content: Syncer) -> None:

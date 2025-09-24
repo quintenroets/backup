@@ -19,7 +19,7 @@ class CacheScanner:
     entries: set[Entry] = field(default_factory=set)
 
     @property
-    def config(self) -> SyncConfig:
+    def sync_config(self) -> SyncConfig:
         return SyncConfig(
             source=self.backup_config.source,
             dest=self.backup_config.cache,
@@ -33,7 +33,7 @@ class CacheScanner:
             if entry.is_changed()
         ]
         return (
-            Syncer(self.config.with_paths(paths)).capture_status(
+            Syncer(self.sync_config.with_paths(paths)).capture_status(
                 reverse=reverse,
                 is_cache=True,
             )
@@ -43,8 +43,8 @@ class CacheScanner:
 
     def generate_entries(self) -> Iterator[Entry]:
         for rule in self.generate_rules():
-            source_path = self.config.source / rule.path
-            dest_path = self.config.dest / rule.path
+            source_path = self.sync_config.source / rule.path
+            dest_path = self.sync_config.dest / rule.path
             if rule.include:
                 is_file = source_path.is_file() or dest_path.is_file()
                 if is_file:
@@ -63,8 +63,8 @@ class CacheScanner:
             self.visited.add(dest_path)
 
     def generate_rules(self) -> Iterator[PathRule]:
-        if self.config.overlapping_sub_path is not None:
-            yield PathRule(self.config.overlapping_sub_path, include=False)
+        if self.sync_config.overlapping_sub_path is not None:
+            yield PathRule(self.sync_config.overlapping_sub_path, include=False)
         yield from self.backup_config.rules
 
     def create_entry(self, **kwargs: Any) -> Entry:

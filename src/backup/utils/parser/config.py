@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 from backup.context import context
 from backup.models import (
@@ -11,11 +11,6 @@ from backup.models import (
 from backup.syncer import SyncConfig, Syncer
 
 from .rules import RuleParser
-
-Entries = list[str | dict[str, "Entries"] | Any]
-
-
-T = TypeVar("T")
 
 
 class EntryParser:

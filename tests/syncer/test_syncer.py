@@ -8,6 +8,7 @@ import pytest
 from backup.context import context
 from backup.models import Change, ChangeTypes, Path
 from backup.syncer import SyncConfig, Syncer
+from backup.syncer.sync_configs import select_sync_config
 
 
 def test_malformed_filters_indicated(mocked_syncer: Syncer) -> None:
@@ -149,3 +150,7 @@ def test_overlapping_sub_path(mocked_syncer: Syncer) -> None:
 
 def assert_no_differences(syncer: Syncer) -> None:
     assert not syncer.capture_status(quiet=True, is_cache=True).paths
+
+
+def test_select_sync_config(mocked_syncer: Syncer) -> None:
+    select_sync_config(mocked_syncer.config.source)

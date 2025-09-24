@@ -48,9 +48,12 @@ class Syncer:
         return self.capture_push(reverse=True)
 
     def export_pdfs(self) -> str:
+        return self.export_files("pdp")
+
+    def export_files(self, export_format: str) -> str:
         return self.cli_runner(action="copy", reverse=True).capture_output(
             "--drive-export-formats",
-            "pdf",
+            export_format,
         )
 
     def capture_status(
@@ -76,7 +79,7 @@ class Syncer:
         self,
         path: Path | None = None,
     ) -> Iterator[tuple[Path, datetime]]:
-        lines = self.cli_runner().capture_output("lsl", path or self.config.dest)
+        lines = self.capture_output("lsl", path or self.config.dest)
         return extract_paths_with_time(lines)
 
 

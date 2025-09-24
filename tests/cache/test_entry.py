@@ -35,6 +35,7 @@ def test_exported_tag_excluded(entry: Entry) -> None:  # pragma: nocover
 
 
 @test_with_tags
+@pytest.mark.usefixtures("mocked_backup")
 def test_other_tags_included(entry: Entry) -> None:  # pragma: nocover
     entry.source.tag = "anything"
     assert not entry.exclude()

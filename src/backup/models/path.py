@@ -63,17 +63,6 @@ class Path(superpathlib.Path):
             path = path.parent
         return os.access(path, os.W_OK)
 
-    @property
-    def short_notation(self) -> Self:
-        path = cast("Path", self)
-        if not path.is_absolute():
-            untyped_path = Path("/") / path
-            path = cast("Self", untyped_path)
-        short_path = (
-            path.relative_to(Path.HOME) if path.is_relative_to(Path.HOME) else path
-        )
-        return cast("Self", short_path)
-
     @classmethod
     @classproperty
     def source_root(cls) -> Self:

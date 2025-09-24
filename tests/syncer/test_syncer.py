@@ -152,5 +152,5 @@ def assert_no_differences(syncer: Syncer) -> None:
     assert not syncer.capture_status(quiet=True, is_cache=True).paths
 
 
-def test_select_sync_config(syncer: Syncer) -> None:
-    select_sync_config(syncer.config.source)
+def test_select_sync_config(mocked_syncer: Syncer) -> None:
+    select_sync_config(mocked_syncer.config.source)

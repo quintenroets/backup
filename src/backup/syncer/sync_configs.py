@@ -8,5 +8,5 @@ class SyncConfigs:
     cache = SyncConfig(source=Path.backup_source, dest=Path.backup_cache)
 
 
-def extract_sync_config(path: Path) -> SyncConfig:
+def select_sync_config(path: Path) -> SyncConfig:
     return SyncConfigs.home if path.is_relative_to(Path.HOME) else SyncConfig()

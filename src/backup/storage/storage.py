@@ -18,16 +18,8 @@ class Storage:
         Path.ignore_names,
         default=[],
     )
-    includes: CachedFileContent[list[str | dict[str, Any]]] = CachedFileContent(
-        Path.paths_include,
-        default=[],
-    )
-    excludes: CachedFileContent[list[str | dict[str, Any]]] = CachedFileContent(
-        Path.paths_exclude,
-        default=[],
-    )
-    profile_paths: CachedFileContent[list[str]] = CachedFileContent(
-        Path.profile_paths,
+    backup_config: CachedFileContent[list[Any]] = CachedFileContent(
+        Path.backup_config,
         default=[],
     )
     active_profile: CachedFileContent[str] = CachedFileContent(

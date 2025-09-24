@@ -3,14 +3,19 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from backup.context.action import Action
 from backup.context.context import Context
 from backup.main.main import main
 
 
-@patch("backup.backups.backup.Backup.run_action")
-def test_main(mocked_run: MagicMock) -> None:
-    main()
-    mocked_run.assert_called_once()
+def test_main(test_context: Context) -> None:
+    methods = {"push": Action.push, "pull": Action.pull, "status": Action.status}
+    for method_name, action in methods.items():
+        with patch(f"backup.backup.backup.Backup.{method_name}") as mocked_run:
+            test_context.options.action = action
+            main()
+            mocked_run.assert_called_once()
+    test_context.options.action = Action.push
 
 
 @pytest.fixture

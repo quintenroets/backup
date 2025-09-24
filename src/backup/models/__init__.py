@@ -1,3 +1,10 @@
+from .backup_config import (
+    BackupConfig,
+    Entries,
+    PathRule,
+    SerializedBackupConfig,
+    SerializedEntryConfig,
+)
 from .change import Change
 from .change_type import ChangeType, ChangeTypes
 from .changes import Changes

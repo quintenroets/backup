@@ -7,7 +7,7 @@ from backup.cli import entry_point, mount
 
 
 @no_cli_args
-@patch("backup.backups.backup.Backup.run_action")
+@patch("backup.backup.backup.Backup.push")
 def test_entry_point(mocked_run: MagicMock) -> None:
     entry_point.entry_point()
     mocked_run.assert_called_once()

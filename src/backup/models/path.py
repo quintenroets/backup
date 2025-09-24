@@ -63,17 +63,6 @@ class Path(superpathlib.Path):
             path = path.parent
         return os.access(path, os.W_OK)
 
-    @property
-    def short_notation(self) -> Self:
-        path = cast("Path", self)
-        if not path.is_absolute():
-            untyped_path = Path("/") / path
-            path = cast("Self", untyped_path)
-        short_path = (
-            path.relative_to(Path.HOME) if path.is_relative_to(Path.HOME) else path
-        )
-        return cast("Self", short_path)
-
     @classmethod
     @classproperty
     def source_root(cls) -> Self:
@@ -105,12 +94,6 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def rclone_command_config(cls) -> Self:
-        path = cls.config / "rclone_commands.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
     def ignore_names(cls) -> Self:
         path = cls.config / "ignore_names.yaml"
         return cast("Self", path)
@@ -123,26 +106,13 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def paths_include(cls) -> Self:
-        path = cls.config / "include.yaml"
-        return cast("Self", path)
+    def profile_prefix(cls) -> str:
+        return cast("str", cls.profile.yaml or "")
 
     @classmethod
     @classproperty
-    def paths_include_pull(cls) -> Self:
-        path = cls.config / "pull_include.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def paths_exclude(cls) -> Self:
-        path = cls.config / "exclude.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def profile_paths(cls) -> Self:
-        path = cls.config / "profiles.yaml"
+    def backup_config(cls) -> Self:
+        path = cls.config / cls.profile_prefix / "config.yaml"
         return cast("Self", path)
 
     @classmethod
@@ -155,6 +125,12 @@ class Path(superpathlib.Path):
     @classproperty
     def profiles(cls) -> Self:
         path = cls.assets / "profiles"
+        return cast("Self", path)
+
+    @classmethod
+    @classproperty
+    def profile(cls) -> Self:
+        path = cls.config / "profile.yaml"
         return cast("Self", path)
 
     @classmethod

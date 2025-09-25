@@ -43,8 +43,8 @@ class CacheScanner:
 
     def generate_entries(self) -> Iterator[Entry]:
         for rule in self.generate_rules():
-            source_path = self.sync_config.source / rule.path
-            dest_path = self.sync_config.dest / rule.path
+            source_path = Path(self.sync_config.source) / rule.path
+            dest_path = Path(self.sync_config.dest) / rule.path
             if rule.include:
                 is_file = source_path.is_file() or dest_path.is_file()
                 if is_file:
@@ -64,7 +64,7 @@ class CacheScanner:
 
     def generate_rules(self) -> Iterator[PathRule]:
         if self.sync_config.overlapping_sub_path is not None:
-            yield PathRule(self.sync_config.overlapping_sub_path, include=False)
+            yield PathRule(Path(self.sync_config.overlapping_sub_path), include=False)
         yield from self.backup_config.rules
 
     def create_entry(self, **kwargs: Any) -> Entry:

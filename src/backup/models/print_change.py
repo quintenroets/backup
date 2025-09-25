@@ -7,9 +7,9 @@ from functools import cached_property
 from typing import cast
 
 import cli
+from superpathlib import Path
 
 from .change import Change, ChangeType, ChangeTypes
-from .path import Path
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator  # pragma: nocover

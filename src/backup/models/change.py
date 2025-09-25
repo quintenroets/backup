@@ -4,10 +4,11 @@ from dataclasses import dataclass
 from typing import cast
 
 import cli
+from superpathlib import Path
 from typing_extensions import Self
 
 from .change_type import ChangeType, ChangeTypes, parse_change_type
-from .path import Path
+from .path import Path as BackupPath
 
 
 @dataclass(unsafe_hash=True)
@@ -40,7 +41,7 @@ class Change:
     @property
     def skip_print(self) -> bool:
         source = cast("Path", self.source)
-        return (source / self.path).is_relative_to(Path.hashes)
+        return (source / self.path).is_relative_to(BackupPath.hashes)
 
     def print(self) -> None:
         cli.console.print(self.message, end="")

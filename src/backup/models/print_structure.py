@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import cast
 
+from superpathlib import Path
+
 from .change import Change
-from .path import Path
 from .print_change import PrintChange
 
 

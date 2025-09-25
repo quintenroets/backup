@@ -2,14 +2,15 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 
 from cli.commands.commands import CommandItem
+from superpathlib import Path
 
-from backup.models import Path
+from backup.models import Path as BackupPath
 
 
 @dataclass
 class SyncConfig:
-    source: Path = Path.backup_source
-    dest: Path = Path.remote
+    source: Path = BackupPath.backup_source
+    dest: Path = BackupPath.remote
     sub_check_path: Path | None = None
     options: list[CommandItem] = field(default_factory=list)
     filter_rules: list[str] = field(default_factory=list)

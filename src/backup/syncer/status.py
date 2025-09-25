@@ -3,8 +3,9 @@ from dataclasses import dataclass, field
 
 import cli
 from cli.commands.runner import Runner
+from superpathlib import Path
 
-from backup.models import Change, Changes, ChangeTypes, Path
+from backup.models import Change, Changes, ChangeTypes
 from backup.utils import generate_output_lines
 from backup.utils.error_handling import create_malformed_filters_error
 

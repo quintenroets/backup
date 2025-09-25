@@ -2,9 +2,9 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 import cli
+from superpathlib import Path
 
 from .change import Change
-from .path import Path
 from .print_structure import PrintStructure
 
 

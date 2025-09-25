@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from backup.models import Path
+from superpathlib import Path
 
 from .sync_config import SyncConfig
 

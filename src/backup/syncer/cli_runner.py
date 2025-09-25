@@ -4,15 +4,18 @@ import subprocess
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from typing import TypeVar
 
+import superpathlib
 from cli.commands.commands import CommandItem
 from cli.commands.runner import Runner
 
 from backup.context import context
-from backup.models import Path
 
 from .filters import FiltersCreator
 from .sync_config import SyncConfig
+
+Path = TypeVar("Path", bound=superpathlib.Path)
 
 
 @dataclass
@@ -77,10 +80,10 @@ class CliRunner:
             if self.root:
                 yield "--no-update-dir-modtime"
 
-    def create_filters_path(self) -> Path:
+    def create_filters_path(self) -> superpathlib.Path:
         if not self.config.filter_rules:
             FiltersCreator(self.config).create_filters_from_paths()
-        path = Path.tempfile()
+        path = superpathlib.Path.tempfile()
         path.lines = self.config.filter_rules
         return path
 

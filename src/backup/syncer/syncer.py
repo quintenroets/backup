@@ -2,15 +2,20 @@ import subprocess
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import TypeVar
 
+import superpathlib
 from cli.commands.commands import CommandItem
 
-from backup.models import Changes, Path
+from backup.models import Changes
+from backup.models import Path as BackupPath
 from backup.utils import setup
 
 from .cli_runner import CliRunner
 from .status import StatusProcessor
 from .sync_config import SyncConfig
+
+Path = TypeVar("Path", bound=superpathlib.Path)
 
 
 @dataclass
@@ -78,12 +83,12 @@ class Syncer:
     def generate_paths_with_time(
         self,
         path: Path | None = None,
-    ) -> Iterator[tuple[Path, datetime]]:
+    ) -> Iterator[tuple[BackupPath, datetime]]:
         lines = self.capture_output("lsl", path or self.config.dest)
         return extract_paths_with_time(lines)
 
 
-def extract_paths_with_time(lines: str) -> Iterator[tuple[Path, datetime]]:
+def extract_paths_with_time(lines: str) -> Iterator[tuple[BackupPath, datetime]]:
     for line in lines.splitlines():
         if line:
             parts = line.split()
@@ -93,5 +98,5 @@ def extract_paths_with_time(lines: str) -> Iterator[tuple[Path, datetime]]:
                 date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").astimezone(
                     tz=timezone.utc,
                 )
-                path = Path(path_str)
+                path = BackupPath(path_str)
                 yield path, date

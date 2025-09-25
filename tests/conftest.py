@@ -9,6 +9,7 @@ from unittest.mock import PropertyMock, patch
 
 import cli
 import pytest
+import superpathlib
 from package_utils.storage import CachedFileContent
 
 from backup.backup import Backup
@@ -158,6 +159,10 @@ def fill_directories(mocked_syncer: Syncer, content: str = "content") -> None:
         fill(mocked_syncer.config.dest, content2, number=number)
 
 
-def fill(directory: Path, content: str = "content", number: int = 0) -> None:
+def fill(
+    directory: superpathlib.Path,
+    content: str = "content",
+    number: int = 0,
+) -> None:
     path = directory / f"{number}.txt"
     path.text = content

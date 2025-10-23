@@ -21,7 +21,7 @@ def install_rclone() -> None:
 
 
 def download_config_file(path: Path) -> None:
-    file_id = "1apaAlz06Hm37AJLl3CNp3zQoofP7yJu4"
+    file_id = "1tEM8-jM7ms8YLWbFbbNKofRPntbhd0wb"
     url = f"https://docs.google.com/uc?export=download&id={file_id}"
     path.create_parent()
     cli.capture_output("wget --no-check-certificate", url, "-O", path)

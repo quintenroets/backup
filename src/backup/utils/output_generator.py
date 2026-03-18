@@ -1,6 +1,7 @@
 import select
 import subprocess
 from collections.abc import Iterator
+from typing import IO
 
 import cli
 from cli.commands.runner import Runner
@@ -25,7 +26,9 @@ def generate_output_lines(runner: Runner[str]) -> Iterator[str]:
 
 
 def extract_output_lines(process: subprocess.Popen[str]) -> Iterator[tuple[str, bool]]:
-    outputs = [process.stdout, process.stderr]
+    outputs: list[IO[str]] = [
+        f for f in (process.stdout, process.stderr) if f is not None
+    ]
     while outputs:
         readable_outputs, _, _ = select.select(outputs, [], [])
         for output in readable_outputs:

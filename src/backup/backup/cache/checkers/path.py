@@ -57,11 +57,11 @@ class UserPlaceChecker(PathChecker):
     tag_ignore_names: tuple[str, ...] = ("tags", "kdeconnect")
 
     def extract_content(self, path: Path, _: BackupConfig) -> Iterator[str]:
-        from bs4 import BeautifulSoup
+        from bs4 import BeautifulSoup  # noqa: PLC0415
 
         soup = BeautifulSoup(path.text, features="xml")
         for tag in soup.find_all("bookmark"):
-            href = tag.get("href")
+            href = str(tag.get("href") or "")
             if not any(name in href for name in self.tag_ignore_names):
                 yield str(tag)
 
@@ -80,8 +80,8 @@ class RetrievedContentChecker(PathChecker):
         yield content_hash
 
     def calculate_content_hash(self) -> str:
-        import hashlib
-        import json
+        import hashlib  # noqa: PLC0415
+        import json  # noqa: PLC0415
 
         content_generator = self.retrieve_content()
         content = tuple(content_generator)

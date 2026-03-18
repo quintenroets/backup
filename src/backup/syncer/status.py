@@ -14,7 +14,7 @@ from .sync_config import SyncConfig
 
 @dataclass
 class StatusProcessor:
-    config: SyncConfig = field(default_factory=lambda: SyncConfig())
+    config: SyncConfig = field(default_factory=SyncConfig)
     quiet: bool = False
     is_cache: bool = False
 

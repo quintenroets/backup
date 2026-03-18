@@ -38,10 +38,11 @@ class RuleConfig:
         if isinstance(names, str):
             full_path = root / names
             path = full_path.resolve()
-            if not path.is_relative_to(root):  # pragma: no cover
+            resolved_root = root.resolve()
+            if not path.is_relative_to(resolved_root):  # pragma: no cover
                 message = "Currently, only symlinks under the same sub root are allowed"
                 raise ValueError(message)
-            names = str(path.relative_to(root))
+            names = str(path.relative_to(resolved_root))
             names = names.split(RuleConfig.path_separator)
 
         name, *sub_names = names
@@ -56,7 +57,7 @@ class RuleConfig:
     @classmethod
     def parse_name(cls, name: str, root: Path) -> str:
         if cls.VERSION_KEYWORD in name:
-            name_start = name.split(cls.VERSION_KEYWORD)[0]
+            name_start = name.split(cls.VERSION_KEYWORD, maxsplit=1)[0]
             true_paths = list(root.glob(f"{name_start}*"))
             true_paths = sorted(true_paths, key=lambda path: -path.mtime)
             name = true_paths[0].name if true_paths else "__NON_EXISTING__"

@@ -20,7 +20,7 @@ Path = TypeVar("Path", bound=superpathlib.Path)
 
 @dataclass
 class Syncer:
-    config: SyncConfig = field(default_factory=lambda: SyncConfig())
+    config: SyncConfig = field(default_factory=SyncConfig)
 
     def __post_init__(self) -> None:
         setup.check_setup()

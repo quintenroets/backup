@@ -31,7 +31,7 @@ class Path(superpathlib.Path):
         return self.with_suffix(".pdf")
 
     def extract_date(self, *, check_tag: bool = False) -> datetime:
-        from datetime import datetime, timezone
+        from datetime import datetime, timezone  # noqa: PLC0415
 
         mtime = self.mtime
 

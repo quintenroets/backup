@@ -26,9 +26,8 @@ def generate_output_lines(runner: Runner[str]) -> Iterator[str]:
 
 
 def extract_output_lines(process: subprocess.Popen[str]) -> Iterator[tuple[str, bool]]:
-    outputs: list[IO[str]] = [
-        f for f in (process.stdout, process.stderr) if f is not None
-    ]
+    streams = process.stdout, process.stderr
+    outputs: list[IO[str]] = [f for f in streams if f is not None]
     while outputs:
         readable_outputs, _, _ = select.select(outputs, [], [])
         for output in readable_outputs:

@@ -1,6 +1,6 @@
 import subprocess
 from collections.abc import Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import TypeVar
 
@@ -20,7 +20,7 @@ Path = TypeVar("Path", bound=superpathlib.Path)
 
 @dataclass
 class Syncer:
-    config: SyncConfig = field(default_factory=SyncConfig)
+    config: SyncConfig
 
     def __post_init__(self) -> None:
         setup.check_setup()

@@ -3,7 +3,7 @@ from typing import cast
 import cli
 
 from backup.models import Path
-from backup.syncer import SyncConfig, Syncer
+from backup.syncer import Syncer, create_sync_config
 
 
 def export_resume() -> bool:
@@ -23,7 +23,6 @@ def export_resume() -> bool:
 
 def export_path(path: Path) -> None:
     relative_path = path.with_export_suffix.relative_to(Path.backup_source)
-    config = SyncConfig(path=relative_path)
-    Syncer(config).export_pdfs()
+    Syncer(create_sync_config(path=relative_path)).export_pdfs()
     path.with_export_suffix.mtime = path.mtime
     path.with_export_suffix.tag = "exported"

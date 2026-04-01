@@ -8,7 +8,7 @@ from backup.models import (
     SerializedBackupConfig,
     SerializedEntryConfig,
 )
-from backup.syncer import Syncer, create_sync_config
+from backup.syncer import create_syncer
 
 from .rules import RuleParser
 
@@ -57,7 +57,7 @@ class EntryParser:
 
 def load_config() -> dict[str, Any]:
     if not Path.config.exists():
-        Syncer(create_sync_config(directory=Path.config)).capture_pull()
+        create_syncer(directory=Path.config).capture_pull()
     return cast("dict[str, Any]", context.storage.backup_config)
 
 

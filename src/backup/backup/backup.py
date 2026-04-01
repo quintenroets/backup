@@ -7,7 +7,7 @@ import cli
 
 from backup.context import context
 from backup.models import BackupConfig, Changes, Path
-from backup.syncer import SyncConfig, Syncer, create_sync_config
+from backup.syncer import SyncConfig, Syncer, create_syncer
 from backup.utils import exporter
 from backup.utils.parser.config import parse_config
 
@@ -52,7 +52,7 @@ class Backup:
         )
         if should_upload_resume:
             with cli.status("Uploading new resume pdf"):
-                Syncer(create_sync_config(path=Path.main_resume_pdf)).capture_push()
+                create_syncer(path=Path.main_resume_pdf).capture_push()
 
     def generate_contains_change_checks(
         self,

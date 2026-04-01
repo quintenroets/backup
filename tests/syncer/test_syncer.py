@@ -8,7 +8,7 @@ import pytest
 from backup.context import context
 from backup.models import Change, ChangeTypes, Path
 from backup.syncer import SyncConfig, Syncer
-from backup.syncer.sync_configs import create_sync_config
+from backup.syncer.builder import create_syncer
 
 dummy_config = SyncConfig(source=Path("/"), dest=Path("dest:"))
 
@@ -154,5 +154,5 @@ def assert_no_differences(syncer: Syncer) -> None:
     assert not syncer.capture_status(quiet=True, is_cache=True).paths
 
 
-def test_create_sync_config(mocked_syncer: Syncer) -> None:
-    create_sync_config(path=mocked_syncer.config.source)
+def test_create_syncer(mocked_syncer: Syncer) -> None:
+    create_syncer(path=mocked_syncer.config.source)

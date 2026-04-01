@@ -8,9 +8,19 @@ from backup.models import (
     SerializedBackupConfig,
     SerializedEntryConfig,
 )
-from backup.syncer import SyncConfig, Syncer
+from backup.syncer import create_syncer
 
 from .rules import RuleParser
+
+
+def resolve_sub_path(source: Path) -> Path:
+    return (
+        Path("")
+        if context.sub_check_path is None
+        else context.sub_check_path.relative_to(source)
+        if context.sub_check_path.is_relative_to(source)
+        else Path("__no_sub_match__")
+    )
 
 
 class EntryParser:
@@ -30,11 +40,7 @@ class EntryParser:
             dest = dest.with_name(context.storage.active_profile)
         if not context.options.include_browser:
             remove_browser(entry.includes, context.config.browser_name)
-        sub_path = (
-            Path("")
-            if context.sub_check_path is None
-            else context.sub_check_path.relative_to(source)
-        )
+        sub_path = resolve_sub_path(source)
         rules = RuleParser(
             source,
             sub_path,
@@ -51,7 +57,7 @@ class EntryParser:
 
 def load_config() -> dict[str, Any]:
     if not Path.config.exists():
-        Syncer(SyncConfig(directory=Path.config)).capture_pull()
+        create_syncer(directory=Path.config).capture_pull()
     return cast("dict[str, Any]", context.storage.backup_config)
 
 

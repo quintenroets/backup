@@ -4,13 +4,11 @@ from dataclasses import dataclass, field
 from cli.commands.commands import CommandItem
 from superpathlib import Path
 
-from backup.models import Path as BackupPath
-
 
 @dataclass
 class SyncConfig:
-    source: Path = BackupPath.backup_source
-    dest: Path = BackupPath.remote
+    source: Path
+    dest: Path
     sub_check_path: Path | None = None
     options: list[CommandItem] = field(default_factory=list)
     filter_rules: list[str] = field(default_factory=list)

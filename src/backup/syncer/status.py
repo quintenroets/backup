@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import cli
 from cli.commands.runner import Runner
@@ -14,7 +14,7 @@ from .sync_config import SyncConfig
 
 @dataclass
 class StatusProcessor:
-    config: SyncConfig = field(default_factory=SyncConfig)
+    config: SyncConfig
     quiet: bool = False
     is_cache: bool = False
 

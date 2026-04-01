@@ -39,8 +39,8 @@ class CacheSyncer:
     ) -> Iterator[tuple[Path, datetime]]:
         for path, date in pairs:
             cache_path = self.backup_config.cache / path
-            date_matches = cache_path.has_date(date) or cache_path.has_date(date, check_tag=True)
-            if not date_matches:
+            match = cache_path.has_date(date)
+            if not match and not cache_path.has_date(date, check_tag=True):
                 self.handle_cache_mismatch(cache_path, date)
             yield path, date
 

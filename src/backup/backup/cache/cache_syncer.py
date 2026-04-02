@@ -16,12 +16,12 @@ class CacheSyncer:
     date_start: str = "── ["
     date_end: str = "]  /"
 
-    def sync_remote_changes(self) -> None:
+    def sync_from_remote(self) -> None:
         path = str(self.backup_config.dest).split(":")[-1]
         with cli.status(f"Reading remote filesystem at {path}"):
-            self.run_remote_sync()
+            self.update_cache()
 
-    def run_remote_sync(self) -> None:
+    def update_cache(self) -> None:
         filter_rules = list(self.generate_pull_filters())
         config = SyncConfig(
             self.backup_config.cache,

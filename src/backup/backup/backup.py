@@ -42,9 +42,9 @@ class Backup:
         return changes
 
     def pull(self) -> None:
-        if not context.options.no_sync:
+        if not context.options.cache_only:
             for item in self.backup_configs:
-                CacheSyncer(item).sync_remote_changes()
+                CacheSyncer(item).sync_from_remote()
         changes = self.push(reverse=True)
         should_upload_resume = (
             any(self.generate_contains_change_checks(Path.resume, changes))

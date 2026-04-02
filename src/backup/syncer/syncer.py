@@ -95,8 +95,9 @@ def extract_paths_with_time(lines: str) -> Iterator[tuple[BackupPath, datetime]]
             date_str = " ".join(parts[1:3]).split(".")[0]
             path_str = " ".join(parts[3:])
             if path_str:
-                date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").astimezone(
-                    tz=timezone.utc,
-                )
+                date = datetime.strptime(
+                    date_str,
+                    "%Y-%m-%d %H:%M:%S",
+                ).astimezone(timezone.utc)
                 path = BackupPath(path_str)
                 yield path, date

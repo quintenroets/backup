@@ -25,7 +25,7 @@ class ChangeScanner:
             and not context.options.show_file_diffs
             and not self.ask_confirm(changes, reverse=reverse, show_diff=True)
         )
-        return [] if remove_changes else changes
+        return [Changes() for _ in self.backup_configs] if remove_changes else changes
 
     def calculate_changes(
         self,

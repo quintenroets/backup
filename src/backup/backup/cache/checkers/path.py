@@ -69,15 +69,13 @@ class UserPlaceChecker(PathChecker):
 class RetrievedContentChecker(PathChecker):
     def extract_content(self, path: Path, config: BackupConfig) -> Iterator[str]:
         hash_path = extract_hash_path(path, config)
-        # compare generated hash with saved hash
-        content_hash = (
-            hash_path.text
-            if hash_path.is_relative_to(config.cache)
-            else self.calculate_content_hash()
-        )
-        if content_hash != hash_path.text:
-            hash_path.text = content_hash
-        yield content_hash
+        if hash_path.is_relative_to(config.cache):
+            yield hash_path.text
+        else:
+            content_hash = self.calculate_content_hash()
+            if content_hash != hash_path.text:
+                hash_path.text = content_hash
+            yield content_hash
 
     def calculate_content_hash(self) -> str:
         import hashlib  # noqa: PLC0415

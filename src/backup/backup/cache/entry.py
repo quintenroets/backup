@@ -57,10 +57,14 @@ class Entry:
         if only_volatile_content_changed:
             self.update_cached_dest()
         else:
+            self.assign_hash_path()
+        return only_volatile_content_changed
+
+    def assign_hash_path(self) -> None:
+        if Path.hashes.is_relative_to(self.config.source):
             hash_path = extract_hash_path(self.source, self.config)
             if hash_path.exists():
                 self.hash_path = hash_path.relative_to(self.config.source)
-        return only_volatile_content_changed
 
     def relevant_content_unchanged(self) -> bool:
         checker = Checker.checkers[self.relative]

@@ -7,27 +7,18 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-<<<<<<< HEAD
     "beautifulsoup4 >=4.12.2, <5",
     "lxml >=4.9.3, <7",
-    "package-utils[context] >=0.6.4, <1",
-    "powercli >=0.3.0, <1",
-    "PyYAML >=6.0.1, <7",
-    "xattr >=0.10.1, <2",
-=======
     "package-utils[context] >=0.8.3, <1",
     "powercli >=0.4.0, <1",
->>>>>>> template
+    "PyYAML >=6.0.1, <7",
+    "xattr >=0.10.1, <2",
 ]
 
 [project.optional-dependencies]
 dev = [
-<<<<<<< HEAD
     "dirhash >=0.2.1, <1",
-    "package-dev-tools >=0.8.0, <1",
-=======
     "package-dev-tools >=0.8.1, <1",
->>>>>>> template
     "package-dev-utils >=0.1.6, <1",
     "types-beautifulsoup4 >=4.12.0.20240106, <5",
 ]

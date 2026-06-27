@@ -43,8 +43,13 @@ class ContextList(AbstractContextManager[None]):
 @pytest.fixture(scope="session", autouse=True)
 def _rclone_test_config() -> Iterator[None]:
     os.environ.pop("RCLONE_PASSWORD_COMMAND", None)
-    with Path.tempfile() as config_path:
-        os.environ["RCLONE_CONFIG"] = str(config_path)
+    with Path.tempfile() as config_path, Path.tempdir() as remote_directory:
+        config = {
+            "RCLONE_CONFIG": str(config_path),
+            "RCLONE_CONFIG_BACKUPMASTER_TYPE": "alias",
+            "RCLONE_CONFIG_BACKUPMASTER_REMOTE": str(remote_directory),
+        }
+        os.environ.update(config)
         yield
 
 

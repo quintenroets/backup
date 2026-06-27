@@ -54,6 +54,14 @@ def _rclone_test_config() -> Iterator[None]:
 
 
 @pytest.fixture(scope="session", autouse=True)
+def _config_directory() -> Iterator[None]:
+    with Path.tempdir() as config_directory:
+        mocked_config = PropertyMock(return_value=config_directory)
+        with patch.object(Path, "config", new_callable=mocked_config):
+            yield
+
+
+@pytest.fixture(scope="session", autouse=True)
 def test_context() -> Context:
     os.environ["USERNAME"] = (
         "runner" if "GITHUB_ACTIONS" in os.environ else os.getlogin()

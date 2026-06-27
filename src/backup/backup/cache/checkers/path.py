@@ -1,5 +1,4 @@
 import itertools
-import os
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, cast
@@ -126,8 +125,7 @@ class KwalletChecker(RetrievedContentChecker):
 
 class RcloneChecker(RetrievedContentChecker):
     def retrieve_content(self) -> Iterator[str]:
-        env = os.environ | {"RCLONE_CONFIG_PASS": context.secrets.rclone}
-        lines = cli.capture_output_lines("rclone config show", env=env)
+        lines = cli.capture_output_lines("rclone config show", env=context.rclone_env)
         for line in lines:
             if "refresh_token" not in line:
                 yield line

@@ -13,12 +13,11 @@ import superpathlib
 from package_utils.storage import CachedFileContent
 
 from backup.backup import Backup
+from backup.context import Context
 from backup.context import context as context_
-from backup.context.context import Context
 from backup.models import BackupConfig, Path
 from backup.storage import Storage
 from backup.syncer import SyncConfig, Syncer
-from backup.utils.setup import check_setup
 from tests import mocks
 from tests.mocks.methods import mocked_method
 
@@ -41,20 +40,12 @@ class ContextList(AbstractContextManager[None]):
             item.__exit__(exception_type, exception_value, traceback)
 
 
-def provision_directory() -> Iterator[Path]:
-    with Path.tempdir() as path:
-        yield path
-    assert not path.exists()
-
-
-@pytest.fixture
-def directory() -> Iterator[Path]:
-    yield from provision_directory()
-
-
 @pytest.fixture(scope="session", autouse=True)
-def _setup_syncer() -> None:
-    check_setup()
+def _rclone_test_config() -> Iterator[None]:
+    os.environ.pop("RCLONE_PASSWORD_COMMAND", None)
+    with Path.tempfile() as config_path:
+        os.environ["RCLONE_CONFIG"] = str(config_path)
+        yield
 
 
 @pytest.fixture(scope="session", autouse=True)

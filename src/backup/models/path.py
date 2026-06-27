@@ -164,11 +164,5 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def rclone_config(cls) -> Self:
-        path = cls.HOME / ".config" / "rclone" / "rclone.conf"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
     def backup_source(cls) -> Self:
         return cls("/")

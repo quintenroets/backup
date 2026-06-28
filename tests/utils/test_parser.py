@@ -43,7 +43,6 @@ def verify_config_parser() -> None:
         "includes": [{".config": ["git", {"chromium": ["Default"]}]}],
         "excludes": [""],
         "source": "/HOME",
-        "dest": "/__PROFILE__",
     }
     config = {"syncs": [sync]}
     parsed_config = list(parse_config(config))

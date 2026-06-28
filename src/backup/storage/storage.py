@@ -22,7 +22,3 @@ class Storage:
         Path.backup_config,
         default=[],
     )
-    active_profile: CachedFileContent[str] = CachedFileContent(
-        Path.active_profile,
-        default="light",
-    )

@@ -1,7 +1,6 @@
 import fnmatch
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from functools import cached_property
 from typing import Any
 
 from backup.context import context
@@ -75,15 +74,9 @@ class CacheScanner:
             path in self.visited
             or (path / ".git").exists()
             or any(
-                fnmatch.fnmatch(str(path), pattern) for pattern in self.ignore_patterns
+                fnmatch.fnmatch(str(path), pattern)
+                for pattern in context.storage.ignore_patterns
             )
             or path.name in context.storage.ignore_names
             or path.is_symlink()
         )
-
-    @cached_property
-    def ignore_patterns(self) -> list[str]:
-        ignore_patterns = context.storage.ignore_patterns
-        if not context.options.include_browser:
-            ignore_patterns.append(context.config.browser_pattern)
-        return ignore_patterns

@@ -3,8 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from backup.context.action import Action
-from backup.context.context import Context
+from backup.context import Action, Context
 from backup.main.main import main
 
 

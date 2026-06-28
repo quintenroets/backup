@@ -1,5 +1,4 @@
 import itertools
-import os
 import subprocess
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -43,11 +42,8 @@ class CliRunner:
         filters_path = self.create_filters_path()
         command_parts = self.generate_command_parts(filters_path, *args)
         command = tuple(command_parts)
-        env = os.environ | {"RCLONE_CONFIG_PASS": context.secrets.rclone}
-        env.pop("RCLONE_PASSWORD_COMMAND", None)
-        kwargs = {"env": env}
         with filters_path:
-            yield Runner(command, root=self.root, kwargs=kwargs)
+            yield Runner(command, root=self.root, kwargs={"env": context.rclone_env})
 
     def generate_command_parts(
         self,

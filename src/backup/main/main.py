@@ -1,8 +1,7 @@
 import cli
 
 from backup.backup import Backup
-from backup.context import context
-from backup.context.action import Action
+from backup.context import Action, context
 from backup.models import Path
 from backup.utils.parser import load_config
 

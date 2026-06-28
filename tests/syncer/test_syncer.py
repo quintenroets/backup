@@ -1,6 +1,5 @@
 import json
 from collections.abc import Iterator
-from unittest.mock import patch
 
 import cli
 import pytest
@@ -17,12 +16,6 @@ def test_malformed_filters_indicated(mocked_syncer: Syncer) -> None:
     mocked_syncer.config.filter_rules = ["????"]
     with pytest.raises(ValueError, match="Invalid paths:"):
         mocked_syncer.capture_status()
-
-
-def test_setup_trigger() -> None:
-    with patch("backup.utils.setup.check_setup") as mocked_setup:
-        Syncer(dummy_config)
-        mocked_setup.assert_called_once()
 
 
 def test_syncer_command() -> None:

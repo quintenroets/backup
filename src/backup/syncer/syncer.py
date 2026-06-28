@@ -9,7 +9,6 @@ from cli.commands.commands import CommandItem
 
 from backup.models import Changes
 from backup.models import Path as BackupPath
-from backup.utils import setup
 
 from .cli_runner import CliRunner
 from .status import StatusProcessor
@@ -21,9 +20,6 @@ Path = TypeVar("Path", bound=superpathlib.Path)
 @dataclass
 class Syncer:
     config: SyncConfig
-
-    def __post_init__(self) -> None:
-        setup.check_setup()
 
     def cli_runner(
         self,

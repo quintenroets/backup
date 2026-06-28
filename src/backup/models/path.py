@@ -106,37 +106,14 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def profile_prefix(cls) -> str:
-        return cast("str", cls.profile.yaml or "")
-
-    @classmethod
-    @classproperty
     def backup_config(cls) -> Self:
-        path = cls.config / cls.profile_prefix / "config.yaml"
+        path = cls.config / "config.yaml"
         return cast("Self", path)
 
     @classmethod
     @classproperty
     def number_of_paths(cls) -> Self:
         path = cls.assets / "volatile" / "number_of_paths"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def profiles(cls) -> Self:
-        path = cls.assets / "profiles"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def profile(cls) -> Self:
-        path = cls.config / "profile.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def active_profile(cls) -> Self:
-        path = cls.profiles / "active.txt"
         return cast("Self", path)
 
     @classmethod

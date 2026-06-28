@@ -36,8 +36,6 @@ class EntryParser:
         if source == Path("/") / "HOME":
             source = Path.HOME
         dest = Path(entry.dest)
-        if dest.name == "__PROFILE__":
-            dest = dest.with_name(context.storage.active_profile)
         if not context.options.include_browser:
             remove_browser(entry.includes, context.config.browser_name)
         sub_path = resolve_sub_path(source)

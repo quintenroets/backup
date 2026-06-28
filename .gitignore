@@ -5,6 +5,7 @@ uv.lock
 # IDE config files
 .idea/
 .vscode/
+.claude/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

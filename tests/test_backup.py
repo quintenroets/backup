@@ -108,21 +108,3 @@ def test_after_pull(mocked_backup: Backup) -> None:
         mocked_backup.pull()
     patched_export.assert_called_once()
     patched_push.assert_called_once()
-
-
-def test_push_with_detailed_checker(mocked_backup: Backup) -> None:
-    path = mocked_backup.backup_configs[0].source / ".config" / "gtkrc"
-    path.touch()
-    with patch("xattr.xattr.set"):
-        mocked_backup.push()
-        path.text = "#"
-        mocked_backup.push()
-
-
-def test_push_with_detailed_checker_hash_path(mocked_backup: Backup) -> None:
-    path = mocked_backup.backup_configs[0].source / ".config" / "rclone" / "rclone.conf"
-    path.touch()
-    with patch("xattr.xattr.set"):
-        mocked_backup.push()
-        path.text = " "
-        mocked_backup.push()

@@ -1,11 +1,14 @@
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from typing import cast
 
 from backup.context import context
 from backup.models import BackupConfig, Path
 
-from .checkers.detailed import Checker
-from .checkers.path import extract_hash_path
+
+def extract_hash_path(path: Path, config: BackupConfig) -> Path:
+    root = config.cache if path.is_relative_to(config.cache) else config.source
+    return cast("Path", root / Path.hashes.relative_to(config.source) / path.name)
 
 
 @dataclass
@@ -32,11 +35,14 @@ class Entry:
         return self.relative.is_relative_to(context.config.browser_folder)
 
     def is_changed(self) -> bool:
-        return (
+        changed = (
             self.existing.is_file()
             and (self.source.mtime != self.dest.mtime)
             and not self.exclude()
         )
+        if changed:
+            self.assign_hash_path()
+        return changed
 
     def exclude(self) -> bool:
         return (
@@ -47,41 +53,13 @@ class Entry:
                 and self.relative.suffix != ".zip"
             )
             or self.relative.suffix == ".part"
-            or self.only_volatile_content_changed()
         )
-
-    def only_volatile_content_changed(self) -> bool:
-        only_volatile_content_changed = (
-            self.relative in Checker.checkers and self.relevant_content_unchanged()
-        )
-        if only_volatile_content_changed:
-            self.update_cached_dest()
-        else:
-            self.assign_hash_path()
-        return only_volatile_content_changed
 
     def assign_hash_path(self) -> None:
         if Path.hashes.is_relative_to(self.config.source):
             hash_path = extract_hash_path(self.source, self.config)
             if hash_path.exists():
                 self.hash_path = hash_path.relative_to(self.config.source)
-
-    def relevant_content_unchanged(self) -> bool:
-        checker = Checker.checkers[self.relative]
-        source_hash = checker.calculate_relevant_hash(self.source, self.config)
-        dest_hash = checker.calculate_relevant_hash(self.dest, self.config)
-        return source_hash == dest_hash
-
-    def update_cached_dest(self) -> None:
-        no_original_mtime_present = (
-            self.dest.exists()
-            and self.dest.is_relative_to(self.config.cache)
-            and self.dest.tag is None
-        )
-        if no_original_mtime_present:
-            self.dest.tag = str(self.dest.mtime)
-        self.source.copy_to(self.dest, include_properties=False)
-        self.dest.touch(mtime=self.source.mtime)
 
     def get_paths(self) -> Iterator[Path]:
         yield self.relative

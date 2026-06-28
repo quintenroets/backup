@@ -31,9 +31,6 @@ class Entry:
             self.relative = self.source.relative_to(self.config.source)
             self.dest = self.config.cache / self.relative
 
-    def is_browser_config(self) -> bool:
-        return self.relative.is_relative_to(context.config.browser_folder)
-
     def is_changed(self) -> bool:
         changed = (
             self.existing.is_file()
@@ -46,8 +43,7 @@ class Entry:
 
     def exclude(self) -> bool:
         return (
-            (not context.options.include_browser and self.is_browser_config())
-            or (self.existing.tag and self.existing.tag == "exported")
+            (self.existing.tag and self.existing.tag == "exported")
             or (
                 self.existing.size > context.config.max_backup_size
                 and self.relative.suffix != ".zip"

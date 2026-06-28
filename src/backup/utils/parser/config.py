@@ -36,8 +36,6 @@ class EntryParser:
         if source == Path("/") / "HOME":
             source = Path.HOME
         dest = Path(entry.dest)
-        if not context.options.include_browser:
-            remove_browser(entry.includes, context.config.browser_name)
         sub_path = resolve_sub_path(source)
         rules = RuleParser(
             source,
@@ -69,12 +67,3 @@ def parse_config(config_dict: dict[str, Any]) -> Iterator[BackupConfig]:
         )
         if should_use:
             yield parsed_entry
-
-
-def remove_browser(includes: list[str | dict[str, Any]], browser_name: str) -> None:
-    for include in includes:
-        if isinstance(include, dict):
-            key, value = next(iter(include.items()))
-            remove_browser(value, browser_name)
-            if browser_name in key:
-                includes.remove(include)

@@ -10,9 +10,6 @@ class ChangeType:
     color: str
     symbol: str
 
-    def __str__(self) -> str:
-        return self.symbol
-
     @property
     def sort_order(self) -> int:
         return symbols.index(self.symbol)

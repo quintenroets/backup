@@ -30,15 +30,8 @@ class Change:
         return cls(path, type_, source, dest)
 
     @property
-    def message(self) -> str:
-        return f"{self.type} [bold {self.type.color}]{self.path}\n"
-
-    @property
     def sort_index(self) -> tuple[ChangeType, Path]:
         return self.type, self.path
-
-    def print(self) -> None:
-        cli.console.print(self.message, end="")
 
     def get_diff_lines(self, *, color: bool = True) -> list[str]:
         max_lines = self.max_diff_lines_per_file

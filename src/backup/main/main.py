@@ -22,8 +22,6 @@ def backup_files() -> None:
         Action.pull if context.options.export_resume_changes else context.options.action
     )
     match action:
-        case Action.status:
-            backup.status()
         case Action.push:
             backup.push()
         case Action.pull:

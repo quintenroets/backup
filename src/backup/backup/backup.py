@@ -23,15 +23,6 @@ class Backup:
     def backup_configs(self) -> list[BackupConfig]:
         return list(parse_config(self.config))
 
-    def status(self) -> None:
-        changes = ChangeScanner(self.backup_configs).calculate_changes()
-        statuses = [
-            Syncer(config).capture_status()
-            for config in self.generate_sync_configs(changes)
-        ]
-        for status in statuses:
-            status.print()
-
     def push(self, *, reverse: bool = False) -> list[Changes]:
         changes = ChangeScanner(self.backup_configs).check_changes(reverse=reverse)
         cache_configs = self.generate_sync_configs(changes)

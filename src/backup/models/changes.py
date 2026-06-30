@@ -1,7 +1,6 @@
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-import cli
 from superpathlib import Path
 
 from .change import Change
@@ -26,14 +25,3 @@ class Changes:
     @property
     def paths(self) -> list[Path]:
         return [change.path for change in self.changes]
-
-    def ask_confirm(self, message: str, *, show_diff: bool = False) -> bool:
-        self.print(title="Backup", show_diff=show_diff)
-        message = "\n" + message
-        return cli.confirm(message, default=True)
-
-    def print(self, title: str | None = None, *, show_diff: bool = False) -> None:
-        if title is not None:
-            cli.console.clear()
-            cli.console.rule(title)
-        self.print_structure.print(show_diff=show_diff)

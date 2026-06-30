@@ -8,7 +8,7 @@ from backup.main.main import main
 
 
 def test_main(test_context: Context) -> None:
-    methods = {"push": Action.push, "pull": Action.pull, "status": Action.status}
+    methods = {"push": Action.push, "pull": Action.pull}
     for method_name, action in methods.items():
         with patch(f"backup.backup.backup.Backup.{method_name}") as mocked_run:
             test_context.options.action = action

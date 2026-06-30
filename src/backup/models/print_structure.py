@@ -20,9 +20,7 @@ class PrintStructure:
     @classmethod
     def from_changes(cls, changes: list[Change]) -> PrintStructure:
         print_changes = [
-            PrintChange(change.path, change)
-            for change in changes[: cls.max_show]
-            if not change.skip_print
+            PrintChange(change.path, change) for change in changes[: cls.max_show]
         ]
         return cls.from_print_changes(print_changes)
 

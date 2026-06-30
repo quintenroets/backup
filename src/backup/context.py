@@ -4,6 +4,7 @@ from enum import Enum
 from functools import cached_property
 from typing import Annotated, cast
 
+import cli
 import typer
 from package_utils.context import Context as Context_
 from package_utils.context.loaders.secrets_ import SecretLoader
@@ -37,6 +38,7 @@ class Help:
     sub_check: str = "only check subpath of current working directory"
     diff_all: str = "diff all files"
     cache_only: str = "pull from local cache without syncing from remote"
+    remote: str = "rclone remote to back up to"
     paths: str = "The paths to run the action on"
 
 
@@ -53,6 +55,7 @@ class Options:
     diff_all: Annotated[bool, typer.Option(help=Help.diff_all)] = False
     export_resume_changes: bool = False
     cache_only: Annotated[bool, typer.Option(help=Help.cache_only)] = False
+    remote: Annotated[str | None, typer.Option(help=Help.remote)] = None
 
 
 class Context(Context_[Options, Config, None]):
@@ -76,6 +79,14 @@ class Context(Context_[Options, Config, None]):
         if env.pop("RCLONE_PASSWORD_COMMAND", None) is not None:
             env["RCLONE_CONFIG_PASS"] = SecretLoader("rclone").load()
         return env
+
+    @cached_property
+    def remote(self) -> str:
+        return (
+            self.options.remote
+            if self.options.remote is not None
+            else cli.capture_output_lines("rclone listremotes", env=self.rclone_env)[0]
+        )
 
 
 context = Context(Options, Config)

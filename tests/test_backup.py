@@ -1,4 +1,4 @@
-from unittest.mock import PropertyMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -26,15 +26,9 @@ def test_push_with_reversed_cache(mocked_backup_with_filled_content: Backup) -> 
 def verify_push(backup: Backup, *, reverse_cache: bool = False) -> None:
     if reverse_cache:
         config = backup.backup_configs[0]
-        hash_path = config.cache / Path.hashes.relative_to(config.source)
         config.source, config.cache = config.cache, config.source
-
-    else:
-        hash_path = Path.hashes
-    mocked_path = PropertyMock(return_value=hash_path)
-    with patch.object(Path, "hashes", new_callable=mocked_path):
-        backup.push()
-        backup.push()
+    backup.push()
+    backup.push()
 
 
 @pytest.fixture

@@ -76,12 +76,6 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def hashes(cls) -> Self:
-        path = cls.assets / "hashes"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
     def backup_cache(cls) -> Self:
         path = cls.assets / "cache"
         return cast("Self", path)

@@ -25,12 +25,7 @@ class CacheScanner:
         )
 
     def calculate_changes(self, *, reverse: bool = False) -> Changes:
-        paths = [
-            path
-            for entry in self.entries
-            for path in entry.get_paths()
-            if entry.is_changed()
-        ]
+        paths = [entry.relative for entry in self.entries if entry.is_changed()]
         return (
             Syncer(self.sync_config.with_paths(paths)).capture_status(
                 reverse=reverse,

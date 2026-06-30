@@ -3,12 +3,9 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import Any
 
-import cli
-
 from backup.context import context
-from backup.models import BackupConfig, Changes, Path
-from backup.syncer import SyncConfig, Syncer, create_syncer
-from backup.utils import exporter
+from backup.models import BackupConfig, Changes
+from backup.syncer import SyncConfig, Syncer
 from backup.utils.parser.config import parse_config
 
 from .cache import CacheSyncer
@@ -36,25 +33,7 @@ class Backup:
         if not context.options.cache_only:
             for item in self.backup_configs:
                 CacheSyncer(item).sync_from_remote()
-        changes = self.push(reverse=True)
-        should_upload_resume = (
-            any(self.generate_contains_change_checks(Path.resume, changes))
-            and exporter.export_resume()
-        )
-        if should_upload_resume:
-            with cli.status("Uploading new resume pdf"):
-                create_syncer(path=Path.main_resume_pdf).capture_push()
-
-    def generate_contains_change_checks(
-        self,
-        path: Path,
-        changes: list[Changes],
-    ) -> Iterator[bool]:
-        for change, config in zip(changes, self.backup_configs, strict=True):
-            if path.is_relative_to(config.source):
-                relative_path = path.relative_to(config.source)
-                for item in change:
-                    yield item.path.is_relative_to(relative_path)
+        self.push(reverse=True)
 
     def generate_sync_configs(
         self,

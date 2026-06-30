@@ -146,3 +146,7 @@ def assert_no_differences(syncer: Syncer) -> None:
 
 def test_create_syncer(mocked_syncer: Syncer) -> None:
     create_syncer(path=mocked_syncer.config.source)
+
+
+def test_export_files(mocked_syncer_with_filled_content: Syncer) -> None:
+    mocked_syncer_with_filled_content.export_files("csv")

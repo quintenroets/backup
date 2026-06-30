@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 from enum import Enum
 from functools import cached_property
-from typing import Annotated, cast
+from typing import Annotated
 
 import cli
 import typer
@@ -45,7 +45,6 @@ class Options:
     configure: Annotated[bool, typer.Option(help=Help.configure)] = False
     confirm_push: Annotated[bool, typer.Option(help=Help.configure)] = True
     sub_check: Annotated[bool, typer.Option(help=Help.sub_check)] = False
-    export_resume_changes: bool = False
     cache_only: Annotated[bool, typer.Option(help=Help.cache_only)] = False
     remote: Annotated[str | None, typer.Option(help=Help.remote)] = None
 
@@ -57,13 +56,7 @@ class Context(Context_[Options, Config, None]):
 
     @cached_property
     def sub_check_path(self) -> Path | None:  # pragma: no cover
-        if self.options.export_resume_changes:
-            sub_check_path = Path.resume
-        elif self.options.sub_check:
-            sub_check_path = Path.cwd()
-        else:
-            sub_check_path = None
-        return cast("Path | None", sub_check_path)
+        return Path.cwd() if self.options.sub_check else None
 
     @cached_property
     def rclone_env(self) -> dict[str, str]:

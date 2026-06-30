@@ -26,10 +26,6 @@ class Path(superpathlib.Path):
     def mtime(self, value: int) -> None:
         superpathlib.Path.mtime.fset(self, value)  # type: ignore[attr-defined]
 
-    @property
-    def with_export_suffix(self) -> Self:
-        return self.with_suffix(".pdf")
-
     def extract_date(self, *, check_tag: bool = False) -> datetime:
         from datetime import datetime, timezone  # noqa: PLC0415
 
@@ -96,24 +92,6 @@ class Path(superpathlib.Path):
     @classproperty
     def number_of_paths(cls) -> Self:
         path = cls.assets / "volatile" / "number_of_paths"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def resume(cls) -> Self:
-        path = cls.docs / "Drive" / "resume" / "Resume"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def main_resume_pdf(cls) -> Self:
-        path = cls.resume.parent / "Resume Quinten Roets.pdf"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def selected_resume_pdf(cls) -> Self:
-        path = Path.resume / "Main" / Path.main_resume_pdf.name
         return cast("Self", path)
 
     @classmethod

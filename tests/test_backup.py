@@ -1,6 +1,9 @@
+from unittest.mock import patch
+
 import pytest
 
-from backup.backup import Backup
+from backup.backup import Backup, run
+from backup.context import Action, context
 from backup.models import BackupConfig, Path, PathRule
 
 
@@ -10,6 +13,16 @@ def test_push(mocked_backup_with_filled_content: Backup) -> None:
 
 def test_empty_push(mocked_backup: Backup) -> None:
     mocked_backup.push()
+
+
+@pytest.mark.parametrize("action", Action)
+def test_run(action: Action, mocked_backup: Backup) -> None:
+    with (
+        patch.object(context.options, "action", action),
+        patch.object(Backup, action.value) as method,
+    ):
+        run(mocked_backup.config)
+    method.assert_called_once()
 
 
 def test_push_with_reversed_cache(mocked_backup_with_filled_content: Backup) -> None:

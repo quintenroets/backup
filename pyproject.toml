@@ -26,9 +26,6 @@ dev = [
 [project.urls]
 "Source Code" = "https://github.com/quintenroets/backup"
 
-[project.scripts]
-backup = "backup.cli.entry_point:entry_point"
-
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"

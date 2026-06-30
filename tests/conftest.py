@@ -13,10 +13,9 @@ import superpathlib
 from package_utils.storage import CachedFileContent
 
 from backup.backup import Backup
-from backup.context import Context
+from backup.context import Context, Storage
 from backup.context import context as context_
 from backup.models import BackupConfig, Path
-from backup.storage import Storage
 from backup.syncer import SyncConfig, Syncer
 from tests import mocks
 from tests.mocks.methods import mocked_method
@@ -51,14 +50,6 @@ def _rclone_test_config() -> Iterator[None]:
         }
         os.environ.update(config)
         yield
-
-
-@pytest.fixture(scope="session", autouse=True)
-def _config_directory() -> Iterator[None]:
-    with Path.tempdir() as config_directory:
-        mocked_config = PropertyMock(return_value=config_directory)
-        with patch.object(Path, "config", new_callable=mocked_config):
-            yield
 
 
 @pytest.fixture(scope="session", autouse=True)

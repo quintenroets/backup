@@ -1,1 +1,1 @@
-from .config import load_config, parse_config
+from .config import parse_config

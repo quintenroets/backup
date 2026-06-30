@@ -5,17 +5,26 @@
 ![Operating system](https://img.shields.io/badge/os-linux-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
-Back up import files across entire disk
-- Scale to huge number of files
-- Detailed configuration possibilities to maximize performance
-- Perfect for files that are too volatile for a VCS like GIT and too important to lose
+Generic engine to back up important files across an entire disk to an [rclone](https://rclone.org) remote with change detection.
+- Scales to a huge number of files
+- Detailed configuration to maximize performance
+- Perfect for files that are too volatile for a VCS like Git and too important to lose
 
 ## Usage
+```python
+import backup
 
-Run
-```shell
-backup
+config = {
+    "source": "/home/user",
+    "dest": "remote:backup",  # any rclone destination; a local path also works
+    "syncs": [
+        {"includes": [".ssh", ".config/git"], "excludes": ["*.log"]},
+    ],
+}
+
+backup.run(config)   # back up changed files under each include
 ```
+
 ## Installation
 ```shell
 pip install backupmaster

@@ -1,10 +1,7 @@
-from unittest.mock import patch
-
 import pytest
 
 from backup.backup import Backup
 from backup.models import BackupConfig, Path, PathRule
-from backup.syncer import Syncer
 
 
 def test_push(mocked_backup_with_filled_content: Backup) -> None:
@@ -83,18 +80,3 @@ def verify_pull(test_backup_config: BackupConfig, backup: Backup) -> None:
     )
     dest_file.unlink()
     backup.pull()
-
-
-def test_after_pull(mocked_backup: Backup) -> None:
-    Path.selected_resume_pdf.touch()
-    config = mocked_backup.backup_configs[0]
-    path = Path.selected_resume_pdf.relative_to(config.source)
-    config.rules.append(PathRule(path, include=True))
-
-    with (
-        patch("backup.utils.exporter.export_resume") as patched_export,
-        patch.object(Syncer, "capture_push", autospec=True) as patched_push,
-    ):
-        mocked_backup.pull()
-    patched_export.assert_called_once()
-    patched_push.assert_called_once()

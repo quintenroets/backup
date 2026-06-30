@@ -73,21 +73,7 @@ def generate_context_managers(
     directories: list[Path],
 ) -> Iterator[AbstractContextManager[Any]]:
     yield from directories
-    root = directories[0]
-    yield mock_under_test_root(root=root, path=Path.resume)
     yield patch("cli.track_progress", new=lambda *args, **_: args[0])
-
-
-def mock_under_test_root(
-    root: Path,
-    path: Path,
-    name: str | None = None,
-) -> AbstractContextManager[Any]:
-    if name is None:
-        name = path.name.lower()
-    return_value = root / path.relative_to(Path.backup_source)
-    mocked_path = PropertyMock(return_value=return_value)
-    return patch.object(Path, name, new_callable=mocked_path)
 
 
 @pytest.fixture

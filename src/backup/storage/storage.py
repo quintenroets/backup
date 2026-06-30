@@ -10,14 +10,6 @@ class Storage:
         Path.number_of_paths,
         default=0,
     )
-    ignore_patterns: CachedFileContent[list[str]] = CachedFileContent(
-        Path.ignore_patterns,
-        default=[],
-    )
-    ignore_names: CachedFileContent[list[str]] = CachedFileContent(
-        Path.ignore_names,
-        default=[],
-    )
     backup_config: CachedFileContent[list[Any]] = CachedFileContent(
         Path.backup_config,
         default=[],

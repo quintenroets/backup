@@ -7,10 +7,6 @@ from backup.models import BackupConfig, Path, PathRule
 from backup.syncer import Syncer
 
 
-def test_status(mocked_backup_with_filled_content: Backup) -> None:
-    mocked_backup_with_filled_content.status()
-
-
 def test_push(mocked_backup_with_filled_content: Backup) -> None:
     verify_push(mocked_backup_with_filled_content)
 

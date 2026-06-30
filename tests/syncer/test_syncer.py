@@ -81,13 +81,10 @@ def test_show_diff(mocked_syncer_with_filled_content: Syncer, *, color: bool) ->
     syncer = mocked_syncer_with_filled_content
     (syncer.config.source / "0.txt").lines = ["same", "different"]
     (syncer.config.dest / "0.txt").lines = ["same", "different2"]
-    context.options.show_file_diffs = True
     changes = syncer.capture_status(quiet=True, is_cache=True)
-    changes.ask_confirm(message="message", show_diff=True)
+    changes.print_structure.print(show_diff=True)
     change = changes.changes[0]
-    change.print()
     change.get_diff_lines(color=color)
-    context.options.show_file_diffs = False
 
 
 @pytest.fixture

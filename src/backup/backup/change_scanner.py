@@ -22,18 +22,12 @@ class ChangeScanner:
             and context.options.confirm_push
             and sys.stdin.isatty()
             and not self.ask_confirm(changes, reverse=reverse)
-            and not context.options.show_file_diffs
             and not self.ask_confirm(changes, reverse=reverse, show_diff=True)
         )
         return [Changes() for _ in self.backup_configs] if remove_changes else changes
 
-    def calculate_changes(
-        self,
-        *,
-        quiet: bool = False,
-        reverse: bool = False,
-    ) -> Iterator[Changes]:
-        scanners = [CacheScanner(backup, quiet=quiet) for backup in self.backup_configs]
+    def calculate_changes(self, *, reverse: bool = False) -> Iterator[Changes]:
+        scanners = [CacheScanner(backup) for backup in self.backup_configs]
         entries = aggregate_iterators_with_progress(
             (scanner.generate_entries() for scanner in scanners),
             description="Checking",
@@ -49,12 +43,11 @@ class ChangeScanner:
         changes: list[Changes],
         *,
         reverse: bool = False,
-        show_diff: bool | None = None,
+        show_diff: bool = False,
     ) -> bool:
         message = "Pull?" if reverse else "Push?"
-        if show_diff is None:
+        if not show_diff:
             cli.console.rule("Backup")
-            show_diff = context.options.show_file_diffs
         for change in changes:
             change.print_structure.print(show_diff=show_diff)
         return cli.confirm(message, default=True)

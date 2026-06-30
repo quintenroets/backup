@@ -13,7 +13,6 @@ from .entry import Entry
 @dataclass
 class CacheScanner:
     backup_config: BackupConfig
-    quiet: bool = True
     visited: set[Path] = field(default_factory=set)
     entries: set[Entry] = field(default_factory=set)
 

@@ -28,7 +28,6 @@ dev = [
 
 [project.scripts]
 backup = "backup.cli.entry_point:entry_point"
-mount-remote = "backup.cli.mount:entry_point"
 
 [build-system]
 requires = ["setuptools"]

@@ -1,9 +1,7 @@
-import fnmatch
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
-from backup.context import context
 from backup.models import BackupConfig, Changes, Path, PathRule
 from backup.syncer import SyncConfig, Syncer
 
@@ -67,10 +65,6 @@ class CacheScanner:
         return (
             path in self.visited
             or (path / ".git").exists()
-            or any(
-                fnmatch.fnmatch(str(path), pattern)
-                for pattern in context.storage.ignore_patterns
-            )
-            or path.name in context.storage.ignore_names
+            or self.backup_config.ignores.matches(path)
             or path.is_symlink()
         )

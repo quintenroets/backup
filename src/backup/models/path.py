@@ -88,18 +88,6 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def ignore_names(cls) -> Self:
-        path = cls.config / "ignore_names.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def ignore_patterns(cls) -> Self:
-        path = cls.config / "ignore_patterns.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
     def backup_config(cls) -> Self:
         path = cls.config / "config.yaml"
         return cast("Self", path)

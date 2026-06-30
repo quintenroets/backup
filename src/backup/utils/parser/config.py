@@ -30,6 +30,7 @@ class EntryParser:
         self.dest = Path(dest)
         self.cache = Path(config.cache)
         self.cache.mkdir(parents=True, exist_ok=True)
+        self.ignores = config.ignores
 
     def parse_entry(self, entry: SerializedEntryConfig) -> BackupConfig:
         source = self.source / Path(entry.source)
@@ -48,6 +49,7 @@ class EntryParser:
             self.dest / dest / sub_path,
             self.cache / dest / sub_path,
             rules,
+            self.ignores,
         )
 
 

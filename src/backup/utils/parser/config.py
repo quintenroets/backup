@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Any, cast
+from typing import Any
 
 from backup.context import context
 from backup.models import (
@@ -8,7 +8,6 @@ from backup.models import (
     SerializedBackupConfig,
     SerializedEntryConfig,
 )
-from backup.syncer import create_syncer
 
 from .rules import RuleParser
 
@@ -51,12 +50,6 @@ class EntryParser:
             rules,
             self.ignores,
         )
-
-
-def load_config() -> dict[str, Any]:
-    if not Path.config.exists():
-        create_syncer(directory=Path.config).capture_pull()
-    return cast("dict[str, Any]", context.storage.backup_config)
 
 
 def parse_config(config_dict: dict[str, Any]) -> Iterator[BackupConfig]:

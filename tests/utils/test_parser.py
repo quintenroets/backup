@@ -4,7 +4,7 @@ import pytest
 
 from backup.context import Context
 from backup.models import Path
-from backup.utils.parser.config import load_config, parse_config
+from backup.utils.parser.config import parse_config
 from backup.utils.parser.rules import RuleParser
 
 
@@ -15,17 +15,6 @@ def test_parser() -> None:
     parsed_paths = list(rules.get_paths())
     expected_path = Path("a/b")
     assert expected_path in parsed_paths
-
-
-@pytest.mark.usefixtures("test_context")
-def test_download_config() -> None:
-    with (
-        patch.object(Path, "config") as mocked_config,
-        patch("backup.utils.parser.config.create_syncer") as mocked_create_syncer,
-    ):
-        mocked_config.exists.return_value = False
-        load_config()
-    mocked_create_syncer.assert_called_once()
 
 
 def test_config_parser() -> None:

@@ -8,26 +8,14 @@ import cli
 import typer
 from package_utils.context import Context as Context_
 from package_utils.context.loaders.secrets_ import SecretLoader
+from package_utils.storage import CachedFileContent
 
 from backup.models import Path
-from backup.storage.storage import Storage
 
 
 class Action(str, Enum):
     push = "push"
     pull = "pull"
-
-
-@dataclass
-class Config:
-    overwrite_newer: bool = True
-    retries: int = 5
-    n_checkers: int = 100
-    n_parallel_transfers = 100
-    retries_sleep: str = "30s"
-    order_by: str = "size,desc"  # handle largest files first
-    drive_import_formats = "docx, xlsx"
-    max_backup_size: int = int(50e6)
 
 
 class Help:
@@ -43,10 +31,30 @@ class Help:
 class Options:
     action: Annotated[Action, typer.Argument(help=Help.action)] = Action.push
     configure: Annotated[bool, typer.Option(help=Help.configure)] = False
-    confirm_push: Annotated[bool, typer.Option(help=Help.configure)] = True
+    confirm_push: Annotated[bool, typer.Option(help=Help.confirm_push)] = True
     sub_check: Annotated[bool, typer.Option(help=Help.sub_check)] = False
     cache_only: Annotated[bool, typer.Option(help=Help.cache_only)] = False
     remote: Annotated[str | None, typer.Option(help=Help.remote)] = None
+    config_path: Path = Path.config
+
+
+@dataclass
+class Config:
+    overwrite_newer: bool = True
+    retries: int = 5
+    n_checkers: int = 100
+    n_parallel_transfers = 100
+    retries_sleep: str = "30s"
+    order_by: str = "size,desc"  # handle largest files first
+    drive_import_formats = "docx, xlsx"
+    max_backup_size: int = int(50e6)
+
+
+class Storage:
+    number_of_paths: CachedFileContent[int] = CachedFileContent(
+        Path.number_of_paths,
+        default=0,
+    )
 
 
 class Context(Context_[Options, Config, None]):

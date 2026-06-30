@@ -84,12 +84,6 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def backup_config(cls) -> Self:
-        path = cls.config / "config.yaml"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
     def number_of_paths(cls) -> Self:
         path = cls.assets / "volatile" / "number_of_paths"
         return cast("Self", path)

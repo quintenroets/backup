@@ -1,5 +1,6 @@
 from superpathlib import Path
 
+from backup.context import context
 from backup.models import Path as BackupPath
 
 from .sync_config import SyncConfig
@@ -15,5 +16,6 @@ def create_syncer(
     assert target is not None  # noqa: S101
     is_home = target.is_relative_to(BackupPath.HOME)
     source = BackupPath.HOME if is_home else BackupPath.backup_source
-    dest = BackupPath.remote / "home" if is_home else BackupPath.remote
+    remote = BackupPath(context.remote)
+    dest = remote / "home" if is_home else remote
     return Syncer(SyncConfig(source=source, dest=dest, path=path, directory=directory))

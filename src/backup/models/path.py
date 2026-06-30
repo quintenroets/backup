@@ -130,10 +130,5 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def remote(cls) -> Self:
-        return cls("backupmaster:")
-
-    @classmethod
-    @classproperty
     def backup_source(cls) -> Self:
         return cls("/")

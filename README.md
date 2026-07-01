@@ -5,12 +5,10 @@
 ![Operating system](https://img.shields.io/badge/os-linux-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
-Back up the files that matter from across your entire disk to any [rclone](https://rclone.org) remote, transferring only what changed.
-- Scales to millions of files: one stat per file, no content hashing
-- Selective and disk-wide: back up scattered paths, skip everything else
-- Ideal for volatile files a VCS like Git cannot handle efficiently
-
-Pair it with a versioned remote to keep every file recoverable, not just mirrored.
+Generic engine to back up important files across an entire disk to an [rclone](https://rclone.org) remote with change detection.
+- Scales to a huge number of files
+- Detailed configuration to maximize performance
+- Perfect for files that are too volatile for a VCS like Git and too important to lose
 
 ## Usage
 ```python

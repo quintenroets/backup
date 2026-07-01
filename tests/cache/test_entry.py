@@ -9,7 +9,7 @@ from backup.models import BackupConfig, Path
 is_running_in_ci = "GITHUB_ACTIONS" in os.environ
 
 
-test_with_tags = pytest.mark.skipif(
+requires_tags = pytest.mark.skipif(
     is_running_in_ci,
     reason="XDG Tags are not supported in CI",
 )
@@ -28,13 +28,13 @@ def entry(file: Path) -> Entry:  # pragma: nocover
     return Entry(config, source=file)
 
 
-@test_with_tags
+@requires_tags
 def test_exported_tag_excluded(entry: Entry) -> None:  # pragma: nocover
     entry.source.tag = "exported"
     assert entry.exclude()
 
 
-@test_with_tags
+@requires_tags
 @pytest.mark.usefixtures("mocked_backup")
 def test_other_tags_included(entry: Entry) -> None:  # pragma: nocover
     entry.source.tag = "anything"

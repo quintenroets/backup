@@ -29,7 +29,7 @@ class Backup:
         changes = ChangeScanner(self.backup_configs).check_changes(reverse=reverse)
         cache_configs = self.generate_sync_configs(changes)
         remote_configs = self.generate_sync_configs(changes, cache=False)
-        for cache, remote in zip(cache_configs, remote_configs, strict=False):
+        for cache, remote in zip(cache_configs, remote_configs, strict=True):
             Syncer(remote).push(reverse=reverse)
             Syncer(cache).push()
         return changes
@@ -46,7 +46,7 @@ class Backup:
         *,
         cache: bool = True,
     ) -> Iterator[SyncConfig]:
-        for item, change in zip(self.backup_configs, changes, strict=False):
+        for item, change in zip(self.backup_configs, changes, strict=True):
             if change.paths:
                 yield SyncConfig(
                     source=item.source,

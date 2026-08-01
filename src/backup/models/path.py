@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from __future__ import annotations
 
 import os
@@ -11,6 +12,12 @@ if TYPE_CHECKING:
     from datetime import datetime  # pragma: nocover
 
 T = TypeVar("T", bound="Path")
+=======
+from typing import Self, cast
+
+import superpathlib
+from simple_classproperty import classproperty
+>>>>>>> template
 
 
 class Path(superpathlib.Path):

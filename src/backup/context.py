@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from functools import cached_property
 from typing import Annotated
 
@@ -13,7 +13,7 @@ from package_utils.storage import CachedFileContent
 from backup.models import Path
 
 
-class Action(str, Enum):
+class Action(StrEnum):
     push = "push"
     pull = "pull"
 

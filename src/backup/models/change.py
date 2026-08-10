@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import cast
+from typing import Self, cast
 
 import cli
 from superpathlib import Path
-from typing_extensions import Self
 
 from .change_type import ChangeType, ChangeTypes, parse_change_type
 

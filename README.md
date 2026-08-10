@@ -1,15 +1,8 @@
 # Backup
-<<<<<<< HEAD
 [![PyPI version](https://badge.fury.io/py/backupmaster.svg)](https://badge.fury.io/py/backupmaster)
 ![PyPI downloads](https://img.shields.io/pypi/dm/backupmaster)
-![Python version](https://img.shields.io/badge/python-3.10+-brightgreen)
-![Operating system](https://img.shields.io/badge/os-linux-brightgreen)
-=======
-[![PyPI version](https://badge.fury.io/py/backup.svg)](https://badge.fury.io/py/backup)
-![PyPI downloads](https://img.shields.io/pypi/dm/backup)
 ![Python version](https://img.shields.io/badge/python-3.11+-brightgreen)
-![Operating system](https://img.shields.io/badge/os-linux%20%7c%20macOS%20%7c%20windows-brightgreen)
->>>>>>> template
+![Operating system](https://img.shields.io/badge/os-linux-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
 Generic engine to back up important files across an entire disk to an [rclone](https://rclone.org) remote with change detection.

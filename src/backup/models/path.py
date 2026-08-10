@@ -1,23 +1,14 @@
-<<<<<<< HEAD
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, TypeVar, cast
+from datetime import UTC
+from typing import TYPE_CHECKING, Self, cast
 
 import superpathlib
 from simple_classproperty import classproperty
-from typing_extensions import Self
 
 if TYPE_CHECKING:
     from datetime import datetime  # pragma: nocover
-
-T = TypeVar("T", bound="Path")
-=======
-from typing import Self, cast
-
-import superpathlib
-from simple_classproperty import classproperty
->>>>>>> template
 
 
 class Path(superpathlib.Path):
@@ -34,7 +25,7 @@ class Path(superpathlib.Path):
         superpathlib.Path.mtime.fset(self, value)  # type: ignore[attr-defined]
 
     def extract_date(self, *, check_tag: bool = False) -> datetime:
-        from datetime import datetime, timezone  # noqa: PLC0415
+        from datetime import datetime  # noqa: PLC0415
 
         mtime = self.mtime
 
@@ -44,7 +35,7 @@ class Path(superpathlib.Path):
             if tag:
                 mtime = int(tag)
 
-        return datetime.fromtimestamp(mtime, tz=timezone.utc)
+        return datetime.fromtimestamp(mtime, tz=UTC)
 
     def has_date(self, date: datetime, *, check_tag: bool = False) -> bool:
         path_date = self.extract_date(check_tag=check_tag)

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import typing
 from dataclasses import dataclass, field
-from typing import Any
-
-from typing_extensions import Self
+from typing import Any, Self
 
 from backup.models import Entries, Path, PathRule
 

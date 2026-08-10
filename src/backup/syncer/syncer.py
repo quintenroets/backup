@@ -1,7 +1,7 @@
 import subprocess
 from collections.abc import Iterator
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TypeVar
 
 import superpathlib
@@ -89,6 +89,6 @@ def extract_paths_with_time(lines: str) -> Iterator[tuple[BackupPath, datetime]]
             path_str = " ".join(parts[3:])
             if path_str:
                 format_ = "%Y-%m-%d %H:%M:%S"
-                date = datetime.strptime(date_str, format_).astimezone(timezone.utc)
+                date = datetime.strptime(date_str, format_).astimezone(UTC)
                 path = BackupPath(path_str)
                 yield path, date

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from datetime import UTC
 from typing import TYPE_CHECKING, Self, cast
 
 import superpathlib
@@ -25,7 +24,7 @@ class Path(superpathlib.Path):
         superpathlib.Path.mtime.fset(self, value)  # type: ignore[attr-defined]
 
     def extract_date(self, *, check_tag: bool = False) -> datetime:
-        from datetime import datetime  # noqa: PLC0415
+        from datetime import UTC, datetime  # noqa: PLC0415
 
         mtime = self.mtime
 

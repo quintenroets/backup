@@ -57,7 +57,10 @@ ignore = [
 <<<<<<< HEAD
 =======
     "CPY001",   # missing copyright notice
+<<<<<<< HEAD
     "G004",     # logging f-string
+>>>>>>> template
+=======
 >>>>>>> template
     "D1",       # missing docstrings
     "D200",     # one-line docstring

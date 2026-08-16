@@ -22,7 +22,7 @@ config = {
     ],
 }
 
-backup.run(config)   # back up changed files under each include
+backup.run(config)  # back up changed files under each include
 ```
 
 ## Installation

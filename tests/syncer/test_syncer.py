@@ -1,39 +1,36 @@
-import json
 from collections.abc import Iterator
 
 import cli
 import pytest
 
-from backup.context import context
-from backup.models import Change, ChangeTypes, Path
-from backup.syncer import SyncConfig, Syncer
-from backup.syncer.builder import create_syncer
+from backup import create_syncer
+from backup.backup.models import Path
+from backup.backup.run import resolve_remote
+from backup.syncer import RcloneConfig, SyncConfig, Syncer
+from backup.syncer.cli_runner import CliRunner
+from backup.syncer.syncer import parse_modified_time
 
 dummy_config = SyncConfig(source=Path("/"), dest=Path("dest:"))
 
 
-def test_malformed_filters_indicated(mocked_syncer: Syncer) -> None:
-    mocked_syncer.config.filter_rules = ["????"]
-    with pytest.raises(ValueError, match="Invalid paths:"):
-        mocked_syncer.capture_status()
-
-
 def test_syncer_command() -> None:
-    Syncer(dummy_config).run("version")
+    assert Syncer(dummy_config).run("version").returncode == 0
 
 
-def test_status(mocked_syncer_with_filled_content: Syncer) -> None:
-    expected_changes = {
-        Change(Path("0.txt"), ChangeTypes.modified),
-        Change(Path("1.txt"), ChangeTypes.created),
-        Change(Path("2.txt"), ChangeTypes.deleted),
-    }
-    assert capture_changes(mocked_syncer_with_filled_content) == expected_changes
+def test_list_remote_files(mocked_syncer_with_filled_content: Syncer) -> None:
+    syncer = mocked_syncer_with_filled_content
+    files = syncer.list_remote_files()
+    expected_file = syncer.config.dest / "0.txt"
+    assert files["0.txt"].size == expected_file.size
+    assert files["0.txt"].mtime == pytest.approx(expected_file.mtime)
 
 
-def capture_changes(syncer: Syncer) -> set[Change]:
-    status = syncer.capture_status(quiet=True, is_cache=True)
-    return {Change(change.path, change.type) for change in status}
+@pytest.mark.parametrize(
+    "value",
+    ["2023-01-01T12:00:00.123456789Z", "2023-01-01T12:00:00+01:00"],
+)
+def test_parse_modified_time(value: str) -> None:
+    assert parse_modified_time(value) > 0
 
 
 def test_push(mocked_syncer_with_filled_content: Syncer) -> None:
@@ -54,37 +51,15 @@ def test_pull(mocked_syncer_with_filled_content: Syncer) -> None:
     assert syncer.config.dest.content_hash == hash_value
 
 
-def test_ls(mocked_syncer_with_filled_content: Syncer) -> None:
-    syncer = mocked_syncer_with_filled_content
-    path = next(path for path in syncer.config.source.iterdir() if path.is_file())
-    file_info = syncer.capture_output("lsjson", path)
-    parsed_file_info = json.loads(file_info)
-    assert parsed_file_info[0]["Name"] == path.name
+def test_preserved_newer_files_add_the_update_option() -> None:
+    """--update is what stops a push from overwriting a newer remote file."""
+    options = RcloneConfig(overwrite_newer=False)
+    assert "--update" in CliRunner(dummy_config, options).generate_options()
 
 
-def test_single_file_copy(mocked_syncer_with_filled_content: Syncer) -> None:
-    syncer = mocked_syncer_with_filled_content
-    path = next(syncer.config.source.iterdir())
-    dest = syncer.config.dest / path.relative_to(syncer.config.source)
-    syncer.capture_output("copyto", path, dest)
-
-
-def test_all_options(mocked_syncer_with_filled_content: Syncer) -> None:
-    overwrite_newer = context.config.overwrite_newer
-    context.config.overwrite_newer = False
-    mocked_syncer_with_filled_content.capture_push()
-    context.config.overwrite_newer = overwrite_newer
-
-
-@pytest.mark.parametrize("color", [True, False])
-def test_show_diff(mocked_syncer_with_filled_content: Syncer, *, color: bool) -> None:
-    syncer = mocked_syncer_with_filled_content
-    (syncer.config.source / "0.txt").lines = ["same", "different"]
-    (syncer.config.dest / "0.txt").lines = ["same", "different2"]
-    changes = syncer.capture_status(quiet=True, is_cache=True)
-    changes.print_structure.print(show_diff=True)
-    change = changes.changes[0]
-    change.get_diff_lines(color=color)
+def test_overwritten_newer_files_omit_the_update_option() -> None:
+    options = RcloneConfig(overwrite_newer=True)
+    assert "--update" not in CliRunner(dummy_config, options).generate_options()
 
 
 @pytest.fixture
@@ -101,7 +76,7 @@ def mocked_syncer_with_root_dest(
 def test_push_to_root_dest(mocked_syncer_with_root_dest: Syncer) -> None:
     source_hash = mocked_syncer_with_root_dest.config.source.content_hash
     mocked_syncer_with_root_dest.push()
-    assert not mocked_syncer_with_root_dest.capture_status().paths
+    assert_no_differences(mocked_syncer_with_root_dest)
     assert mocked_syncer_with_root_dest.config.source.content_hash == source_hash
 
 
@@ -120,33 +95,38 @@ def test_pull_to_root_source(mocked_syncer_with_root_dest: Syncer) -> None:
 def test_pull_with_specified_paths(
     mocked_syncer_with_filled_content: Syncer,
 ) -> None:
-    paths = mocked_syncer_with_filled_content.capture_status(
-        quiet=True,
-        is_cache=True,
-    ).paths
+    paths = [Path("0.txt"), Path("2.txt")]
     syncer = Syncer(mocked_syncer_with_filled_content.config.with_paths(paths))
     dest_hash = syncer.config.dest.content_hash
     syncer.pull()
-    assert_no_differences(mocked_syncer_with_filled_content)
     assert syncer.config.dest.content_hash == dest_hash
-
-
-def test_overlapping_sub_path(mocked_syncer: Syncer) -> None:
-    source = mocked_syncer.config.source
-    config = SyncConfig(
-        source=mocked_syncer.config.source,
-        dest=source / "sub_path" / source.name,
-    )
-    assert config.overlapping_sub_path is not None
+    for path in paths:
+        source_file = syncer.config.source / path
+        assert source_file.text == (syncer.config.dest / path).text
 
 
 def assert_no_differences(syncer: Syncer) -> None:
-    assert not syncer.capture_status(quiet=True, is_cache=True).paths
+    syncer.cli_runner(action="check").capture_output()
 
 
-def test_create_syncer(mocked_syncer: Syncer) -> None:
-    create_syncer(path=mocked_syncer.config.source)
+def test_create_syncer_scopes_a_home_path_to_the_home_remote() -> None:
+    syncer = create_syncer(path=Path.HOME / "file.txt")
+    assert syncer.config.source == Path.HOME
+    assert syncer.config.dest == Path(resolve_remote()) / "home"
+
+
+def test_create_syncer_scopes_an_outside_directory_to_the_bare_remote(
+    mocked_syncer: Syncer,
+) -> None:
+    directory = mocked_syncer.config.source
+    syncer = create_syncer(directory=directory)
+    assert syncer.config.source == Path.backup_source
+    assert syncer.config.dest == Path(resolve_remote())
+    assert syncer.config.directory == directory
 
 
 def test_export_files(mocked_syncer_with_filled_content: Syncer) -> None:
-    mocked_syncer_with_filled_content.export_files("csv")
+    syncer = mocked_syncer_with_filled_content
+    syncer.export_files("csv")
+    remote_only_file = syncer.config.source / "2.txt"
+    assert remote_only_file.text == (syncer.config.dest / "2.txt").text

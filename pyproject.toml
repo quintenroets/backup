@@ -1,18 +1,15 @@
 [project]
 name = "backupmaster"
-version = "3.0.0"
+version = "4.0.0"
 description = "Backup import files across entire disk"
 authors = [{name = "Quinten Roets", email = "qdr2104@columbia.edu"}]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "beautifulsoup4 >=4.12.2, <5",
-    "lxml >=4.9.3, <7",
     "package-utils[context] >=0.8.3, <1",
-    "powercli >=0.4.0, <1",
-    "PyYAML >=6.0.1, <7",
-    "xattr >=0.10.1, <2",
+    "powercli >=0.4.5, <1",
+    "superpathlib >=2.0.14, <3",
 ]
 
 [project.optional-dependencies]
@@ -20,8 +17,10 @@ dev = [
     "dirhash >=0.2.1, <1",
     "package-dev-tools >=0.8.1, <1",
     "package-dev-utils >=0.1.6, <1",
-    "types-beautifulsoup4 >=4.12.0.20240106, <5",
 ]
+
+[project.scripts]
+backupmaster = "backup:entry_point"
 
 [project.urls]
 "Source Code" = "https://github.com/quintenroets/backup"
@@ -30,9 +29,19 @@ dev = [
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
+[tool.uv.sources]
+# the argument-parser fast path (`defaults_cover_arguments`) is unreleased
+package-utils = { path = "../package-utils", editable = true }
+# the delayed progress bar (`track_progress` delay) is unreleased
+powercli = { path = "../cli", editable = true }
+# the yaml sidecar cache (`cached_yaml`) is unreleased
+superpathlib = { path = "../superpathlib", editable = true }
+
 [tool.coverage.run]
 command_line = "-m pytest tests"
 relative_files = true
+# editable installs bring their source into scope
+omit = ["*/cli/*", "*/package_utils/*", "*/superpathlib/*"]
 
 [tool.coverage.report]
 precision = 4
@@ -67,6 +76,9 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
     "F401"  # unused import
+]
+"src/backup/backup/change_tree.py" = [
+    "PLC0415",  # powercli loads rich core anyway: this keeps tree and syntax out
 ]
 "tests/*" = [
     "S101",    # assert used

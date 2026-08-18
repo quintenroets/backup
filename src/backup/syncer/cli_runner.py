@@ -1,25 +1,43 @@
 import itertools
+import os
 import subprocess
 from collections.abc import Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass
-from typing import TypeVar
+from dataclasses import dataclass, field
+from functools import cache
 
 import superpathlib
 from cli.commands.commands import CommandItem
 from cli.commands.runner import Runner
+from package_utils.context.loaders.secrets_ import SecretLoader
 
-from backup.context import context
-
-from .filters import FiltersCreator
+from .filters import generate_filters
 from .sync_config import SyncConfig
 
-Path = TypeVar("Path", bound=superpathlib.Path)
+
+@dataclass
+class RcloneConfig:
+    overwrite_newer: bool = True
+    retries: int = 5
+    n_checkers: int = 100
+    n_parallel_transfers: int = 100
+    retries_sleep: str = "30s"
+    order_by: str = "size,desc"
+    drive_import_formats: str = "docx, xlsx"
+
+
+@cache
+def load_rclone_env() -> dict[str, str]:
+    env = dict(os.environ)
+    if env.pop("RCLONE_PASSWORD_COMMAND", None) is not None:
+        env["RCLONE_CONFIG_PASS"] = SecretLoader("rclone").load()
+    return env
 
 
 @dataclass
 class CliRunner:
     config: SyncConfig
+    options: RcloneConfig = field(default_factory=RcloneConfig)
     push: bool = False
     action: str | None = None
     reverse: bool = False
@@ -43,11 +61,17 @@ class CliRunner:
         command_parts = self.generate_command_parts(filters_path, *args)
         command = tuple(command_parts)
         with filters_path:
-            yield Runner(command, root=self.root, kwargs={"env": context.rclone_env})
+            env = {"env": load_rclone_env()}
+            yield Runner(command, root=self.root, kwargs=env)
+
+    def create_filters_path(self) -> superpathlib.Path:
+        path = superpathlib.Path.tempfile()
+        path.lines = list(generate_filters(self.config))
+        return path
 
     def generate_command_parts(
         self,
-        filters_path: Path,
+        filters_path: superpathlib.Path,
         *args: CommandItem,
     ) -> Iterator[CommandItem]:
         if self.root:
@@ -57,16 +81,14 @@ class CliRunner:
             self.generate_action_parts(),
             args,
             ("--filter-from", filters_path),
-            self.config.options,
             self.generate_options(),
         )
         yield from itertools.chain(*parts)
 
     def generate_action_parts(self) -> Iterator[CommandItem]:
-        if self.push:
-            self.action = "sync"
-        if self.action is not None:
-            yield self.action
+        action = "sync" if self.push else self.action
+        if action is not None:
+            yield action
             if self.reverse:
                 yield from (self.config.dest, self.config.source)
             else:
@@ -76,25 +98,17 @@ class CliRunner:
             if self.root:
                 yield "--no-update-dir-modtime"
 
-    def create_filters_path(self) -> superpathlib.Path:
-        if not self.config.filter_rules:
-            FiltersCreator(self.config).create_filters_from_paths()
-        path = superpathlib.Path.tempfile()
-        path.lines = self.config.filter_rules
-        return path
-
-    @classmethod
-    def generate_options(cls) -> Iterator[CommandItem]:
-        config = context.config
+    def generate_options(self) -> Iterator[CommandItem]:
+        options = self.options
         yield "--skip-links"
-        if not config.overwrite_newer:
+        if not options.overwrite_newer:
             yield "--update"
 
         yield {
-            "retries": config.retries,
-            "retries-sleep": config.retries_sleep,
-            "order-by": config.order_by,
-            "drive-import-formats": config.drive_import_formats,
-            "checkers": config.n_checkers,
-            "transfers": config.n_parallel_transfers,
+            "retries": options.retries,
+            "retries-sleep": options.retries_sleep,
+            "order-by": options.order_by,
+            "drive-import-formats": options.drive_import_formats,
+            "checkers": options.n_checkers,
+            "transfers": options.n_parallel_transfers,
         }

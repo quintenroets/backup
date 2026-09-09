@@ -7,7 +7,7 @@ from typing import Annotated
 import cli
 import typer
 from package_utils.context import Context as Context_
-from package_utils.context.loaders.secrets_ import SecretLoader
+from package_utils.secrets_ import load_secret
 from package_utils.storage import CachedFileContent
 
 from backup.models import Path
@@ -70,7 +70,7 @@ class Context(Context_[Options, Config, None]):
     def rclone_env(self) -> dict[str, str]:
         env = dict(os.environ)
         if env.pop("RCLONE_PASSWORD_COMMAND", None) is not None:
-            env["RCLONE_CONFIG_PASS"] = SecretLoader("rclone").load()
+            env["RCLONE_CONFIG_PASS"] = load_secret("rclone")
         return env
 
     @cached_property

@@ -59,15 +59,11 @@ class Syncer:
         *,
         quiet: bool = False,
         reverse: bool = False,
-        is_cache: bool = False,
     ) -> Changes:
         runner_factory = self.cli_runner(action="check", reverse=reverse)
         with runner_factory.create_runner("--combined", "-") as runner:
-            changes, no_change_paths = StatusProcessor(
-                self.config,
-                quiet,
-                is_cache=is_cache,
-            ).capture_changes(runner)
+            processor = StatusProcessor(self.config, quiet)
+            changes, no_change_paths = processor.capture_changes(runner)
             if no_change_paths:
                 # Update modified times to avoid checking again in the future
                 Syncer(self.config.with_paths(no_change_paths)).push()

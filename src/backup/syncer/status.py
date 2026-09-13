@@ -16,7 +16,6 @@ from .sync_config import SyncConfig
 class StatusProcessor:
     config: SyncConfig
     quiet: bool = False
-    is_cache: bool = False
 
     def capture_changes(self, runner: Runner[str]) -> tuple[Changes, list[Path]]:
         runner.quiet = self.quiet
@@ -26,8 +25,11 @@ class StatusProcessor:
             raise create_malformed_filters_error(
                 self.config.filter_rules,
             ) from exception
-        paths_without_change = list(self.extract_paths_without_change(changes))
-        changes = [change for change in changes if change.type != ChangeTypes.preserved]
+        preserved = ChangeTypes.preserved
+        paths_without_change = [
+            change.path for change in changes if change.type == preserved
+        ]
+        changes = [change for change in changes if change.type != preserved]
         return Changes(changes), paths_without_change
 
     def generate_changes(self, runner: Runner[str]) -> Iterator[Change]:
@@ -42,13 +44,3 @@ class StatusProcessor:
             )
         for line in status_lines:
             yield Change.from_pattern(line, self.config.source, self.config.dest)
-
-    def extract_paths_without_change(self, changes: list[Change]) -> Iterator[Path]:
-        for change in changes:
-            if change.type == ChangeTypes.preserved:
-                yield change.path
-                if self.is_cache:
-                    dest = self.config.dest / change.path
-                    if dest.tag is None:
-                        # save original mtime for remote syncing
-                        dest.tag = str(dest.mtime)

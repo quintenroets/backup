@@ -12,7 +12,6 @@ dependencies = [
     "package-utils[context] >=0.9.0, <1",
     "powercli >=0.4.0, <1",
     "PyYAML >=6.0.1, <7",
-    "xattr >=0.10.1, <2",
 ]
 
 [project.optional-dependencies]

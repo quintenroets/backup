@@ -32,7 +32,7 @@ def test_status(mocked_syncer_with_filled_content: Syncer) -> None:
 
 
 def capture_changes(syncer: Syncer) -> set[Change]:
-    status = syncer.capture_status(quiet=True, is_cache=True)
+    status = syncer.capture_status(quiet=True)
     return {Change(change.path, change.type) for change in status}
 
 
@@ -81,7 +81,7 @@ def test_show_diff(mocked_syncer_with_filled_content: Syncer, *, color: bool) ->
     syncer = mocked_syncer_with_filled_content
     (syncer.config.source / "0.txt").lines = ["same", "different"]
     (syncer.config.dest / "0.txt").lines = ["same", "different2"]
-    changes = syncer.capture_status(quiet=True, is_cache=True)
+    changes = syncer.capture_status(quiet=True)
     changes.print_structure.print(show_diff=True)
     change = changes.changes[0]
     change.get_diff_lines(color=color)
@@ -120,10 +120,7 @@ def test_pull_to_root_source(mocked_syncer_with_root_dest: Syncer) -> None:
 def test_pull_with_specified_paths(
     mocked_syncer_with_filled_content: Syncer,
 ) -> None:
-    paths = mocked_syncer_with_filled_content.capture_status(
-        quiet=True,
-        is_cache=True,
-    ).paths
+    paths = mocked_syncer_with_filled_content.capture_status(quiet=True).paths
     syncer = Syncer(mocked_syncer_with_filled_content.config.with_paths(paths))
     dest_hash = syncer.config.dest.content_hash
     syncer.pull()
@@ -141,7 +138,7 @@ def test_overlapping_sub_path(mocked_syncer: Syncer) -> None:
 
 
 def assert_no_differences(syncer: Syncer) -> None:
-    assert not syncer.capture_status(quiet=True, is_cache=True).paths
+    assert not syncer.capture_status(quiet=True).paths
 
 
 def test_create_syncer(mocked_syncer: Syncer) -> None:

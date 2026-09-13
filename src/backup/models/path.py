@@ -23,21 +23,13 @@ class Path(superpathlib.Path):
     def mtime(self, value: int) -> None:
         superpathlib.Path.mtime.fset(self, value)  # type: ignore[attr-defined]
 
-    def extract_date(self, *, check_tag: bool = False) -> datetime:
+    def extract_date(self) -> datetime:
         from datetime import UTC, datetime  # noqa: PLC0415
 
-        mtime = self.mtime
+        return datetime.fromtimestamp(self.mtime, tz=UTC)
 
-        use_tag = check_tag and self.exists() and self.is_relative_to(Path.backup_cache)
-        if use_tag:  # pragma: nocover
-            tag = self.tag
-            if tag:
-                mtime = int(tag)
-
-        return datetime.fromtimestamp(mtime, tz=UTC)
-
-    def has_date(self, date: datetime, *, check_tag: bool = False) -> bool:
-        path_date = self.extract_date(check_tag=check_tag)
+    def has_date(self, date: datetime) -> bool:
+        path_date = self.extract_date()
         return self.extract_date_tuple(date) == self.extract_date_tuple(path_date)
 
     @classmethod

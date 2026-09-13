@@ -30,13 +30,9 @@ class Entry:
         )
 
     def exclude(self) -> bool:
-        return (
-            (self.existing.tag and self.existing.tag == "exported")
-            or (
-                self.existing.size > context.config.max_backup_size
-                and self.relative.suffix != ".zip"
-            )
-            or self.relative.suffix == ".part"
+        return self.relative.suffix == ".part" or (
+            self.existing.size > context.config.max_backup_size
+            and self.relative.suffix != ".zip"
         )
 
     def __hash__(self) -> int:

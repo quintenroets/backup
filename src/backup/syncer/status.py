@@ -5,7 +5,7 @@ import cli
 from cli.commands.runner import Runner
 from superpathlib import Path
 
-from backup.models import Change, Changes, ChangeTypes
+from backup.models import Change, Changes, ChangeType
 from backup.utils import generate_output_lines
 from backup.utils.error_handling import create_malformed_filters_error
 
@@ -25,11 +25,10 @@ class StatusProcessor:
             raise create_malformed_filters_error(
                 self.config.filter_rules,
             ) from exception
-        preserved = ChangeTypes.preserved
         paths_without_change = [
-            change.path for change in changes if change.type == preserved
+            change.path for change in changes if change.type == ChangeType.preserved
         ]
-        changes = [change for change in changes if change.type != preserved]
+        changes = [change for change in changes if change.type != ChangeType.preserved]
         return Changes(changes), paths_without_change
 
     def generate_changes(self, runner: Runner[str]) -> Iterator[Change]:

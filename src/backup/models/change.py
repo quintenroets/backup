@@ -1,18 +1,28 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Self, cast
 
 import cli
 from superpathlib import Path
 
-from .change_type import ChangeType, ChangeTypes, parse_change_type
+
+class ChangeType(Enum):
+    created = "green", "+"
+    modified = "blue", "*"
+    deleted = "red", "-"
+    preserved = "black", "="
+
+    def __init__(self, color: str, symbol: str) -> None:
+        self.color = color
+        self.symbol = symbol
 
 
 @dataclass(unsafe_hash=True)
 class Change:
     path: Path
-    type: ChangeType = ChangeTypes.created
+    type: ChangeType = ChangeType.created
     source: Path | None = None
     dest: Path | None = None
     max_diff_lines_per_file: int = 20
@@ -24,13 +34,9 @@ class Change:
         source: Path | None = None,
         dest: Path | None = None,
     ) -> Self:
-        type_ = parse_change_type(symbol=pattern[0])
+        type_ = {member.symbol: member for member in ChangeType}[pattern[0]]
         path = Path(pattern[2:])
         return cls(path, type_, source, dest)
-
-    @property
-    def sort_index(self) -> tuple[ChangeType, Path]:
-        return self.type, self.path
 
     def get_diff_lines(self, *, color: bool = True) -> list[str]:
         max_lines = self.max_diff_lines_per_file

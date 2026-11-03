@@ -5,7 +5,7 @@ import cli
 import pytest
 
 from backup.context import context
-from backup.models import Change, ChangeTypes, Path
+from backup.models import Change, ChangeType, Path
 from backup.syncer import SyncConfig, Syncer
 from backup.syncer.builder import create_syncer
 
@@ -24,9 +24,9 @@ def test_syncer_command() -> None:
 
 def test_status(mocked_syncer_with_filled_content: Syncer) -> None:
     expected_changes = {
-        Change(Path("0.txt"), ChangeTypes.modified),
-        Change(Path("1.txt"), ChangeTypes.created),
-        Change(Path("2.txt"), ChangeTypes.deleted),
+        Change(Path("0.txt"), ChangeType.modified),
+        Change(Path("1.txt"), ChangeType.created),
+        Change(Path("2.txt"), ChangeType.deleted),
     }
     assert capture_changes(mocked_syncer_with_filled_content) == expected_changes
 

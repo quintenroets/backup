@@ -45,6 +45,9 @@ class Change:
         return calculate_diff(self.path, source, dest, color=color, max_lines=max_lines)
 
 
+Changes = list[Change]
+
+
 def calculate_diff(
     path: Path,
     source_root: Path,

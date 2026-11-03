@@ -5,7 +5,7 @@ import cli
 import pytest
 
 from backup.context import context
-from backup.models import Change, ChangeType, Path
+from backup.models import Change, ChangeType, Path, PrintStructure
 from backup.syncer import SyncConfig, Syncer
 from backup.syncer.builder import create_syncer
 
@@ -82,9 +82,8 @@ def test_show_diff(mocked_syncer_with_filled_content: Syncer, *, color: bool) ->
     (syncer.config.source / "0.txt").lines = ["same", "different"]
     (syncer.config.dest / "0.txt").lines = ["same", "different2"]
     changes = syncer.capture_status(quiet=True)
-    changes.print_structure.print(show_diff=True)
-    change = changes.changes[0]
-    change.get_diff_lines(color=color)
+    PrintStructure.from_changes(changes).print(show_diff=True)
+    changes[0].get_diff_lines(color=color)
 
 
 @pytest.fixture
@@ -101,7 +100,7 @@ def mocked_syncer_with_root_dest(
 def test_push_to_root_dest(mocked_syncer_with_root_dest: Syncer) -> None:
     source_hash = mocked_syncer_with_root_dest.config.source.content_hash
     mocked_syncer_with_root_dest.push()
-    assert not mocked_syncer_with_root_dest.capture_status().paths
+    assert not mocked_syncer_with_root_dest.capture_status()
     assert mocked_syncer_with_root_dest.config.source.content_hash == source_hash
 
 
@@ -117,10 +116,9 @@ def test_pull_to_root_source(mocked_syncer_with_root_dest: Syncer) -> None:
     assert syncer.config.dest.content_hash == dest_hash
 
 
-def test_pull_with_specified_paths(
-    mocked_syncer_with_filled_content: Syncer,
-) -> None:
-    paths = mocked_syncer_with_filled_content.capture_status(quiet=True).paths
+def test_pull_with_specified_paths(mocked_syncer_with_filled_content: Syncer) -> None:
+    changes = mocked_syncer_with_filled_content.capture_status(quiet=True)
+    paths = [change.path for change in changes]
     syncer = Syncer(mocked_syncer_with_filled_content.config.with_paths(paths))
     dest_hash = syncer.config.dest.content_hash
     syncer.pull()
@@ -138,7 +136,7 @@ def test_overlapping_sub_path(mocked_syncer: Syncer) -> None:
 
 
 def assert_no_differences(syncer: Syncer) -> None:
-    assert not syncer.capture_status(quiet=True).paths
+    assert not syncer.capture_status(quiet=True)
 
 
 def test_create_syncer(mocked_syncer: Syncer) -> None:

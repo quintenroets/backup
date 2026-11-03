@@ -29,7 +29,7 @@ class StatusProcessor:
             change.path for change in changes if change.type == ChangeType.preserved
         ]
         changes = [change for change in changes if change.type != ChangeType.preserved]
-        return Changes(changes), paths_without_change
+        return changes, paths_without_change
 
     def generate_changes(self, runner: Runner[str]) -> Iterator[Change]:
         status_lines: Iterable[str] = generate_output_lines(runner)

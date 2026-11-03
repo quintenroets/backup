@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import cli
 
 from backup.context import context
-from backup.models import BackupConfig, Changes
+from backup.models import BackupConfig, Changes, PrintStructure
 from backup.utils.itertools import aggregate_iterators_with_progress
 
 from .cache import CacheScanner
@@ -16,15 +16,15 @@ class ChangeScanner:
     backup_configs: list[BackupConfig]
 
     def check_changes(self, *, reverse: bool) -> list[Changes]:
-        changes: list[Changes] = list(self.calculate_changes(reverse=reverse))
+        batches = list(self.calculate_changes(reverse=reverse))
         remove_changes = (
-            any(change for change in changes)
+            any(batches)
             and context.options.confirm_push
             and sys.stdin.isatty()
-            and not self.ask_confirm(changes, reverse=reverse)
-            and not self.ask_confirm(changes, reverse=reverse, show_diff=True)
+            and not self.ask_confirm(batches, reverse=reverse)
+            and not self.ask_confirm(batches, reverse=reverse, show_diff=True)
         )
-        return [Changes() for _ in self.backup_configs] if remove_changes else changes
+        return [[] for _ in self.backup_configs] if remove_changes else batches
 
     def calculate_changes(self, *, reverse: bool = False) -> Iterator[Changes]:
         scanners = [CacheScanner(backup) for backup in self.backup_configs]
@@ -40,7 +40,7 @@ class ChangeScanner:
     @classmethod
     def ask_confirm(
         cls,
-        changes: list[Changes],
+        batches: list[Changes],
         *,
         reverse: bool = False,
         show_diff: bool = False,
@@ -48,6 +48,6 @@ class ChangeScanner:
         message = "Pull?" if reverse else "Push?"
         if not show_diff:
             cli.console.rule("Backup")
-        for change in changes:
-            change.print_structure.print(show_diff=show_diff)
+        for changes in batches:
+            PrintStructure.from_changes(changes).print(show_diff=show_diff)
         return cli.confirm(message, default=True)

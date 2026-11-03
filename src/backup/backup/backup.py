@@ -26,13 +26,13 @@ class Backup:
         return list(parse_config(self.config))
 
     def push(self, *, reverse: bool = False) -> list[Changes]:
-        changes = ChangeScanner(self.backup_configs).check_changes(reverse=reverse)
-        cache_configs = self.generate_sync_configs(changes)
-        remote_configs = self.generate_sync_configs(changes, cache=False)
+        batches = ChangeScanner(self.backup_configs).check_changes(reverse=reverse)
+        cache_configs = self.generate_sync_configs(batches)
+        remote_configs = self.generate_sync_configs(batches, cache=False)
         for cache, remote in zip(cache_configs, remote_configs, strict=True):
             Syncer(remote).push(reverse=reverse)
             Syncer(cache).push()
-        return changes
+        return batches
 
     def pull(self) -> list[Changes]:
         if not context.options.cache_only:
@@ -42,14 +42,14 @@ class Backup:
 
     def generate_sync_configs(
         self,
-        changes: Iterable[Changes],
+        batches: Iterable[Changes],
         *,
         cache: bool = True,
     ) -> Iterator[SyncConfig]:
-        for item, change in zip(self.backup_configs, changes, strict=True):
-            if change.paths:
+        for item, changes in zip(self.backup_configs, batches, strict=True):
+            if changes:
                 yield SyncConfig(
                     source=item.source,
                     dest=item.cache if cache else item.dest,
-                    paths=change.paths,
+                    paths=[change.path for change in changes],
                 )

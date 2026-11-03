@@ -1,33 +1,21 @@
-import fnmatch
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
 from package_utils.dataclasses.mixins import SerializationMixin
 
+from backup.syncer import FileState, PathRule, RcloneConfig, Snapshot, Syncer
+
+from .change import Action
 from .path import Path
+from .scope import Ignores, Scope, default_max_backup_size
+from .sync_state import SyncRecords
 
 Entries = list[str | dict[str, "Entries"] | Any]
 
 
 @dataclass
-class Ignores:
-    names: list[str] = field(default_factory=list)
-    patterns: list[str] = field(default_factory=list)
-
-    def matches(self, path: Path) -> bool:
-        return path.name in self.names or any(
-            fnmatch.fnmatch(str(path), pattern) for pattern in self.patterns
-        )
-
-
-@dataclass
-class PathRule:
-    path: Path
-    include: bool
-
-
-@dataclass
-class SerializedEntryConfig(SerializationMixin):
+class SyncEntry(SerializationMixin):
     source: str = ""
     dest: str = ""
     includes: Entries = field(default_factory=list)
@@ -35,18 +23,33 @@ class SerializedEntryConfig(SerializationMixin):
 
 
 @dataclass
-class SerializedBackupConfig(SerializationMixin):
-    syncs: list[SerializedEntryConfig]
+class Config(SerializationMixin):
+    syncs: list[SyncEntry]
     source: str = "/"
     dest: str = "/"
-    cache: str = str(Path.backup_cache)
+    sync_state: str = str(Path.sync_state)
     ignores: Ignores = field(default_factory=Ignores)
+    max_backup_size: int = default_max_backup_size
+    rclone: RcloneConfig = field(default_factory=RcloneConfig)
 
 
 @dataclass
 class BackupConfig:
     source: Path
     dest: Path
-    cache: Path
-    rules: list[PathRule] = field(default_factory=list)
-    ignores: Ignores = field(default_factory=Ignores)
+    records: SyncRecords
+    scope: Scope
+    rclone: RcloneConfig
+
+    def create_syncer(self, paths: list[str], action: Action = Action.push) -> Syncer:
+        rules = PathRule.select(paths)
+        syncer = Syncer(self.source, self.dest, rules, self.rclone)
+        return syncer.reversed if action == Action.pull else syncer
+
+    def list_remote(self) -> Snapshot:
+        rules = self.scope.deepest_first
+        return Syncer(self.source, self.dest, rules, self.rclone).list_remote_files()
+
+    def observe_local(self, paths: Iterable[str]) -> Snapshot:
+        states = {path: FileState.observe(self.source / path) for path in paths}
+        return {path: state for path, state in states.items() if state is not None}

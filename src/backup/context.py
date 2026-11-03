@@ -1,85 +1,33 @@
-import os
+from __future__ import annotations
+
 from dataclasses import dataclass
-from enum import StrEnum
-from functools import cached_property
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
-import cli
-import typer
-from package_utils.context import Context as Context_
-from package_utils.secrets_ import load_secret
-from package_utils.storage import CachedFileContent
+from package_utils.context import Context
 
-from backup.models import Path
+from .models import Action, Config, Path
 
-
-class Action(StrEnum):
-    push = "push"
-    pull = "pull"
+if TYPE_CHECKING:
+    import typer  # pragma: nocover
 
 
 class Help:
     action: str = "The action to do"
-    configure: str = "Open configuration"
-    confirm_push: str = "Ask confirmation before pushing"
+    confirm: str = "Ask confirmation before applying changes"
+    diff: str = "Show content diffs of changed files before confirming"
     sub_check: str = "only check subpath of current working directory"
-    cache_only: str = "pull from local cache without syncing from remote"
-    remote: str = "rclone remote to back up to"
+    config_path: str = "Configuration describing what to back up"
 
 
 @dataclass
 class Options:
+    """How one run behaves, as opposed to what a config says to back up."""
+
     action: Annotated[Action, typer.Argument(help=Help.action)] = Action.push
-    configure: Annotated[bool, typer.Option(help=Help.configure)] = False
-    confirm_push: Annotated[bool, typer.Option(help=Help.confirm_push)] = True
+    confirm: Annotated[bool, typer.Option(help=Help.confirm)] = True
+    diff: Annotated[bool, typer.Option(help=Help.diff)] = False
     sub_check: Annotated[bool, typer.Option(help=Help.sub_check)] = False
-    cache_only: Annotated[bool, typer.Option(help=Help.cache_only)] = False
-    remote: Annotated[str | None, typer.Option(help=Help.remote)] = None
-    config_path: Path = Path.config
+    config_path: Annotated[Path, typer.Option(help=Help.config_path)] = Path.config
 
 
-@dataclass
-class Config:
-    overwrite_newer: bool = True
-    retries: int = 5
-    n_checkers: int = 100
-    n_parallel_transfers: int = 100
-    retries_sleep: str = "30s"
-    order_by: str = "size,desc"  # handle largest files first
-    drive_import_formats: str = "docx, xlsx"
-    max_backup_size: int = int(50e6)
-
-
-class Storage:
-    number_of_paths: CachedFileContent[int] = CachedFileContent(
-        Path.number_of_paths,
-        default=0,
-    )
-
-
-class Context(Context_[Options, Config, None]):
-    @cached_property
-    def storage(self) -> Storage:
-        return Storage()
-
-    @cached_property
-    def sub_check_path(self) -> Path | None:  # pragma: no cover
-        return Path.cwd() if self.options.sub_check else None
-
-    @cached_property
-    def rclone_env(self) -> dict[str, str]:
-        env = dict(os.environ)
-        if env.pop("RCLONE_PASSWORD_COMMAND", None) is not None:
-            env["RCLONE_CONFIG_PASS"] = load_secret("rclone")
-        return env
-
-    @cached_property
-    def remote(self) -> str:
-        return (
-            self.options.remote
-            if self.options.remote is not None
-            else cli.capture_output_lines("rclone listremotes", env=self.rclone_env)[0]
-        )
-
-
-context = Context(Options, Config)
+context: Context[Options, Config, None] = Context(Options, Config)

@@ -1,42 +1,25 @@
 import os
 import sys
 from collections.abc import Iterator
-from contextlib import AbstractContextManager
-from dataclasses import dataclass
-from types import TracebackType
-from typing import Any, cast
-from unittest.mock import PropertyMock, patch
+from dataclasses import dataclass, replace
+from typing import Any, Self
+from unittest.mock import patch
 
 import cli
 import pytest
-import superpathlib
-from package_utils.storage import CachedFileContent
 
-from backup.backup import Backup
-from backup.context import Context, Storage
-from backup.context import context as context_
-from backup.models import BackupConfig, Path
-from backup.syncer import SyncConfig, Syncer
-from tests import mocks
-from tests.mocks.methods import mocked_method
-
-
-@dataclass
-class ContextList(AbstractContextManager[None]):
-    items: list[AbstractContextManager[Any]]
-
-    def __enter__(self) -> None:
-        for item in self.items:
-            item.__enter__()
-
-    def __exit__(
-        self,
-        exception_type: type[BaseException] | None,
-        exception_value: BaseException | None,
-        traceback: TracebackType | None,
-    ) -> None:
-        for item in self.items:
-            item.__exit__(exception_type, exception_value, traceback)
+from backup import run_config
+from backup.context import Options
+from backup.models import (
+    Action,
+    BackupConfig,
+    Change,
+    Config,
+    Path,
+    SyncRecords,
+    load_sync_state,
+)
+from backup.parser import parse_config
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -53,96 +36,66 @@ def _rclone_test_config() -> Iterator[None]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def test_context() -> Context:
-    os.environ["USERNAME"] = (
-        "runner" if "GITHUB_ACTIONS" in os.environ else os.getlogin()
-    )
-    return context_
-
-
-def generate_context_managers(
-    directories: list[Path],
-) -> Iterator[AbstractContextManager[Any]]:
-    yield from directories
-    yield patch("cli.track_progress", new=lambda *args, **_: args[0])
-
-
-@pytest.fixture
-def mocked_backup() -> Iterator[Backup]:
-    directories = [Path.tempdir() for _ in range(2)]
-    context_managers = list(generate_context_managers(directories))
-    relative_cache_path = Path.backup_cache.relative_to(Path.backup_source)
-    item = {"includes": [""], "excludes": ["dummy.txt", "dummy_directory"]}
-    config = {
-        "source": str(directories[0]),
-        "dest": str(directories[1]),
-        "cache": str(directories[0] / relative_cache_path),
-        "syncs": [item],
-    }
-    with ContextList(context_managers):
-        yield Backup(config)
-
-
-@pytest.fixture
-def mocked_backup_with_filled_content(
-    mocked_syncer_with_filled_content: Syncer,  # noqa: ARG001
-    mocked_backup: Backup,
-) -> Backup:
-    return mocked_backup
-
-
-@pytest.fixture
-def test_backup_config(mocked_backup: Backup) -> BackupConfig:
-    return mocked_backup.backup_configs[0]
-
-
-@pytest.fixture(scope="session", autouse=True)
-def mocked_storage(test_context: Context) -> Iterator[None]:
-    storage = Storage()
-    mock_storage = PropertyMock(return_value=storage)
-    patched_methods = [
-        mocked_method(CachedFileContent, "__get__", mocks.CachedFileContent.__get__),
-        mocked_method(CachedFileContent, "__set__", mocks.CachedFileContent.__set__),
-    ]
-    patched_cli_methods = [
+def _mocked_cli() -> Iterator[None]:
+    with (
         patch.object(cli, "confirm", return_value=True),
-        patch.object(cli.console, "clear"),
         patch.object(sys.stdin, "isatty", return_value=True),
-    ]
-    patched_storage = patch.object(test_context, "storage", new_callable=mock_storage)
-    patches = [patched_storage, *patched_cli_methods, *patched_methods]
-    with ContextList(cast("list[AbstractContextManager[Any]]", patches)):
-        yield None
+    ):
+        yield
+
+
+@dataclass
+class BackupSetup:
+    """A backup over throwaway directories, driven through the public entry point."""
+
+    config: dict[str, Any]
+
+    @property
+    def source(self) -> Path:
+        return Path(self.config["source"])
+
+    @property
+    def dest(self) -> Path:
+        return Path(self.config["dest"])
+
+    @property
+    def records(self) -> SyncRecords:
+        return load_sync_state(Path(self.config["sync_state"]))[""]
+
+    def sides(self, action: Action) -> tuple[Path, Path]:
+        sides = (self.source, self.dest)
+        return sides if action == Action.push else sides[::-1]
+
+    def override(self, **config: Any) -> Self:
+        return replace(self, config={**self.config, **config})
+
+    def parse(self) -> BackupConfig:
+        return next(parse_config(Config.from_dict(self.config), {}, None))
+
+    def push(self) -> list[Change]:
+        return self.run(Action.push)
+
+    def pull(self) -> list[Change]:
+        return self.run(Action.pull)
+
+    def run(self, action: Action, *, diff: bool = False) -> list[Change]:
+        plans = run_config(Config.from_dict(self.config), Options(action, diff=diff))
+        return [change for plan in plans for change in plan.changes]
 
 
 @pytest.fixture
-def mocked_syncer(test_backup_config: BackupConfig) -> Syncer:
-    config = SyncConfig(
-        source=test_backup_config.source,
-        dest=test_backup_config.dest,
-        sub_check_path=test_backup_config.source,
-    )
-    return Syncer(config)
+def backup() -> Iterator[BackupSetup]:
+    with Path.tempdir() as source, Path.tempdir() as dest, Path.tempfile() as state:
+        config = {
+            "source": str(source),
+            "dest": str(dest),
+            "sync_state": str(state),
+            "syncs": [{"includes": [""]}],
+            "rclone": {"retries": 1, "retries_sleep": "0s"},
+        }
+        yield BackupSetup(config)
 
 
 @pytest.fixture
-def mocked_syncer_with_filled_content(mocked_syncer: Syncer) -> Syncer:
-    fill_directories(mocked_syncer)
-    return mocked_syncer
-
-
-def fill_directories(mocked_syncer: Syncer, content: str = "content") -> None:
-    for number in (0, 1):
-        fill(mocked_syncer.config.source, content, number=number)
-    content2 = content * 2
-    for number in (0, 2):
-        fill(mocked_syncer.config.dest, content2, number=number)
-
-
-def fill(
-    directory: superpathlib.Path,
-    content: str = "content",
-    number: int = 0,
-) -> None:
-    path = directory / f"{number}.txt"
-    path.text = content
+def backup_config(backup: BackupSetup) -> BackupConfig:
+    return backup.parse()

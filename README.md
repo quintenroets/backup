@@ -14,15 +14,47 @@ Generic engine to back up important files across an entire disk to an [rclone](h
 ```python
 import backup
 
-config = {
-    "source": "/home/user",
-    "dest": "remote:backup",  # any rclone destination; a local path also works
-    "syncs": [
-        {"includes": [".ssh", ".config/git"], "excludes": ["*.log"]},
-    ],
-}
+config = backup.Config.from_dict(
+    {
+        "source": "/home/user",
+        "dest": "remote:backup",  # any rclone destination; a local path also works
+        "syncs": [
+            {"includes": [".ssh", ".config/git"], "excludes": [".config/git/cache"]},
+        ],
+        "ignores": {"patterns": ["*.log"]},  # globs, unlike the anchored excludes
+        "max_backup_size": int(50e6),  # larger files are left alone
+        "rclone": {"n_parallel_transfers": 100},  # see RcloneConfig for the full set
+    }
+)
 
-backup.run(config)  # back up changed files under each include
+backup.run_config(config, backup.Options())  # back up changed files under each include
+```
+
+The config says what to back up. How one run behaves is a separate argument, so
+the same config can be driven in either direction:
+
+```python
+from backup import Action, Options
+
+backup.run_config(config, Options(action=Action.pull))  # restore from the remote
+backup.run_config(config, Options(diff=True))  # show content diffs first
+backup.run_config(config, Options(confirm=False))  # apply without asking
+```
+
+### Syncing without change detection
+
+`backup.syncer` is the rclone layer on its own: filters, transfers and remote
+listings, with no sync state involved. Use it to move a known path around.
+
+```python
+from backup import create_syncer
+from superpathlib import Path
+
+syncer = create_syncer(Path.HOME / "documents")  # a file or a whole directory
+syncer.push()  # mirror it to the configured remote
+syncer.reversed.push()  # and back again
+
+files = syncer.list_remote_files()  # {"documents/a.pdf": FileState(mtime, size), ...}
 ```
 
 ## Installation

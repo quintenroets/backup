@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 from superpathlib import Path
 
-from .change import Change
+from .change import Change, ChangeType
 from .print_structure import PrintStructure
 
 
@@ -13,7 +13,7 @@ class Changes:
     print_structure: PrintStructure = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        self.changes = sorted(self.changes, key=lambda c: c.sort_index)
+        self.changes.sort(key=lambda c: (tuple(ChangeType).index(c.type), c.path))
         self.print_structure = PrintStructure.from_changes(self.changes)
 
     def __iter__(self) -> Iterator[Change]:

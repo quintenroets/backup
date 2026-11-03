@@ -9,7 +9,7 @@ from typing import cast
 import cli
 from superpathlib import Path
 
-from .change import Change, ChangeType, ChangeTypes
+from .change import Change, ChangeType
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator  # pragma: nocover
@@ -93,7 +93,7 @@ class PrintChange:
     def generate_print_lines(self) -> Iterator[str]:
         return (
             self.generate_diff_lines()
-            if self.change.type == ChangeTypes.modified
+            if self.change.type == ChangeType.modified
             else self.generate_path_lines()
         )
 
@@ -102,25 +102,25 @@ class PrintChange:
         for line in diff_lines:
             change_type: ChangeType | None
             match line[0]:
-                case ChangeTypes.created.symbol:
-                    change_type = ChangeTypes.created
-                case ChangeTypes.deleted.symbol:
-                    change_type = ChangeTypes.deleted
+                case ChangeType.created.symbol:
+                    change_type = ChangeType.created
+                case ChangeType.deleted.symbol:
+                    change_type = ChangeType.deleted
                 case " ":
-                    change_type = ChangeTypes.preserved
+                    change_type = ChangeType.preserved
                 case _:
                     change_type = None
 
             if change_type is not None:
                 diff_line = line[1:].strip()
-                if change_type != ChangeTypes.preserved:
+                if change_type != ChangeType.preserved:
                     diff_line = f"{change_type.symbol} {diff_line}"
                 yield f"[{change_type.color}]{diff_line}"
 
     def generate_path_lines(self) -> Iterator[str]:
         source = cast("Path", self.change.source)
         dest = cast("Path", self.change.dest)
-        source = source if self.change.type == ChangeTypes.created else dest
+        source = source if self.change.type == ChangeType.created else dest
         full_path = source / self.change.path
         with contextlib.suppress(UnicodeDecodeError):
             yield from full_path.lines

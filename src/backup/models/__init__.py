@@ -5,8 +5,7 @@ from .backup_config import (
     SerializedBackupConfig,
     SerializedEntryConfig,
 )
-from .change import Change, ChangeType
-from .changes import Changes
+from .change import Change, Changes, ChangeType
 from .path import Path
 from .print_change import PrintChange
 from .print_structure import PrintStructure

@@ -26,7 +26,7 @@ class CacheScanner:
         return (
             Syncer(self.sync_config.with_paths(paths)).capture_status(reverse=reverse)
             if paths
-            else Changes()
+            else []
         )
 
     def generate_entries(self) -> Iterator[Entry]:

@@ -63,7 +63,7 @@ class Context(Context_[Options, Config, None]):
         return Storage()
 
     @cached_property
-    def sub_check_path(self) -> Path | None:  # pragma: no cover
+    def sub_check_path(self) -> Path | None:
         return Path.cwd() if self.options.sub_check else None
 
     @cached_property

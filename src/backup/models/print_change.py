@@ -12,7 +12,7 @@ from superpathlib import Path
 from .change import Change, ChangeType
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator  # pragma: nocover
+    from collections.abc import Iterator
 
 
 @dataclass

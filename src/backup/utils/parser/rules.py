@@ -7,7 +7,7 @@ from typing import Any, Self
 from backup.models import Entries, Path, PathRule
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator  # pragma: nocover
+    from collections.abc import Iterator
 
 
 @dataclass

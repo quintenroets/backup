@@ -4,21 +4,18 @@ from collections.abc import Iterator
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from types import TracebackType
-from typing import Any, cast
-from unittest.mock import PropertyMock, patch
+from typing import Any
+from unittest.mock import patch
 
 import cli
 import pytest
 import superpathlib
-from package_utils.storage import CachedFileContent
 
 from backup.backup import Backup
 from backup.context import Context, Storage
 from backup.context import context as context_
 from backup.models import BackupConfig, Path
 from backup.syncer import SyncConfig, Syncer
-from tests import mocks
-from tests.mocks.methods import mocked_method
 
 
 @dataclass
@@ -97,22 +94,13 @@ def test_backup_config(mocked_backup: Backup) -> BackupConfig:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def mocked_storage(test_context: Context) -> Iterator[None]:
-    storage = Storage()
-    mock_storage = PropertyMock(return_value=storage)
-    patched_methods = [
-        mocked_method(CachedFileContent, "__get__", mocks.CachedFileContent.__get__),
-        mocked_method(CachedFileContent, "__set__", mocks.CachedFileContent.__set__),
-    ]
-    patched_cli_methods = [
+def isolated_session() -> Iterator[None]:
+    with (
+        patch.object(Storage, "number_of_paths", 0),
         patch.object(cli, "confirm", return_value=True),
-        patch.object(cli.console, "clear"),
         patch.object(sys.stdin, "isatty", return_value=True),
-    ]
-    patched_storage = patch.object(test_context, "storage", new_callable=mock_storage)
-    patches = [patched_storage, *patched_cli_methods, *patched_methods]
-    with ContextList(cast("list[AbstractContextManager[Any]]", patches)):
-        yield None
+    ):
+        yield
 
 
 @pytest.fixture

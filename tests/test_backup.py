@@ -3,6 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from backup.backup import Backup, run
+from backup.backup.cache import CacheScanner
 from backup.context import Action, context
 from backup.models import BackupConfig, Path, PathRule
 
@@ -70,6 +71,14 @@ def test_push_with_indent(mocked_backup_with_filled_content: Backup) -> None:
     for path in paths:
         path.touch()
     verify_push(mocked_backup_with_filled_content)
+
+
+def test_scan_skips_nested_cache(test_backup_config: BackupConfig) -> None:
+    path = Path("cache/0.txt")
+    test_backup_config.cache = test_backup_config.source / path.parent
+    (test_backup_config.source / path).touch()
+    entries = CacheScanner(test_backup_config).generate_entries()
+    assert path not in {entry.relative for entry in entries}
 
 
 def test_pull(

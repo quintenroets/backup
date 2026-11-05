@@ -37,11 +37,11 @@ def test_context() -> Context:
 
 @pytest.fixture
 def mocked_backup() -> Iterator[Backup]:
-    with Path.tempdir() as source, Path.tempdir() as dest:
+    with Path.tempdir() as source, Path.tempdir() as dest, Path.tempdir() as cache:
         config = {
             "source": str(source),
             "dest": str(dest),
-            "cache": str(source / Path.backup_cache.relative_to(Path.backup_source)),
+            "cache": str(cache),
             "syncs": [{"includes": [""], "excludes": ["dummy.txt", "dummy_directory"]}],
         }
         yield Backup(config)

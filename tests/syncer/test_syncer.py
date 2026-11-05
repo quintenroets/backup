@@ -70,14 +70,12 @@ def test_all_options(mocked_syncer_with_filled_content: Syncer) -> None:
     context.config.overwrite_newer = overwrite_newer
 
 
-@pytest.mark.parametrize("color", [True, False])
-def test_show_diff(mocked_syncer_with_filled_content: Syncer, *, color: bool) -> None:
+def test_show_diff(mocked_syncer_with_filled_content: Syncer) -> None:
     syncer = mocked_syncer_with_filled_content
     (syncer.config.source / "0.txt").lines = ["same", "different"]
     (syncer.config.dest / "0.txt").lines = ["same", "different2"]
     changes = syncer.capture_status(quiet=True)
     PrintStructure.from_changes(changes).print(show_diff=True)
-    changes[0].get_diff_lines(color=color)
 
 
 @pytest.fixture

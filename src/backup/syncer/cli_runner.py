@@ -29,8 +29,8 @@ class CliRunner:
         dest = self.config.source if self.reverse else self.config.dest
         return dest.is_root
 
-    def run(self, *args: CommandItem) -> subprocess.CompletedProcess[str]:
-        with self.create_runner(*args) as runner:
+    def run(self) -> subprocess.CompletedProcess[str]:
+        with self.create_runner() as runner:
             return runner.run()
 
     def capture_output(self, *args: CommandItem) -> str:

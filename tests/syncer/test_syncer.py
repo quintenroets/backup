@@ -9,17 +9,11 @@ from backup.models import Change, ChangeType, Path, PrintStructure
 from backup.syncer import SyncConfig, Syncer
 from backup.syncer.builder import create_syncer
 
-dummy_config = SyncConfig(source=Path("/"), dest=Path("dest:"))
-
 
 def test_malformed_filters_indicated(mocked_syncer: Syncer) -> None:
     mocked_syncer.config.filter_rules = ["????"]
     with pytest.raises(ValueError, match="Invalid paths:"):
         mocked_syncer.capture_status()
-
-
-def test_syncer_command() -> None:
-    Syncer(dummy_config).run("version")
 
 
 def test_status(mocked_syncer_with_filled_content: Syncer) -> None:

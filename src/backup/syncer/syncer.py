@@ -30,9 +30,6 @@ class Syncer:
     ) -> CliRunner:
         return CliRunner(self.config, push=push, action=action, reverse=reverse)
 
-    def run(self, *args: CommandItem) -> subprocess.CompletedProcess[str]:
-        return self.cli_runner().run(*args)
-
     def capture_output(self, *args: CommandItem) -> str:
         return self.cli_runner().capture_output(*args)
 

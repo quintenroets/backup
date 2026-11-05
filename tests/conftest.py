@@ -37,11 +37,7 @@ def test_context() -> Context:
 
 @pytest.fixture
 def mocked_backup() -> Iterator[Backup]:
-    with (
-        Path.tempdir() as source,
-        Path.tempdir() as dest,
-        patch("cli.track_progress", new=lambda *args, **_: args[0]),
-    ):
+    with Path.tempdir() as source, Path.tempdir() as dest:
         config = {
             "source": str(source),
             "dest": str(dest),

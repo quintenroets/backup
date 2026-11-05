@@ -97,9 +97,11 @@ class PrintChange:
             else self.generate_path_lines()
         )
 
-    def generate_diff_lines(self) -> Iterator[str]:
-        diff_lines = self.change.get_diff_lines(color=False)
-        for line in diff_lines:
+    def generate_diff_lines(self, *, max_lines: int = 20) -> Iterator[str]:
+        source = cast("Path", self.change.source) / self.change.path
+        dest = cast("Path", self.change.dest) / self.change.path
+        lines = cli.capture_output_lines("diff", "-u", dest, source, check=False)
+        for line in lines[2 : 2 + max_lines]:
             change_type: ChangeType | None
             match line[0]:
                 case ChangeType.created.symbol:

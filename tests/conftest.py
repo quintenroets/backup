@@ -1,10 +1,6 @@
 import os
 import sys
 from collections.abc import Iterator
-from contextlib import AbstractContextManager
-from dataclasses import dataclass
-from types import TracebackType
-from typing import Any
 from unittest.mock import patch
 
 import cli
@@ -16,24 +12,6 @@ from backup.context import Context, Storage
 from backup.context import context as context_
 from backup.models import BackupConfig, Path
 from backup.syncer import SyncConfig, Syncer
-
-
-@dataclass
-class ContextList(AbstractContextManager[None]):
-    items: list[AbstractContextManager[Any]]
-
-    def __enter__(self) -> None:
-        for item in self.items:
-            item.__enter__()
-
-    def __exit__(
-        self,
-        exception_type: type[BaseException] | None,
-        exception_value: BaseException | None,
-        traceback: TracebackType | None,
-    ) -> None:
-        for item in self.items:
-            item.__exit__(exception_type, exception_value, traceback)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -57,26 +35,19 @@ def test_context() -> Context:
     return context_
 
 
-def generate_context_managers(
-    directories: list[Path],
-) -> Iterator[AbstractContextManager[Any]]:
-    yield from directories
-    yield patch("cli.track_progress", new=lambda *args, **_: args[0])
-
-
 @pytest.fixture
 def mocked_backup() -> Iterator[Backup]:
-    directories = [Path.tempdir() for _ in range(2)]
-    context_managers = list(generate_context_managers(directories))
-    relative_cache_path = Path.backup_cache.relative_to(Path.backup_source)
-    item = {"includes": [""], "excludes": ["dummy.txt", "dummy_directory"]}
-    config = {
-        "source": str(directories[0]),
-        "dest": str(directories[1]),
-        "cache": str(directories[0] / relative_cache_path),
-        "syncs": [item],
-    }
-    with ContextList(context_managers):
+    with (
+        Path.tempdir() as source,
+        Path.tempdir() as dest,
+        patch("cli.track_progress", new=lambda *args, **_: args[0]),
+    ):
+        config = {
+            "source": str(source),
+            "dest": str(dest),
+            "cache": str(source / Path.backup_cache.relative_to(Path.backup_source)),
+            "syncs": [{"includes": [""], "excludes": ["dummy.txt", "dummy_directory"]}],
+        }
         yield Backup(config)
 
 

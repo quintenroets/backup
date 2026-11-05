@@ -9,20 +9,11 @@ from superpathlib import Path
 class SyncConfig:
     source: Path
     dest: Path
-    sub_check_path: Path | None = None
     options: list[CommandItem] = field(default_factory=list)
     filter_rules: list[str] = field(default_factory=list)
     paths: list[Path] | tuple[Path] | set[Path] = field(default_factory=list)
     path: Path | None = None
     directory: Path | None = None
-
-    def __post_init__(self) -> None:
-        if self.sub_check_path is not None:
-            sub_check_path = self.sub_check_path
-            if sub_check_path.is_relative_to(self.source):
-                sub_check_path = sub_check_path.relative_to(self.source)
-            self.source /= sub_check_path
-            self.dest /= sub_check_path
 
     @property
     def overlapping_sub_path(self) -> Path | None:
@@ -36,7 +27,6 @@ class SyncConfig:
         return SyncConfig(
             source=self.source,
             dest=self.dest,
-            sub_check_path=self.sub_check_path,
             options=self.options,
             paths=list(paths),
         )

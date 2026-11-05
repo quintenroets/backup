@@ -72,11 +72,7 @@ def isolated_session() -> Iterator[None]:
 
 @pytest.fixture
 def mocked_syncer(test_backup_config: BackupConfig) -> Syncer:
-    config = SyncConfig(
-        source=test_backup_config.source,
-        dest=test_backup_config.dest,
-        sub_check_path=test_backup_config.source,
-    )
+    config = SyncConfig(source=test_backup_config.source, dest=test_backup_config.dest)
     return Syncer(config)
 
 

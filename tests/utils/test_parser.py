@@ -1,38 +1,39 @@
 from unittest.mock import patch
 
-import pytest
-
-from backup.context import Context
-from backup.models import Path
+from backup.context import context
+from backup.models import Path, PathRule
 from backup.utils.parser.config import parse_config
 from backup.utils.parser.rules import RuleParser
 
 
-@pytest.mark.usefixtures("test_context")
-def test_parser() -> None:
-    include_rules = [{"a": ["b", "c"]}, {"d/e/f": ["g", "h"]}, "HOME", "__VERSION__"]
-    rules = RuleParser(root=Path("/"), includes=include_rules)
-    parsed_paths = list(rules.get_paths())
-    expected_path = Path("a/b")
-    assert expected_path in parsed_paths
+def test_nested_include() -> None:
+    parser = RuleParser(root=Path("/"), includes=[{"d/e": ["f"]}])
+    rules = PathRule(Path("d/e/f"), include=True), PathRule(Path(), include=False)
+    assert tuple(parser.parse()) == rules
 
 
-def test_config_parser() -> None:
-    verify_config_parser()
+def test_version_keyword() -> None:
+    with Path.tempdir() as root:
+        (root / "1").touch(mtime=1)
+        (root / "2").touch()
+        parser = RuleParser(root=root, includes=["__VERSION__"])
+        assert PathRule(Path("2"), include=True) in parser.parse()
 
 
-def test_config_parser_with_sub_check_path(test_context: Context) -> None:
-    sub_check_path = Path.HOME / ".config"
-    with patch.object(test_context, "sub_check_path", sub_check_path):
-        verify_config_parser()
+def test_exclude() -> None:
+    parser = RuleParser(root=Path("/"), excludes=["a"])
+    assert PathRule(Path("a"), include=False) in parser.parse()
 
 
-def verify_config_parser() -> None:
-    sync = {
-        "includes": [{".config": ["git", {"chromium": ["Default"]}]}],
-        "excludes": [""],
-        "source": "/HOME",
-    }
-    config = {"syncs": [sync]}
-    parsed_config = list(parse_config(config))
-    assert parsed_config
+def test_home_source() -> None:
+    with Path.tempdir() as home, patch.object(Path, "HOME", home):
+        config = {"cache": str(home), "syncs": [{"includes": [""], "source": "/HOME"}]}
+        assert next(parse_config(config)).source == home
+
+
+def test_sub_check_path() -> None:
+    with Path.tempdir() as path, patch.object(context, "sub_check_path", path):
+        sync = {"includes": [""], "source": str(path.parent)}
+        parsed = next(parse_config({"cache": str(path), "syncs": [sync]}))
+    assert parsed.source == path
+    assert parsed.rules == [PathRule(Path(), include=True)]

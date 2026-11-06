@@ -8,8 +8,7 @@ import pytest
 import superpathlib
 
 from backup.backup import Backup
-from backup.context import Context, Storage
-from backup.context import context as context_
+from backup.context import Storage
 from backup.models import BackupConfig, Path
 from backup.syncer import SyncConfig, Syncer
 
@@ -25,14 +24,6 @@ def _rclone_test_config() -> Iterator[None]:
         }
         os.environ.update(config)
         yield
-
-
-@pytest.fixture(scope="session", autouse=True)
-def test_context() -> Context:
-    os.environ["USERNAME"] = (
-        "runner" if "GITHUB_ACTIONS" in os.environ else os.getlogin()
-    )
-    return context_
 
 
 @pytest.fixture

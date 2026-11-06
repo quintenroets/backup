@@ -69,13 +69,6 @@ class RuleParser:
     includes: Entries = field(default_factory=list)
     excludes: Entries = field(default_factory=list)
 
-    def parse_rules(self) -> list[PathRule]:
-        return list(self.parse())
-
-    def get_paths(self) -> Iterator[Path]:
-        for rule in self.parse():
-            yield rule.path
-
     def parse(self) -> Iterator[PathRule]:
         include_rules = RuleConfig.from_list(self.includes, self.root)
         exclude_rules = RuleConfig.from_list(self.excludes, self.root)

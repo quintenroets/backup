@@ -37,17 +37,11 @@ class EntryParser:
             source = Path.HOME
         dest = Path(entry.dest)
         sub_path = resolve_sub_path(source)
-        rules = RuleParser(
-            source,
-            sub_path,
-            entry.includes,
-            entry.excludes,
-        ).parse_rules()
         return BackupConfig(
             source / sub_path,
             self.dest / dest / sub_path,
             self.cache / dest / sub_path,
-            rules,
+            list(RuleParser(source, sub_path, entry.includes, entry.excludes).parse()),
             self.ignores,
         )
 

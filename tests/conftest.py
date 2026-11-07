@@ -29,13 +29,8 @@ def _rclone_test_config() -> Iterator[None]:
 @pytest.fixture
 def mocked_backup() -> Iterator[Backup]:
     with Path.tempdir() as source, Path.tempdir() as dest, Path.tempdir() as cache:
-        config = {
-            "source": str(source),
-            "dest": str(dest),
-            "cache": str(cache),
-            "syncs": [{"includes": [""], "excludes": ["dummy.txt", "dummy_directory"]}],
-        }
-        yield Backup(config)
+        sync = {"includes": [""], "excludes": ["dummy.txt", "dummy_directory"]}
+        yield Backup({"source": source, "dest": dest, "cache": cache, "syncs": [sync]})
 
 
 @pytest.fixture

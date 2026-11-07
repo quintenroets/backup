@@ -24,23 +24,21 @@ def resolve_sub_path(source: Path) -> Path:
 
 class EntryParser:
     def __init__(self, config: SerializedBackupConfig) -> None:
-        dest = config.source if config.dest == "/" else config.dest
-        self.source = Path(config.source)
-        self.dest = Path(dest)
-        self.cache = Path(config.cache)
+        self.source = config.source
+        self.dest = config.dest
+        self.cache = config.cache
         self.cache.mkdir(parents=True, exist_ok=True)
         self.ignores = config.ignores
 
     def parse_entry(self, entry: SerializedEntryConfig) -> BackupConfig:
-        source = self.source / Path(entry.source)
+        source = self.source / entry.source
         if source == Path("/") / "HOME":
             source = Path.HOME
-        dest = Path(entry.dest)
         sub_path = resolve_sub_path(source)
         return BackupConfig(
             source / sub_path,
-            self.dest / dest / sub_path,
-            self.cache / dest / sub_path,
+            self.dest / entry.dest / sub_path,
+            self.cache / entry.dest / sub_path,
             list(RuleParser(source, sub_path, entry.includes, entry.excludes).parse()),
             self.ignores,
         )

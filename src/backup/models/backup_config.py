@@ -28,8 +28,8 @@ class PathRule:
 
 @dataclass
 class SerializedEntryConfig(SerializationMixin):
-    source: str = ""
-    dest: str = ""
+    source: Path = field(default_factory=Path)
+    dest: Path = field(default_factory=Path)
     includes: Entries = field(default_factory=list)
     excludes: Entries = field(default_factory=list)
 
@@ -37,9 +37,9 @@ class SerializedEntryConfig(SerializationMixin):
 @dataclass
 class SerializedBackupConfig(SerializationMixin):
     syncs: list[SerializedEntryConfig]
-    source: str = "/"
-    dest: str = "/"
-    cache: str = str(Path.backup_cache)
+    dest: Path
+    source: Path = Path.backup_source
+    cache: Path = Path.backup_cache
     ignores: Ignores = field(default_factory=Ignores)
 
 

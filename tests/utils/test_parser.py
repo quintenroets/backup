@@ -27,13 +27,14 @@ def test_exclude() -> None:
 
 def test_home_source() -> None:
     with Path.tempdir() as home, patch.object(Path, "HOME", home):
-        config = {"cache": str(home), "syncs": [{"includes": [""], "source": "/HOME"}]}
+        sync = {"includes": [""], "source": "/HOME"}
+        config = {"cache": home, "dest": home, "syncs": [sync]}
         assert next(parse_config(config)).source == home
 
 
 def test_sub_check_path() -> None:
     with Path.tempdir() as path, patch.object(context, "sub_check_path", path):
-        sync = {"includes": [""], "source": str(path.parent)}
-        parsed = next(parse_config({"cache": str(path), "syncs": [sync]}))
+        sync = {"includes": [""], "source": path.parent}
+        parsed = next(parse_config({"cache": path, "dest": path, "syncs": [sync]}))
     assert parsed.source == path
     assert parsed.rules == [PathRule(Path(), include=True)]

@@ -7,7 +7,7 @@ import pytest
 from backup import run
 from backup.cache import CacheScanner
 from backup.context import Action, context
-from backup.models import Change, Path, PrintStructure, SerializedBackupConfig
+from backup.models import Path, SerializedBackupConfig
 from backup.parser import parse_config
 
 
@@ -29,15 +29,13 @@ def test_push_file(config: SerializedBackupConfig, *, deleted: bool) -> None:
 
 
 def test_declined_push(config: SerializedBackupConfig) -> None:
-    (config.source / "0.txt").touch()
+    (config.source / "long.txt").lines = [str(number) for number in range(20)]
+    (config.source / "binary.bin").byte_content = b"\0"
+    for number in range(1001):
+        (config.source / "many" / f"{number}.txt").touch()
     with patch.object(cli, "confirm", return_value=False):
         assert not run(config.dict())
-    assert not (config.dest / "0.txt").exists()
-
-
-def test_print_nested_changes() -> None:
-    paths = ("a/b/0", "a/b/c/0", "a/b/c/1")
-    PrintStructure.from_changes([Change(Path(path)) for path in paths]).print()
+    assert not (config.dest / "long.txt").exists()
 
 
 def test_scan_skips_nested_cache(config: SerializedBackupConfig) -> None:
@@ -52,8 +50,13 @@ def test_scan_skips_nested_cache(config: SerializedBackupConfig) -> None:
 def test_pull(config: SerializedBackupConfig) -> None:
     (config.source / "0.txt").touch(mtime=60)
     (config.dest / "0.txt").touch(mtime=60)
-    (config.dest / "1.txt").touch()
+    (config.dest / "1.txt").text = "pulled"
     (config.cache / "2.txt").touch()
-    with patch.object(context.options, "action", Action.pull):
+    with (
+        patch.object(context.options, "action", Action.pull),
+        patch.object(cli, "confirm", side_effect=[False, True]),
+        cli.console.capture() as capture,
+    ):
         assert run(config.dict()) == [config.source / "1.txt"]
     assert (config.source / "1.txt").exists()
+    assert "@@ -0,0 +1 @@" in capture.get()

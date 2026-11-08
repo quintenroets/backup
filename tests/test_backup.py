@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from unittest.mock import patch
 
 import pytest
@@ -5,100 +6,57 @@ import pytest
 from backup.backup import Backup, run
 from backup.backup.cache import CacheScanner
 from backup.context import Action, context
-from backup.models import BackupConfig, Path, PathRule
-
-
-def test_push(mocked_backup_with_filled_content: Backup) -> None:
-    verify_push(mocked_backup_with_filled_content)
-
-
-def test_empty_push(mocked_backup: Backup) -> None:
-    mocked_backup.push()
-
-
-@pytest.mark.parametrize("action", Action)
-def test_run(action: Action, mocked_backup: Backup) -> None:
-    with (
-        patch.object(context.options, "action", action),
-        patch.object(Backup, action.value) as method,
-    ):
-        run(mocked_backup.config)
-    method.assert_called_once()
-
-
-def test_push_with_reversed_cache(mocked_backup_with_filled_content: Backup) -> None:
-    verify_push(mocked_backup_with_filled_content, reverse_cache=True)
-
-
-def verify_push(backup: Backup, *, reverse_cache: bool = False) -> None:
-    if reverse_cache:
-        config = backup.backup_configs[0]
-        config.source, config.cache = config.cache, config.source
-    backup.push()
-    backup.push()
+from backup.models import Change, Path, PathRule, PrintStructure
 
 
 @pytest.fixture
-def mocked_backup_with_include_path(
-    mocked_backup_with_filled_content: Backup,
-) -> Backup:
-    mocked_backup_with_filled_content.backup_configs[0].rules.append(
-        PathRule(Path("0.txt"), include=True),
-    )
-    return mocked_backup_with_filled_content
+def mocked_backup() -> Iterator[Backup]:
+    with Path.tempdir() as source, Path.tempdir() as dest, Path.tempdir() as cache:
+        sync = {"includes": [""]}
+        yield Backup({"source": source, "dest": dest, "cache": cache, "syncs": [sync]})
 
 
-def test_push_with_include_path(mocked_backup_with_include_path: Backup) -> None:
-    verify_push(mocked_backup_with_include_path)
+@pytest.mark.parametrize("action", Action)
+def test_run(action: Action) -> None:
+    with (
+        patch.object(context.options, "action", action),
+        patch.object(Backup, action.value, autospec=True) as method,
+    ):
+        run({})
+    method.assert_called_once()
 
 
-def test_push_with_reversed_cache_and_include_path(
-    mocked_backup_with_include_path: Backup,
-) -> None:
-    verify_push(mocked_backup_with_include_path, reverse_cache=True)
+@pytest.mark.parametrize("deleted", [False, True])
+def test_push_file(mocked_backup: Backup, *, deleted: bool) -> None:
+    config = mocked_backup.backup_configs[0]
+    path = Path("0.txt")
+    ((config.cache if deleted else config.source) / path).touch()
+    config.rules = [PathRule(path, include=True)]
+    changes = mocked_backup.push()[0]
+    assert len(changes) == 1
+    assert changes[0].path == path
+    assert not mocked_backup.push()[0]
 
 
-def test_push_with_indent(mocked_backup_with_filled_content: Backup) -> None:
-    directory = (
-        mocked_backup_with_filled_content.backup_configs[0].source / "sub" / "directory"
-    )
-    paths = (
-        directory / "a.txt",
-        directory / "b.txt",
-        directory / "sub_sub" / "a.txt",
-        directory / "sub_sub" / "b.txt",
-    )
-    for path in paths:
-        path.touch()
-    verify_push(mocked_backup_with_filled_content)
+def test_print_nested_changes() -> None:
+    paths = ("a/b/0", "a/b/c/0", "a/b/c/1")
+    PrintStructure.from_changes([Change(Path(path)) for path in paths]).print()
 
 
-def test_scan_skips_nested_cache(test_backup_config: BackupConfig) -> None:
+def test_scan_skips_nested_cache(mocked_backup: Backup) -> None:
+    config = mocked_backup.backup_configs[0]
     path = Path("cache/0.txt")
-    test_backup_config.cache = test_backup_config.source / path.parent
-    (test_backup_config.source / path).touch()
-    entries = CacheScanner(test_backup_config).generate_entries()
+    config.cache = config.source / path.parent
+    (config.source / path).touch()
+    entries = CacheScanner(config).generate_entries()
     assert path not in {entry.relative for entry in entries}
 
 
-def test_pull(
-    mocked_backup_with_filled_content: Backup,
-    test_backup_config: BackupConfig,
-) -> None:
-    verify_pull(test_backup_config, backup=mocked_backup_with_filled_content)
-
-
-def test_pull_with_sub_path(
-    mocked_backup_with_filled_content: Backup,
-    test_backup_config: BackupConfig,
-) -> None:
-    verify_pull(test_backup_config, backup=mocked_backup_with_filled_content)
-
-
-def verify_pull(test_backup_config: BackupConfig, backup: Backup) -> None:
-    backup.pull()
-    dest_file = next(
-        path for path in test_backup_config.dest.rglob("*") if path.is_file()
-    )
-    dest_file.unlink()
-    backup.pull()
+def test_pull(mocked_backup: Backup) -> None:
+    config = mocked_backup.backup_configs[0]
+    (config.source / "0.txt").touch(mtime=60)
+    (config.dest / "0.txt").touch(mtime=60)
+    (config.dest / "1.txt").touch()
+    (config.cache / "2.txt").touch()
+    assert len(mocked_backup.pull()[0]) == 1
+    assert (config.source / "1.txt").exists()

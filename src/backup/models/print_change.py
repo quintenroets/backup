@@ -14,6 +14,13 @@ from .change import Change, ChangeType
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
 
+colors = {
+    ChangeType.created: "green",
+    ChangeType.modified: "blue",
+    ChangeType.deleted: "red",
+    ChangeType.preserved: "black",
+}
+
 
 @dataclass
 class PrintChange:
@@ -36,7 +43,7 @@ class PrintChange:
 
     @property
     def symbol(self) -> str:
-        return self.change.type.symbol if self.change.path.parts else "\u2022"
+        return self.change.type if self.change.path.parts else "\u2022"
 
     @cached_property
     def path_message(self) -> str:
@@ -67,7 +74,7 @@ class PrintChange:
             self.print_diff()
 
     def format_lines(self, lines: list[str]) -> Iterator[str]:
-        color = self.change.type.color if self.change.path.parts else "black"
+        color = colors[self.change.type] if self.change.path.parts else "black"
         last_chunk_index = len(lines) - 1
         for i, message in enumerate(lines):
             prefix = f"{self.symbol} " if i == 0 else "  "
@@ -102,22 +109,12 @@ class PrintChange:
         dest = cast("Path", self.change.dest) / self.change.path
         lines = cli.capture_output_lines("diff", "-u", dest, source, check=False)
         for line in lines[2 : 2 + max_lines]:
-            change_type: ChangeType | None
-            match line[0]:
-                case ChangeType.created.symbol:
-                    change_type = ChangeType.created
-                case ChangeType.deleted.symbol:
-                    change_type = ChangeType.deleted
-                case " ":
-                    change_type = ChangeType.preserved
-                case _:
-                    change_type = None
-
-            if change_type is not None:
-                diff_line = line[1:].strip()
-                if change_type != ChangeType.preserved:
-                    diff_line = f"{change_type.symbol} {diff_line}"
-                yield f"[{change_type.color}]{diff_line}"
+            symbol = line[0]
+            content = line[1:].strip()
+            if symbol == " ":
+                yield f"[{colors[ChangeType.preserved]}]{content}"
+            elif symbol in (ChangeType.created, ChangeType.deleted):
+                yield f"[{colors[ChangeType(symbol)]}]{symbol} {content}"
 
     def generate_path_lines(self) -> Iterator[str]:
         source = cast("Path", self.change.source)

@@ -11,31 +11,30 @@ from backup.syncer.builder import create_syncer
 
 
 @pytest.fixture
-def mocked_syncer() -> Iterator[Syncer]:
+def syncer() -> Iterator[Syncer]:
     with Path.tempdir() as source, Path.tempdir() as dest:
         yield Syncer(SyncConfig(source=source, dest=dest))
 
 
 @pytest.fixture
-def mocked_syncer_with_filled_content(mocked_syncer: Syncer) -> Syncer:
+def filled_syncer(syncer: Syncer) -> Syncer:
     for number in (0, 1):
-        (mocked_syncer.config.source / f"{number}.txt").text = "a"
+        (syncer.config.source / f"{number}.txt").text = "a"
     for number in (0, 2):
-        (mocked_syncer.config.dest / f"{number}.txt").text = "aa"
-    return mocked_syncer
+        (syncer.config.dest / f"{number}.txt").text = "aa"
+    return syncer
 
 
-def test_malformed_filters_indicated(mocked_syncer: Syncer) -> None:
-    mocked_syncer.config.filter_rules = ["????"]
+def test_malformed_filters_indicated(syncer: Syncer) -> None:
+    syncer.config.filter_rules = ["????"]
     with pytest.raises(ValueError, match="Invalid paths:"):
-        mocked_syncer.capture_status()
+        syncer.capture_status()
 
 
-def test_status(mocked_syncer_with_filled_content: Syncer) -> None:
-    syncer = mocked_syncer_with_filled_content
-    for directory in (syncer.config.source, syncer.config.dest):
+def test_status(filled_syncer: Syncer) -> None:
+    for directory in (filled_syncer.config.source, filled_syncer.config.dest):
         (directory / "3.txt").text = "a"
-    status = syncer.capture_status(quiet=True)
+    status = filled_syncer.capture_status(quiet=True)
     changes = {change.path: change.type for change in status}
     assert changes == {
         Path("0.txt"): ChangeType.modified,
@@ -44,63 +43,58 @@ def test_status(mocked_syncer_with_filled_content: Syncer) -> None:
     }
 
 
-def test_push(mocked_syncer_with_filled_content: Syncer) -> None:
-    syncer = mocked_syncer_with_filled_content
-    source_hash = syncer.config.source.content_hash
-    syncer.capture_push()
-    assert syncer.config.dest.content_hash == source_hash
+def test_push(filled_syncer: Syncer) -> None:
+    source_hash = filled_syncer.config.source.content_hash
+    filled_syncer.capture_push()
+    assert filled_syncer.config.dest.content_hash == source_hash
 
 
-def test_pull(mocked_syncer_with_filled_content: Syncer) -> None:
-    syncer = mocked_syncer_with_filled_content
-    dest_hash = syncer.config.dest.content_hash
-    syncer.capture_pull()
-    assert syncer.config.source.content_hash == dest_hash
+def test_pull(filled_syncer: Syncer) -> None:
+    dest_hash = filled_syncer.config.dest.content_hash
+    filled_syncer.capture_pull()
+    assert filled_syncer.config.source.content_hash == dest_hash
 
 
-def test_push_skips_newer(mocked_syncer: Syncer) -> None:
-    (mocked_syncer.config.source / "0.txt").touch(mtime=1)
-    dest = mocked_syncer.config.dest / "0.txt"
+def test_push_skips_newer(syncer: Syncer) -> None:
+    (syncer.config.source / "0.txt").touch(mtime=1)
+    dest = syncer.config.dest / "0.txt"
     dest.text = "newer"
     with patch.object(context.config, "overwrite_newer", new=False):
-        mocked_syncer.capture_push()
+        syncer.capture_push()
     assert dest.text == "newer"
 
 
-def test_show_diff(mocked_syncer_with_filled_content: Syncer) -> None:
-    syncer = mocked_syncer_with_filled_content
-    (syncer.config.source / "0.txt").lines = ["same", "different"]
-    (syncer.config.dest / "0.txt").lines = ["same", "different2"]
-    changes = syncer.capture_status(quiet=True)
+def test_show_diff(filled_syncer: Syncer) -> None:
+    (filled_syncer.config.source / "0.txt").lines = ["same", "different"]
+    (filled_syncer.config.dest / "0.txt").lines = ["same", "different2"]
+    changes = filled_syncer.capture_status(quiet=True)
     PrintStructure.from_changes(changes).print(show_diff=True)
 
 
 @pytest.fixture
-def mocked_syncer_with_root_dest(
-    mocked_syncer_with_filled_content: Syncer,
-) -> Iterator[Syncer]:
-    config = mocked_syncer_with_filled_content.config
+def syncer_with_root_dest(filled_syncer: Syncer) -> Iterator[Syncer]:
+    config = filled_syncer.config
     cli.run("rm -r", config.dest)
     cli.run("sudo mkdir", config.dest)
-    yield mocked_syncer_with_filled_content
+    yield filled_syncer
     cli.run("sudo rm -r", config.dest)
 
 
-def test_push_to_root_dest(mocked_syncer_with_root_dest: Syncer) -> None:
-    source_hash = mocked_syncer_with_root_dest.config.source.content_hash
-    mocked_syncer_with_root_dest.push()
-    assert mocked_syncer_with_root_dest.config.dest.content_hash == source_hash
+def test_push_to_root_dest(syncer_with_root_dest: Syncer) -> None:
+    source_hash = syncer_with_root_dest.config.source.content_hash
+    syncer_with_root_dest.push()
+    assert syncer_with_root_dest.config.dest.content_hash == source_hash
 
 
-def test_pull_to_root_source(mocked_syncer_with_root_dest: Syncer) -> None:
-    config = mocked_syncer_with_root_dest.config
+def test_pull_to_root_source(syncer_with_root_dest: Syncer) -> None:
+    config = syncer_with_root_dest.config
     source_hash = config.source.content_hash
     Syncer(SyncConfig(source=config.dest, dest=config.source)).pull()
     assert config.dest.content_hash == source_hash
 
 
-def test_pull_with_specified_paths(mocked_syncer_with_filled_content: Syncer) -> None:
-    config = mocked_syncer_with_filled_content.config
+def test_pull_with_specified_paths(filled_syncer: Syncer) -> None:
+    config = filled_syncer.config
     Syncer(config.with_paths([Path("2.txt")])).pull()
     assert (config.source / "2.txt").exists()
     assert (config.source / "1.txt").exists()
@@ -115,5 +109,5 @@ def test_create_syncer() -> None:
     create_syncer(path=Path("/"))
 
 
-def test_export_files(mocked_syncer: Syncer) -> None:
-    mocked_syncer.export_files("csv")
+def test_export_files(syncer: Syncer) -> None:
+    syncer.export_files("csv")

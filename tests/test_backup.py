@@ -10,7 +10,7 @@ from backup.models import Change, Path, PathRule, PrintStructure
 
 
 @pytest.fixture
-def mocked_backup() -> Iterator[Backup]:
+def backup() -> Iterator[Backup]:
     with Path.tempdir() as source, Path.tempdir() as dest, Path.tempdir() as cache:
         sync = {"includes": [""]}
         yield Backup({"source": source, "dest": dest, "cache": cache, "syncs": [sync]})
@@ -27,15 +27,15 @@ def test_run(action: Action) -> None:
 
 
 @pytest.mark.parametrize("deleted", [False, True])
-def test_push_file(mocked_backup: Backup, *, deleted: bool) -> None:
-    config = mocked_backup.backup_configs[0]
+def test_push_file(backup: Backup, *, deleted: bool) -> None:
+    config = backup.backup_configs[0]
     path = Path("0.txt")
     ((config.cache if deleted else config.source) / path).touch()
     config.rules = [PathRule(path, include=True)]
-    changes = mocked_backup.push()[0]
+    changes = backup.push()[0]
     assert len(changes) == 1
     assert changes[0].path == path
-    assert not mocked_backup.push()[0]
+    assert not backup.push()[0]
 
 
 def test_print_nested_changes() -> None:
@@ -43,8 +43,8 @@ def test_print_nested_changes() -> None:
     PrintStructure.from_changes([Change(Path(path)) for path in paths]).print()
 
 
-def test_scan_skips_nested_cache(mocked_backup: Backup) -> None:
-    config = mocked_backup.backup_configs[0]
+def test_scan_skips_nested_cache(backup: Backup) -> None:
+    config = backup.backup_configs[0]
     path = Path("cache/0.txt")
     config.cache = config.source / path.parent
     (config.source / path).touch()
@@ -52,11 +52,11 @@ def test_scan_skips_nested_cache(mocked_backup: Backup) -> None:
     assert path not in {entry.relative for entry in entries}
 
 
-def test_pull(mocked_backup: Backup) -> None:
-    config = mocked_backup.backup_configs[0]
+def test_pull(backup: Backup) -> None:
+    config = backup.backup_configs[0]
     (config.source / "0.txt").touch(mtime=60)
     (config.dest / "0.txt").touch(mtime=60)
     (config.dest / "1.txt").touch()
     (config.cache / "2.txt").touch()
-    assert len(mocked_backup.pull()[0]) == 1
+    assert len(backup.pull()[0]) == 1
     assert (config.source / "1.txt").exists()

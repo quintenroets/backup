@@ -4,9 +4,9 @@ from functools import cached_property
 from typing import Any
 
 from backup.context import Action, context
-from backup.models import BackupConfig, Changes
+from backup.models import BackupConfig, Changes, Path
 from backup.syncer import SyncConfig, Syncer
-from backup.utils.parser.config import parse_config
+from backup.utils.parser import parse_config
 
 from .cache import CacheSyncer
 from .change_scanner import ChangeScanner
@@ -23,7 +23,8 @@ class Backup:
 
     @cached_property
     def backup_configs(self) -> list[BackupConfig]:
-        return list(parse_config(self.config))
+        backup_root = Path.cwd() if context.options.sub_check else Path("/")
+        return list(parse_config(self.config, backup_root))
 
     def push(self, *, reverse: bool = False) -> list[Changes]:
         batches = ChangeScanner(self.backup_configs).check_changes(reverse=reverse)

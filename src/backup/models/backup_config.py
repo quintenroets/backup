@@ -48,5 +48,5 @@ class BackupConfig:
     source: Path
     dest: Path
     cache: Path
-    rules: list[PathRule] = field(default_factory=list)
-    ignores: Ignores = field(default_factory=Ignores)
+    rules: list[PathRule]
+    ignores: Ignores

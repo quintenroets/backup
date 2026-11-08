@@ -64,6 +64,7 @@ class CacheSyncer:
         remote_paths: set[Path],
         config: SyncConfig,
     ) -> None:
+        config.source.mkdir(parents=True, exist_ok=True)
         pairs = Syncer(config).generate_paths_with_time(config.source)
         for path, _ in pairs:
             if path not in remote_paths:

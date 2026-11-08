@@ -1,14 +1,16 @@
+import select
+import subprocess
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
+from typing import IO
 
 import cli
 from cli.commands.runner import Runner
 from superpathlib import Path
 
 from backup.models import Change, Changes, ChangeType
-from backup.utils import generate_output_lines
-from backup.utils.error_handling import create_malformed_filters_error
 
+from .filters import create_malformed_filters_error
 from .sync_config import SyncConfig
 
 
@@ -44,3 +46,34 @@ class StatusProcessor:
         for line in status_lines:
             type_ = ChangeType(line[0])
             yield Change(Path(line[2:]), type_, self.config.source, self.config.dest)
+
+
+def generate_output_lines(runner: Runner[str]) -> Iterator[str]:
+    runner.stdout = subprocess.PIPE
+    runner.stderr = subprocess.PIPE
+    process = runner.launch()
+    extracted_outputs = extract_output_lines(process)
+    error_lines = []
+    output_generated = False
+    for line, is_stdout in extracted_outputs:
+        if is_stdout:
+            output_generated = True
+            yield line
+        else:
+            error_lines.append(line)
+    if not output_generated and error_lines:
+        message = "\n".join(error_lines)
+        raise cli.CalledProcessError(message)
+
+
+def extract_output_lines(process: subprocess.Popen[str]) -> Iterator[tuple[str, bool]]:
+    streams = process.stdout, process.stderr
+    outputs: list[IO[str]] = [f for f in streams if f is not None]
+    while outputs:
+        readable_outputs, _, _ = select.select(outputs, [], [])
+        for output in readable_outputs:
+            line = output.readline().strip()
+            if line:
+                yield line, output is process.stdout
+            else:
+                outputs.remove(output)

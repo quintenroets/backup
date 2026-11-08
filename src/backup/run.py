@@ -6,12 +6,11 @@ from typing import TYPE_CHECKING, Any
 
 import cli
 
-from backup.context import Action, context
-from backup.models import BackupConfig, Change, Path, PrintStructure
-from backup.syncer import SyncConfig, Syncer
-from backup.utils.parser import parse_config
-
 from .cache import CacheScanner, CacheSyncer, Entry
+from .context import Action, context
+from .models import BackupConfig, Change, Path, PrintStructure
+from .parser import parse_config
+from .syncer import SyncConfig, Syncer
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

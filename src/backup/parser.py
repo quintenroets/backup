@@ -2,7 +2,7 @@ from collections.abc import Iterable, Iterator
 from operator import attrgetter
 from typing import Any
 
-from backup.models import BackupConfig, Entries, Path, PathRule, SerializedBackupConfig
+from .models import BackupConfig, Entries, Path, PathRule, SerializedBackupConfig
 
 
 def parse_config(raw: dict[str, Any], backup_root: Path) -> Iterator[BackupConfig]:

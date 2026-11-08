@@ -7,7 +7,7 @@ import cli
 from backup.models import BackupConfig, Path
 from backup.syncer import SyncConfig, Syncer
 
-from .cache_scanner import CacheScanner
+from .scanner import CacheScanner
 
 
 @dataclass

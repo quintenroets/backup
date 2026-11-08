@@ -34,6 +34,3 @@ class Entry:
             self.existing.size > context.config.max_backup_size
             and self.relative.suffix != ".zip"
         )
-
-    def __hash__(self) -> int:
-        return hash(self.relative)

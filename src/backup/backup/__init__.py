@@ -1,1 +1,1 @@
-from .backup import Backup, run
+from .backup import run

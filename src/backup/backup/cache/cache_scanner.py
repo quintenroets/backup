@@ -2,8 +2,8 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
-from backup.models import BackupConfig, Changes, Path, PathRule
-from backup.syncer import SyncConfig, Syncer
+from backup.models import BackupConfig, Path, PathRule
+from backup.syncer import SyncConfig
 
 from .entry import Entry
 
@@ -12,27 +12,11 @@ from .entry import Entry
 class CacheScanner:
     backup_config: BackupConfig
     visited: set[Path] = field(default_factory=set)
-    entries: set[Entry] = field(default_factory=set)
-
-    @property
-    def sync_config(self) -> SyncConfig:
-        return SyncConfig(
-            source=self.backup_config.source,
-            dest=self.backup_config.cache,
-        )
-
-    def calculate_changes(self, *, reverse: bool = False) -> Changes:
-        paths = [entry.relative for entry in self.entries if entry.is_changed()]
-        return (
-            Syncer(self.sync_config.with_paths(paths)).capture_status(reverse=reverse)
-            if paths
-            else []
-        )
 
     def generate_entries(self) -> Iterator[Entry]:
         for rule in self.generate_rules():
-            source_path = Path(self.sync_config.source) / rule.path
-            dest_path = Path(self.sync_config.dest) / rule.path
+            source_path = self.backup_config.source / rule.path
+            dest_path = self.backup_config.cache / rule.path
             if rule.include:
                 is_file = source_path.is_file() or dest_path.is_file()
                 if is_file:
@@ -51,8 +35,9 @@ class CacheScanner:
             self.visited.add(dest_path)
 
     def generate_rules(self) -> Iterator[PathRule]:
-        if self.sync_config.overlapping_sub_path is not None:
-            yield PathRule(Path(self.sync_config.overlapping_sub_path), include=False)
+        sync_config = SyncConfig(self.backup_config.source, self.backup_config.cache)
+        if sync_config.overlapping_sub_path is not None:
+            yield PathRule(Path(sync_config.overlapping_sub_path), include=False)
         yield from self.backup_config.rules
 
     def create_entry(self, **kwargs: Any) -> Entry:

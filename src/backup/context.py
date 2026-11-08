@@ -10,7 +10,7 @@ from package_utils.context import Context as Context_
 from package_utils.secrets_ import load_secret
 from package_utils.storage import CachedFileContent
 
-from backup.models import Path
+from .models import Path
 
 
 class Action(StrEnum):

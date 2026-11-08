@@ -4,11 +4,11 @@ from unittest.mock import patch
 import cli
 import pytest
 
-from backup.backup import run
-from backup.backup.cache import CacheScanner
+from backup import run
+from backup.cache import CacheScanner
 from backup.context import Action, context
 from backup.models import Change, Path, PrintStructure, SerializedBackupConfig
-from backup.utils.parser import parse_config
+from backup.parser import parse_config
 
 
 @pytest.fixture

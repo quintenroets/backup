@@ -5,7 +5,7 @@ import cli
 import pytest
 
 from backup.context import context
-from backup.models import ChangeType, Path, PrintStructure
+from backup.models import ChangeType, Path
 from backup.syncer import SyncConfig, Syncer
 from backup.syncer.builder import create_syncer
 
@@ -62,13 +62,6 @@ def test_push_skips_newer(syncer: Syncer) -> None:
     with patch.object(context.config, "overwrite_newer", new=False):
         syncer.capture_push()
     assert dest.text == "newer"
-
-
-def test_show_diff(filled_syncer: Syncer) -> None:
-    (filled_syncer.config.source / "0.txt").lines = ["same", "different"]
-    (filled_syncer.config.dest / "0.txt").lines = ["same", "different2"]
-    changes = filled_syncer.capture_status(quiet=True)
-    PrintStructure.from_changes(changes).print(show_diff=True)
 
 
 @pytest.fixture

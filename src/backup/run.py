@@ -8,7 +8,7 @@ import cli
 
 from .cache import CacheScanner, CacheSyncer, Entry
 from .context import Action, context
-from .models import BackupConfig, Change, Path, PrintStructure
+from .models import BackupConfig, Path, Plan
 from .parser import parse_config
 from .syncer import SyncConfig, Syncer
 
@@ -16,8 +16,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
     import superpathlib
-
-Plan = tuple[BackupConfig, list[Change]]
 
 
 def run(config: dict[str, Any]) -> list[Path]:
@@ -28,7 +26,8 @@ def run(config: dict[str, Any]) -> list[Path]:
         for backup_config in backup_configs:
             CacheSyncer(backup_config).sync_from_remote()
     plans = list(generate_plans(backup_configs, reverse=reverse))
-    return list(apply(plans, reverse=reverse)) if any(confirm(plans)) else []
+    confirmed = any(confirm(plans, reverse=reverse))
+    return list(apply(plans, reverse=reverse)) if confirmed else []
 
 
 def generate_plans(configs: list[BackupConfig], *, reverse: bool) -> Iterator[Plan]:
@@ -64,12 +63,14 @@ def apply(plans: list[Plan], *, reverse: bool) -> Iterator[Path]:
         yield from (config.source / path for path in paths)
 
 
-def confirm(plans: list[Plan]) -> Iterator[bool]:
+def confirm(plans: list[Plan], *, reverse: bool) -> Iterator[bool]:
     if plans and context.options.confirm_push and sys.stdin.isatty():
+        from .display import print_changes  # noqa: PLC0415
+
         cli.console.rule("Backup")
         for show_diff in (False, True):
-            for _, changes in plans:
-                PrintStructure.from_changes(changes).print(show_diff=show_diff)
+            for plan in plans:
+                print_changes(plan, show_diff=show_diff, reverse=reverse)
             yield cli.confirm(f"{context.options.action.capitalize()}?", default=True)
     else:
         yield True

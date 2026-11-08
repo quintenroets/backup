@@ -44,8 +44,7 @@ class StatusProcessor:
                 cleanup_after_finish=True,
             )
         for line in status_lines:
-            type_ = ChangeType(line[0])
-            yield Change(Path(line[2:]), type_, self.config.source, self.config.dest)
+            yield Change(Path(line[2:]), ChangeType(line[0]))
 
 
 def generate_output_lines(runner: Runner[str]) -> Iterator[str]:

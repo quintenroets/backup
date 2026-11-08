@@ -42,4 +42,5 @@ class StatusProcessor:
                 cleanup_after_finish=True,
             )
         for line in status_lines:
-            yield Change.from_pattern(line, self.config.source, self.config.dest)
+            type_ = ChangeType(line[0])
+            yield Change(Path(line[2:]), type_, self.config.source, self.config.dest)

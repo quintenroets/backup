@@ -7,7 +7,7 @@ import superpathlib
 from simple_classproperty import classproperty
 
 if TYPE_CHECKING:
-    from datetime import datetime  # pragma: nocover
+    from datetime import datetime
 
 
 class Path(superpathlib.Path):

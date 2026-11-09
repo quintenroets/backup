@@ -4,7 +4,8 @@ from datetime import datetime
 
 import cli
 
-from backup.models import BackupConfig, Path
+from backup.models import BackupConfig
+from backup.path import Path
 from backup.syncer import SyncConfig, Syncer
 
 from .scanner import CacheScanner

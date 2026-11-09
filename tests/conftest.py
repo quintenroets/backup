@@ -7,7 +7,7 @@ import cli
 import pytest
 
 from backup.context import Storage
-from backup.models import Path
+from backup.path import Path
 
 
 @pytest.fixture(scope="session", autouse=True)

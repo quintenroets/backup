@@ -5,7 +5,8 @@ import cli
 import pytest
 
 from backup.context import context
-from backup.models import ChangeType, Path
+from backup.models import ChangeType
+from backup.path import Path
 from backup.syncer import SyncConfig, Syncer
 from backup.syncer.builder import create_syncer
 

@@ -2,7 +2,8 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
-from backup.models import BackupConfig, Path, PathRule
+from backup.models import BackupConfig, PathRule
+from backup.path import Path
 from backup.syncer import SyncConfig
 
 from .entry import Entry

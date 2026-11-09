@@ -1,4 +1,4 @@
-from backup.models import Path
+from backup.path import Path
 from backup.syncer import SyncConfig
 from backup.syncer.filters import FiltersCreator
 

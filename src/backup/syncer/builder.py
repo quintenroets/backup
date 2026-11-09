@@ -1,7 +1,7 @@
 from superpathlib import Path
 
 from backup.context import context
-from backup.models import Path as BackupPath
+from backup.path import Path as BackupPath
 
 from .sync_config import SyncConfig
 from .syncer import Syncer

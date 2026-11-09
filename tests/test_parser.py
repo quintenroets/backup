@@ -1,7 +1,8 @@
 from unittest.mock import patch
 
-from backup.models import Path, PathRule
+from backup.models import PathRule
 from backup.parser import flatten, make_relative, parse_config, resolve_pattern
+from backup.path import Path
 
 
 def test_nested_entries() -> None:

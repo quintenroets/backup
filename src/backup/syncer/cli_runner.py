@@ -1,8 +1,7 @@
-import itertools
 import subprocess
 from collections.abc import Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import TypeVar
 
 import superpathlib
@@ -53,14 +52,11 @@ class CliRunner:
         if self.root:
             yield "-E"
         yield "rclone"
-        parts = (
-            self.generate_action_parts(),
-            args,
-            ("--filter-from", filters_path),
-            self.config.options,
-            self.generate_options(),
-        )
-        yield from itertools.chain(*parts)
+        yield from self.generate_action_parts()
+        yield from args
+        yield from ("--filter-from", filters_path, *self.config.options, "--skip-links")
+        for name, value in asdict(context.config.rclone).items():
+            yield f"--{name.replace('_', '-')}={value}"
 
     def generate_action_parts(self) -> Iterator[CommandItem]:
         if self.push:
@@ -82,19 +78,3 @@ class CliRunner:
         path = superpathlib.Path.tempfile()
         path.lines = self.config.filter_rules
         return path
-
-    @classmethod
-    def generate_options(cls) -> Iterator[CommandItem]:
-        config = context.config
-        yield "--skip-links"
-        if not config.overwrite_newer:
-            yield "--update"
-
-        yield {
-            "retries": config.retries,
-            "retries-sleep": config.retries_sleep,
-            "order-by": config.order_by,
-            "drive-import-formats": config.drive_import_formats,
-            "checkers": config.n_checkers,
-            "transfers": config.n_parallel_transfers,
-        }

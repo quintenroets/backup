@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from functools import cached_property
 from typing import Annotated
@@ -37,15 +37,20 @@ class Options:
 
 
 @dataclass
-class Config:
-    overwrite_newer: bool = True
+class RcloneConfig:
+    update: bool = False
     retries: int = 5
-    n_checkers: int = 100
-    n_parallel_transfers: int = 100
     retries_sleep: str = "30s"
-    order_by: str = "size,desc"  # handle largest files first
+    checkers: int = 100
+    transfers: int = 100
+    order_by: str = "size,desc"
     drive_import_formats: str = "docx, xlsx"
+
+
+@dataclass
+class Config:
     max_backup_size: int = int(50e6)
+    rclone: RcloneConfig = field(default_factory=RcloneConfig)
 
 
 class Storage:

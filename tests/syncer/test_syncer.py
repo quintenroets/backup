@@ -60,7 +60,7 @@ def test_push_skips_newer(syncer: Syncer) -> None:
     (syncer.config.source / "0.txt").touch(mtime=1)
     dest = syncer.config.dest / "0.txt"
     dest.text = "newer"
-    with patch.object(context.config, "overwrite_newer", new=False):
+    with patch.object(context.config.rclone, "update", new=True):
         syncer.capture_push()
     assert dest.text == "newer"
 

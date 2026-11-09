@@ -50,32 +50,8 @@ class Path(superpathlib.Path):
 
     @classmethod
     @classproperty
-    def source_root(cls) -> Self:
-        return cls(__file__).parent.parent
-
-    @classmethod
-    @classproperty
     def assets(cls) -> Self:
-        path = cls.script_assets / cls.source_root.name
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def backup_cache(cls) -> Self:
-        path = cls.assets / "cache"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def config(cls) -> Self:
-        path = cls.assets / "config"
-        return cast("Self", path)
-
-    @classmethod
-    @classproperty
-    def number_of_paths(cls) -> Self:
-        path = cls.assets / "volatile" / "number_of_paths"
-        return cast("Self", path)
+        return cast("Self", cls.script_assets / "backup")
 
     @classmethod
     @classproperty

@@ -24,7 +24,6 @@ class Help:
     confirm_push: str = "Ask confirmation before pushing"
     sub_check: str = "only check subpath of current working directory"
     cache_only: str = "pull from local cache without syncing from remote"
-    remote: str = "rclone remote to back up to"
 
 
 @dataclass
@@ -34,7 +33,6 @@ class Options:
     confirm_push: Annotated[bool, typer.Option(help=Help.confirm_push)] = True
     sub_check: Annotated[bool, typer.Option(help=Help.sub_check)] = False
     cache_only: Annotated[bool, typer.Option(help=Help.cache_only)] = False
-    remote: Annotated[str | None, typer.Option(help=Help.remote)] = None
     config_path: Path = Path.config
 
 
@@ -71,11 +69,7 @@ class Context(Context_[Options, Config, None]):
 
     @cached_property
     def remote(self) -> str:
-        return (
-            self.options.remote
-            if self.options.remote is not None
-            else cli.capture_output_lines("rclone listremotes", env=self.rclone_env)[0]
-        )
+        return cli.capture_output_lines("rclone listremotes", env=self.rclone_env)[0]
 
 
 context = Context(Options, Config)

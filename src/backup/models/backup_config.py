@@ -39,7 +39,7 @@ class SerializedBackupConfig(SerializationMixin):
     syncs: list[SerializedEntryConfig]
     dest: Path
     source: Path = Path.backup_source
-    cache: Path = Path.backup_cache
+    cache: Path = Path.assets / "cache"
     ignores: Ignores = field(default_factory=Ignores)
 
 

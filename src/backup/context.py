@@ -33,7 +33,7 @@ class Options:
     confirm_push: Annotated[bool, typer.Option(help=Help.confirm_push)] = True
     sub_check: Annotated[bool, typer.Option(help=Help.sub_check)] = False
     cache_only: Annotated[bool, typer.Option(help=Help.cache_only)] = False
-    config_path: Path = Path.config
+    config_path: Path = Path.assets / "config"
 
 
 @dataclass
@@ -50,7 +50,7 @@ class Config:
 
 class Storage:
     number_of_paths: CachedFileContent[int] = CachedFileContent(
-        Path.number_of_paths,
+        Path.assets / "volatile" / "number_of_paths",
         default=0,
     )
 

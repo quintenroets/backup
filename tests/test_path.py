@@ -1,4 +1,4 @@
-from backup.models import Path
+from backup.path import Path
 
 
 def test_is_root() -> None:

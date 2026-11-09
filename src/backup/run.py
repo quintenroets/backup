@@ -8,14 +8,16 @@ import cli
 
 from .cache import CacheScanner, CacheSyncer, Entry
 from .context import Action, context
-from .models import BackupConfig, Path, Plan
 from .parser import parse_config
+from .path import Path
 from .syncer import SyncConfig, Syncer
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
     import superpathlib
+
+    from .models import BackupConfig, Plan
 
 
 def run(config: dict[str, Any]) -> list[Path]:

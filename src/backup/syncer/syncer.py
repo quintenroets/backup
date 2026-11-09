@@ -8,7 +8,7 @@ import superpathlib
 from cli.commands.commands import CommandItem
 
 from backup.models import Changes
-from backup.models import Path as BackupPath
+from backup.path import Path as BackupPath
 
 from .cli_runner import CliRunner
 from .status import StatusProcessor

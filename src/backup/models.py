@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import fnmatch
 from dataclasses import dataclass, field
-from typing import Any
+from enum import StrEnum
+from typing import TYPE_CHECKING, Any
 
 from package_utils.dataclasses.mixins import SerializationMixin
 
 from .path import Path
+
+if TYPE_CHECKING:
+    import superpathlib
 
 Entries = list[str | dict[str, "Entries"] | Any]
 
@@ -50,3 +56,20 @@ class BackupConfig:
     cache: Path
     rules: list[PathRule]
     ignores: Ignores
+
+
+@dataclass(frozen=True)
+class Change:
+    path: superpathlib.Path
+    type: ChangeType
+
+
+Changes = list[Change]
+Plan = tuple[BackupConfig, Changes]
+
+
+class ChangeType(StrEnum):
+    created = "+"
+    modified = "*"
+    deleted = "-"
+    preserved = "="

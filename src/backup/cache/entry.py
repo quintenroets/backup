@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 
 from backup.context import context
-from backup.models import BackupConfig, Path
+from backup.models import BackupConfig
+from backup.path import Path
 
 
 @dataclass

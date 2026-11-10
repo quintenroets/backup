@@ -6,7 +6,6 @@ from unittest.mock import patch
 import cli
 import pytest
 
-from backup.context import Storage
 from backup.path import Path
 
 
@@ -20,7 +19,6 @@ def isolated_session() -> Iterator[None]:
         }
         with (
             patch.dict(os.environ, env),
-            patch.object(Storage, "number_of_paths", 0),
             patch.object(cli, "confirm", return_value=True),
             patch.object(sys.stdin, "isatty", return_value=True),
         ):

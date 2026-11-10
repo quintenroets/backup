@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import sys
-from itertools import groupby
+from itertools import chain, groupby
 from typing import TYPE_CHECKING, Any
 
 import cli
 
-from .cache import CacheScanner, CacheSyncer, Entry
+from .cache import CacheScanner, CacheSyncer
 from .context import Action, context
 from .parser import parse_config
 from .path import Path
@@ -33,11 +33,11 @@ def run(config: dict[str, Any]) -> list[Path]:
 
 
 def generate_plans(configs: list[BackupConfig], *, reverse: bool) -> Iterator[Plan]:
+    scans = (CacheScanner(config).generate_entries() for config in configs)
     entries = cli.track_progress(
-        generate_entries(configs),
+        chain.from_iterable(scans),
         description="Checking",
         unit="Files",
-        total=context.storage.number_of_paths,
         cleanup_after_finish=True,
     )
     changed = (entry for entry in entries if entry.is_changed())
@@ -46,15 +46,6 @@ def generate_plans(configs: list[BackupConfig], *, reverse: bool) -> Iterator[Pl
         syncer = create_syncer(config, config.cache, paths)
         if changes := syncer.capture_status(reverse=reverse):
             yield config, changes
-
-
-def generate_entries(configs: list[BackupConfig]) -> Iterator[Entry]:
-    number_of_entries = 0
-    for config in configs:
-        for entry in CacheScanner(config).generate_entries():
-            number_of_entries += 1
-            yield entry
-    context.storage.number_of_paths = number_of_entries
 
 
 def apply(plans: list[Plan], *, reverse: bool) -> Iterator[Path]:

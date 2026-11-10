@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Annotated
 import cli
 from package_utils.context import Context as Context_
 from package_utils.secrets_ import load_secret
-from package_utils.storage import CachedFileContent
 
 from .path import Path
 
@@ -57,18 +56,7 @@ class Config:
     rclone: RcloneConfig = field(default_factory=RcloneConfig)
 
 
-class Storage:
-    number_of_paths: CachedFileContent[int] = CachedFileContent(
-        Path.assets / "volatile" / "number_of_paths",
-        default=0,
-    )
-
-
 class Context(Context_[Options, Config, None]):
-    @cached_property
-    def storage(self) -> Storage:
-        return Storage()
-
     @cached_property
     def rclone_env(self) -> dict[str, str]:
         env = dict(os.environ)

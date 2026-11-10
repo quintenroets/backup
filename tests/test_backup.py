@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from sys import executable
 from unittest.mock import patch
 
 import cli
@@ -61,3 +62,7 @@ def test_pull(config: SerializedBackupConfig) -> None:
         assert run(config.dict()) == [config.source / "1.txt"]
     assert (config.source / "1.txt").exists()
     assert "@@ -0,0 +1 @@" in capture.get()
+
+
+def test_import_skips_typer() -> None:
+    cli.run(executable, "-c", "import backup, sys; assert 'typer' not in sys.modules")

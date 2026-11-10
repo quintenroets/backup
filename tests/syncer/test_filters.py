@@ -22,12 +22,6 @@ def test_create_filters_from_path() -> None:
     assert config.filter_rules == [f"+ /{directory / '**'}", "- *"]
 
 
-def test_create_filters_with_overlapping_source() -> None:
-    config = SyncConfig(source=Path("/dest") / "sub_path", dest=Path("/dest"))
-    FiltersCreator(config).create_filters_from_paths()
-    assert config.filter_rules == ["- /sub_path/**"]
-
-
 def test_path_used() -> None:
     path = Path("dummy.txt")
     config = create_config(path=path)

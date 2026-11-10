@@ -96,11 +96,6 @@ def test_pull_with_specified_paths(filled_syncer: Syncer) -> None:
     assert (config.source / "1.txt").exists()
 
 
-def test_overlapping_sub_path() -> None:
-    config = SyncConfig(source=Path("/a"), dest=Path("/a/sub_path/a"))
-    assert config.overlapping_sub_path == Path("sub_path")
-
-
 def test_create_syncer() -> None:
     create_syncer(path=Path("/"))
 

@@ -1,3 +1,4 @@
+import os
 from collections.abc import Iterator
 from unittest.mock import patch
 
@@ -9,6 +10,7 @@ from backup.models import ChangeType
 from backup.path import Path
 from backup.syncer import SyncConfig, Syncer
 from backup.syncer.builder import create_syncer
+from backup.syncer.cli_runner import load_rclone_env
 
 
 @pytest.fixture
@@ -105,3 +107,13 @@ def test_create_syncer() -> None:
 
 def test_export_files(syncer: Syncer) -> None:
     syncer.export_files("csv")
+
+
+def test_load_rclone_password() -> None:
+    with (
+        patch.dict(os.environ, {"RCLONE_PASSWORD_COMMAND": "command"}),
+        patch("backup.syncer.cli_runner.load_secret", return_value="secret"),
+    ):
+        env = load_rclone_env.__wrapped__()
+    assert env["RCLONE_CONFIG_PASS"] == "secret"  # noqa: S105
+    assert "RCLONE_PASSWORD_COMMAND" not in env

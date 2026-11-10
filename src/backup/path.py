@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING, Self, cast
 
 import superpathlib
@@ -36,17 +35,6 @@ class Path(superpathlib.Path):
     def extract_date_tuple(cls, date: datetime) -> tuple[int, ...]:
         # drive remote only minute precision and month range
         return date.month, date.day, date.hour, date.minute
-
-    @property
-    def is_root(self) -> bool:
-        is_remote = self.parts[0].endswith(":")
-        return not is_remote and not self.user_has_write_access()
-
-    def user_has_write_access(self) -> bool:
-        path = self
-        while not path.exists():
-            path = path.parent
-        return os.access(path, os.W_OK)
 
     @classmethod
     @classproperty

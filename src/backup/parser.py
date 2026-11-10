@@ -8,6 +8,7 @@ from .path import Path
 
 def parse_config(raw: dict[str, Any], backup_root: Path) -> Iterator[BackupConfig]:
     config = SerializedBackupConfig.from_dict(raw)
+    cache_rule = PathRule(config.cache, include=False)
     for sync in config.syncs:
         source = config.source / sync.source
         source = Path.HOME if source == Path("/HOME") else source
@@ -17,7 +18,7 @@ def parse_config(raw: dict[str, Any], backup_root: Path) -> Iterator[BackupConfi
             for include, entries in ((True, sync.includes), (False, sync.excludes))
             for pattern in flatten(entries)
         )
-        rules = list(make_relative(absolute_rules, root))
+        rules = list(make_relative([cache_rule, *absolute_rules], root))
         if root.exists() and any(rule.include for rule in rules):
             path = sync.dest / root.relative_to(source)
             cache = config.cache / path

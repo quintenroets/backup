@@ -2,9 +2,8 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
-from backup.models import BackupConfig, PathRule
+from backup.models import BackupConfig
 from backup.path import Path
-from backup.syncer import SyncConfig
 
 from .entry import Entry
 
@@ -15,7 +14,7 @@ class CacheScanner:
     visited: set[Path] = field(default_factory=set)
 
     def generate_entries(self) -> Iterator[Entry]:
-        for rule in self.generate_rules():
+        for rule in self.backup_config.rules:
             source_path = self.backup_config.source / rule.path
             dest_path = self.backup_config.cache / rule.path
             if rule.include:
@@ -34,12 +33,6 @@ class CacheScanner:
                         yield self.create_entry(dest=entry_path)
             self.visited.add(source_path)
             self.visited.add(dest_path)
-
-    def generate_rules(self) -> Iterator[PathRule]:
-        sync_config = SyncConfig(self.backup_config.source, self.backup_config.cache)
-        if sync_config.overlapping_sub_path is not None:
-            yield PathRule(Path(sync_config.overlapping_sub_path), include=False)
-        yield from self.backup_config.rules
 
     def create_entry(self, **kwargs: Any) -> Entry:
         return Entry(self.backup_config, **kwargs)

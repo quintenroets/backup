@@ -8,8 +8,6 @@ from backup.models import BackupConfig
 from backup.path import Path
 from backup.syncer import SyncConfig, Syncer
 
-from .scanner import CacheScanner
-
 
 @dataclass
 class CacheSyncer:
@@ -72,8 +70,7 @@ class CacheSyncer:
                 (self.backup_config.cache / path).unlink()
 
     def generate_pull_filters(self) -> Iterator[str]:
-        rules = CacheScanner(self.backup_config).generate_rules()
-        for rule in rules:
+        for rule in self.backup_config.rules:
             sign = "+" if rule.include else "-"
             pattern = f"{sign} /{rule.path}"
             yield pattern

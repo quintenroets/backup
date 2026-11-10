@@ -6,10 +6,8 @@ import cli
 import pytest
 
 from backup import run
-from backup.cache import CacheScanner
 from backup.context import Action, context
 from backup.models import SerializedBackupConfig
-from backup.parser import parse_config
 from backup.path import Path
 
 
@@ -40,13 +38,10 @@ def test_declined_push(config: SerializedBackupConfig) -> None:
     assert not (config.dest / "long.txt").exists()
 
 
-def test_scan_skips_nested_cache(config: SerializedBackupConfig) -> None:
-    backup_config = next(parse_config(config.dict(), Path("/")))
-    path = Path("cache/0.txt")
-    backup_config.cache = backup_config.source / path.parent
-    (backup_config.source / path).touch()
-    entries = CacheScanner(backup_config).generate_entries()
-    assert path not in {entry.relative for entry in entries}
+def test_push_skips_nested_cache(config: SerializedBackupConfig) -> None:
+    config.cache = config.source / "cache"
+    (config.cache / "0.txt").touch()
+    assert not run(config.dict())
 
 
 def test_pull(config: SerializedBackupConfig) -> None:

@@ -1,16 +1,20 @@
+from __future__ import annotations
+
 import os
 from dataclasses import dataclass, field
 from enum import StrEnum
 from functools import cached_property
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import cli
-import typer
 from package_utils.context import Context as Context_
 from package_utils.secrets_ import load_secret
 from package_utils.storage import CachedFileContent
 
 from .path import Path
+
+if TYPE_CHECKING:
+    import typer
 
 
 class Action(StrEnum):

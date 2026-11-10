@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass, field
 from enum import StrEnum
-from functools import cached_property
 from typing import TYPE_CHECKING, Annotated
 
-import cli
-from package_utils.context import Context as Context_
-from package_utils.secrets_ import load_secret
+from package_utils.context import Context
 
 from .path import Path
 
@@ -56,17 +52,4 @@ class Config:
     rclone: RcloneConfig = field(default_factory=RcloneConfig)
 
 
-class Context(Context_[Options, Config, None]):
-    @cached_property
-    def rclone_env(self) -> dict[str, str]:
-        env = dict(os.environ)
-        if env.pop("RCLONE_PASSWORD_COMMAND", None) is not None:
-            env["RCLONE_CONFIG_PASS"] = load_secret("rclone")
-        return env
-
-    @cached_property
-    def remote(self) -> str:
-        return cli.capture_output_lines("rclone listremotes", env=self.rclone_env)[0]
-
-
-context = Context(Options, Config)
+context: Context[Options, Config, None] = Context(Options, Config)

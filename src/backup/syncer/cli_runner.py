@@ -1,12 +1,16 @@
+import os
 import subprocess
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
+from functools import cache
 from typing import TypeVar
 
+import cli
 import superpathlib
 from cli.commands.commands import CommandItem
 from cli.commands.runner import Runner
+from package_utils.secrets_ import load_secret
 
 from backup.context import context
 
@@ -25,8 +29,9 @@ class CliRunner:
 
     @property
     def root(self) -> bool:
-        dest = self.config.source if self.reverse else self.config.dest
-        return dest.is_root
+        path = self.config.source if self.reverse else self.config.dest
+        existing = (path_ for path_ in (path, *path.parents) if path_.exists())
+        return ":" not in path.parts[0] and not os.access(next(existing), os.W_OK)
 
     def run(self) -> subprocess.CompletedProcess[str]:
         with self.create_runner() as runner:
@@ -42,7 +47,7 @@ class CliRunner:
         command_parts = self.generate_command_parts(filters_path, *args)
         command = tuple(command_parts)
         with filters_path:
-            yield Runner(command, root=self.root, kwargs={"env": context.rclone_env})
+            yield Runner(command, root=self.root, kwargs={"env": load_rclone_env()})
 
     def generate_command_parts(
         self,
@@ -78,3 +83,16 @@ class CliRunner:
         path = superpathlib.Path.tempfile()
         path.lines = self.config.filter_rules
         return path
+
+
+@cache
+def resolve_remote() -> str:
+    return cli.capture_output_lines("rclone listremotes", env=load_rclone_env())[0]
+
+
+@cache
+def load_rclone_env() -> dict[str, str]:
+    env = dict(os.environ)
+    if env.pop("RCLONE_PASSWORD_COMMAND", None) is not None:
+        env["RCLONE_CONFIG_PASS"] = load_secret("rclone")
+    return env

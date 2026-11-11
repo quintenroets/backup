@@ -11,9 +11,7 @@ class SyncConfig:
     dest: Path
     options: list[CommandItem] = field(default_factory=list)
     filter_rules: list[str] = field(default_factory=list)
-    paths: list[Path] | tuple[Path] | set[Path] = field(default_factory=list)
-    path: Path | None = None
-    directory: Path | None = None
+    paths: list[Path] = field(default_factory=list)
 
     def with_paths(self, paths: Iterable[Path]) -> "SyncConfig":
         return SyncConfig(

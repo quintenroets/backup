@@ -17,10 +17,6 @@ class FiltersCreator:
         self.config.filter_rules = list(self.generate_filters_from_paths())
 
     def generate_filters_from_paths(self) -> Iterator[str]:
-        if self.config.directory is not None:
-            self.config.path = self.config.directory
-        if self.config.path is not None:
-            self.config.paths = (self.config.path,)
         for path in self.config.paths:
             relative_path = (
                 path.relative_to(self.config.source)

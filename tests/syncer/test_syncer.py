@@ -100,7 +100,7 @@ def test_pull_with_specified_paths(filled_syncer: Syncer) -> None:
 
 
 def test_create_syncer() -> None:
-    create_syncer(path=Path("/"))
+    create_syncer(Path.HOME)
 
 
 def test_export_files(syncer: Syncer) -> None:

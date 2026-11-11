@@ -10,7 +10,6 @@ from superpathlib import Path
 
 from backup.models import Change, Changes, ChangeType
 
-from .filters import create_malformed_filters_error
 from .sync_config import SyncConfig
 
 
@@ -21,12 +20,7 @@ class StatusProcessor:
 
     def capture_changes(self, runner: Runner[str]) -> tuple[Changes, list[Path]]:
         runner.quiet = self.quiet
-        try:
-            changes = list(self.generate_changes(runner))
-        except cli.CalledProcessError as exception:
-            raise create_malformed_filters_error(
-                self.config.filter_rules,
-            ) from exception
+        changes = list(self.generate_changes(runner))
         paths_without_change = [
             change.path for change in changes if change.type == ChangeType.preserved
         ]

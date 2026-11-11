@@ -56,10 +56,8 @@ class CliRunner:
     ) -> Iterator[CommandItem]:
         if self.root:
             yield "-E"
-        yield "rclone"
-        yield from self.generate_action_parts()
-        yield from args
-        yield from ("--filter-from", filters_path, *self.config.options, "--skip-links")
+        yield from ("rclone", *self.generate_action_parts(), *args)
+        yield from ("--filter-from", filters_path, "--skip-links")
         for name, value in asdict(context.config.rclone).items():
             yield f"--{name.replace('_', '-')}={value}"
 

@@ -15,13 +15,6 @@ def create_config(
     )
 
 
-def test_create_filters_from_path() -> None:
-    directory = Path("subpath")
-    config = create_config(directory=directory)
-    FiltersCreator(config).create_filters_from_paths()
-    assert config.filter_rules == [f"+ /{directory / '**'}", "- *"]
-
-
 def test_path_used() -> None:
     path = Path("dummy.txt")
     config = create_config(path=path)
@@ -33,4 +26,4 @@ def test_directory_used() -> None:
     directory = Path("dummy")
     config = create_config(directory=directory)
     FiltersCreator(config).create_filters_from_paths()
-    assert config.paths == (directory / "**",)
+    assert config.paths == (directory,)

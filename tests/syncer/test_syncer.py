@@ -25,6 +25,7 @@ def filled_syncer(syncer: Syncer) -> Syncer:
         (syncer.config.source / f"{number}.txt").text = "a"
     for number in (0, 2):
         (syncer.config.dest / f"{number}.txt").text = "aa"
+    (syncer.config.dest / "directory" / "file.txt").text = "aa"
     return syncer
 
 
@@ -43,6 +44,7 @@ def test_status(filled_syncer: Syncer) -> None:
         Path("0.txt"): ChangeType.modified,
         Path("1.txt"): ChangeType.created,
         Path("2.txt"): ChangeType.deleted,
+        Path("directory") / "file.txt": ChangeType.deleted,
     }
 
 
@@ -91,8 +93,9 @@ def test_pull_to_root_source(syncer_with_root_dest: Syncer) -> None:
 
 def test_pull_with_specified_paths(filled_syncer: Syncer) -> None:
     config = filled_syncer.config
-    Syncer(config.with_paths([Path("2.txt")])).pull()
+    Syncer(config.with_paths([Path("2.txt"), Path("directory")])).pull()
     assert (config.source / "2.txt").exists()
+    assert (config.source / "directory").exists()
     assert (config.source / "1.txt").exists()
 
 

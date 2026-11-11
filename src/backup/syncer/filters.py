@@ -5,7 +5,7 @@ from superpathlib import Path
 
 from .sync_config import SyncConfig
 
-reserved_characters = "\\", "[", "]", "*", "**", "?", "{", "}"
+reserved_characters = "\\", "[", "]", "*", "?", "{", "}"
 
 
 @dataclass
@@ -18,7 +18,7 @@ class FiltersCreator:
 
     def generate_filters_from_paths(self) -> Iterator[str]:
         if self.config.directory is not None:
-            self.config.path = self.config.directory / "**"
+            self.config.path = self.config.directory
         if self.config.path is not None:
             self.config.paths = (self.config.path,)
         for path in self.config.paths:
@@ -29,6 +29,7 @@ class FiltersCreator:
             )
             path_str = self.escape(relative_path)
             yield f"+ /{path_str}"
+            yield f"+ /{path_str}/**"
 
         if self.config.paths:
             yield "- *"
@@ -36,16 +37,9 @@ class FiltersCreator:
     def escape(self, path: Path) -> str:
         # backslash character needs to be first in sequence
         # or otherwise each escape gets escaped again
-        recursive_symbol = "**"
-        recursive = path.name == recursive_symbol
-        if recursive:
-            path = path.parent
         path_str = self.path_separator.join(path.parts)
         for character in reserved_characters:
             path_str = path_str.replace(character, f"\\{character}")
-        if recursive:
-            path_str += self.path_separator + recursive_symbol
-
         return path_str
 
 

@@ -29,9 +29,9 @@ def filled_syncer(syncer: Syncer) -> Syncer:
     return syncer
 
 
-def test_malformed_filters_indicated(syncer: Syncer) -> None:
+def test_rclone_failures_raise(syncer: Syncer) -> None:
     syncer.config.filter_rules = ["????"]
-    with pytest.raises(ValueError, match="Invalid paths:"):
+    with pytest.raises(cli.CalledProcessError):
         syncer.capture_status()
 
 

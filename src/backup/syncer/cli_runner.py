@@ -1,23 +1,20 @@
 import os
+import re
 import subprocess
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from functools import cache
-from typing import TypeVar
 
 import cli
-import superpathlib
 from cli.commands.commands import CommandItem
 from cli.commands.runner import Runner
 from package_utils.secrets_ import load_secret
+from superpathlib import Path
 
 from backup.context import context
 
-from .filters import FiltersCreator
 from .sync_config import SyncConfig
-
-Path = TypeVar("Path", bound=superpathlib.Path)
 
 
 @dataclass
@@ -43,10 +40,9 @@ class CliRunner:
 
     @contextmanager
     def create_runner(self, *args: CommandItem) -> Iterator[Runner[str]]:
-        filters_path = self.create_filters_path()
-        command_parts = self.generate_command_parts(filters_path, *args)
-        command = tuple(command_parts)
-        with filters_path:
+        with Path.tempfile() as path:
+            path.lines = self.config.filter_rules or generate_filters(self.config.paths)
+            command = tuple(self.generate_command_parts(path, *args))
             yield Runner(command, root=self.root, kwargs={"env": load_rclone_env()})
 
     def generate_command_parts(
@@ -75,12 +71,14 @@ class CliRunner:
             if self.root:
                 yield "--no-update-dir-modtime"
 
-    def create_filters_path(self) -> superpathlib.Path:
-        if not self.config.filter_rules:
-            FiltersCreator(self.config).create_filters_from_paths()
-        path = superpathlib.Path.tempfile()
-        path.lines = self.config.filter_rules
-        return path
+
+def generate_filters(paths: list[Path]) -> Iterator[str]:
+    for path in paths:
+        escaped = re.sub(r"[\\\[\]*?{}]", r"\\\g<0>", str(path))
+        yield f"+ /{escaped}"
+        yield f"+ /{escaped}/**"
+    if paths:
+        yield "- *"
 
 
 @cache

@@ -13,4 +13,4 @@ def create_syncer(path: Path) -> Syncer:
     if path.is_relative_to(BackupPath.HOME):
         source = BackupPath.HOME
         dest /= "home"
-    return Syncer(SyncConfig(source=source, dest=dest, paths=[path]))
+    return Syncer(SyncConfig(source, dest, paths=[path.relative_to(source)]))

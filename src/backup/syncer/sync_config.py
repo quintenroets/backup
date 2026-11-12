@@ -13,6 +13,10 @@ class SyncConfig:
     dest: Path
     rules: list[PathRule] = field(default_factory=list)
 
+    @property
+    def reversed(self) -> Self:
+        return replace(self, source=self.dest, dest=self.source)
+
     def with_paths(self, paths: Iterable[Path]) -> Self:
         includes = [PathRule(path, include=True) for path in paths]
         return replace(self, rules=[*includes, PathRule(Path(), include=False)])

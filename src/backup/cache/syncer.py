@@ -60,7 +60,7 @@ class CacheSyncer:
         config: SyncConfig,
     ) -> None:
         config.source.mkdir(parents=True, exist_ok=True)
-        pairs = Syncer(config).generate_paths_with_time(config.source)
+        pairs = Syncer(config.reversed).generate_paths_with_time()
         for path, _ in pairs:
             if path not in remote_paths:
                 (self.backup_config.cache / path).unlink()

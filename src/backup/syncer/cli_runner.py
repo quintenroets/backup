@@ -19,13 +19,12 @@ from .sync_config import SyncConfig
 class CliRunner:
     config: SyncConfig
     action: str | None = None
-    reverse: bool = False
 
     @property
     def root(self) -> bool:
-        path = self.config.source if self.reverse else self.config.dest
-        existing = (path_ for path_ in (path, *path.parents) if path_.exists())
-        return ":" not in path.parts[0] and not os.access(next(existing), os.W_OK)
+        dest = self.config.dest
+        existing = (path for path in (dest, *dest.parents) if path.exists())
+        return ":" not in dest.parts[0] and not os.access(next(existing), os.W_OK)
 
     def create_runner(self, *args: CommandItem) -> Runner[str]:
         command = tuple(self.generate_command_parts(*args))
@@ -36,22 +35,16 @@ class CliRunner:
     def generate_command_parts(self, *args: CommandItem) -> Iterator[CommandItem]:
         if self.root:
             yield "-E"
-        yield from ("rclone", *self.generate_action_parts(), *args)
-        yield from ("--filter-from", "-", "--skip-links")
-        for name, value in asdict(context.config.rclone).items():
-            yield f"--{name.replace('_', '-')}={value}"
-
-    def generate_action_parts(self) -> Iterator[CommandItem]:
+        yield "rclone"
         if self.action is not None:
-            yield self.action
-            if self.reverse:
-                yield from (self.config.dest, self.config.source)
-            else:
-                yield from (self.config.source, self.config.dest)
+            yield from (self.action, self.config.source, self.config.dest)
         if self.action == "sync":
             yield from ("--create-empty-src-dirs", "--progress")
             if self.root:
                 yield "--no-update-dir-modtime"
+        yield from (*args, "--filter-from", "-", "--skip-links")
+        for name, value in asdict(context.config.rclone).items():
+            yield f"--{name.replace('_', '-')}={value}"
 
 
 def create_filters(rule: PathRule) -> tuple[str, str]:

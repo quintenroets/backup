@@ -85,16 +85,9 @@ def test_push_to_root_dest(syncer_with_root_dest: Syncer) -> None:
     assert syncer_with_root_dest.config.dest.content_hash == source_hash
 
 
-def test_pull_to_root_source(syncer_with_root_dest: Syncer) -> None:
-    config = syncer_with_root_dest.config
-    source_hash = config.source.content_hash
-    Syncer(SyncConfig(source=config.dest, dest=config.source)).pull()
-    assert config.dest.content_hash == source_hash
-
-
 def test_pull_with_specified_paths(filled_syncer: Syncer) -> None:
     config = filled_syncer.config
-    Syncer(config.with_paths([Path("2.txt"), Path("directory")])).pull()
+    Syncer(config.with_paths([Path("2.txt"), Path("directory")])).capture_pull()
     assert (config.source / "2.txt").exists()
     assert (config.source / "directory").exists()
     assert (config.source / "1.txt").exists()

@@ -8,11 +8,10 @@ import superpathlib
 from cli.commands.commands import CommandItem
 from cli.commands.runner import Runner
 
-from backup.models import Changes
+from backup.models import Change, Changes, ChangeType
 from backup.path import Path as BackupPath
 
 from .cli_runner import CliRunner
-from .status import StatusProcessor
 from .sync_config import SyncConfig
 
 Path = TypeVar("Path", bound=superpathlib.Path)
@@ -49,19 +48,19 @@ class Syncer:
         args = "--drive-export-formats", export_format
         return self.create_runner(*args, action="copy", reverse=True).capture_output()
 
-    def capture_status(
-        self,
-        *,
-        quiet: bool = False,
-        reverse: bool = False,
-    ) -> Changes:
+    def capture_status(self, *, reverse: bool = False) -> Changes:
         runner = self.create_runner("--combined", "-", action="check", reverse=reverse)
-        processor = StatusProcessor(self.config, quiet)
-        changes, unchanged = processor.capture_changes(runner)
-        if unchanged:
+        runner.check = False
+        process = runner.run(capture_output=True)
+        if not process.stdout:
+            process.check_returncode()
+        lines = process.stdout.splitlines()
+        changes = [Change(BackupPath(line[2:]), ChangeType(line[0])) for line in lines]
+        preserved = ChangeType.preserved
+        if unchanged := [change.path for change in changes if change.type == preserved]:
             # Update modified times to avoid checking again in the future
             Syncer(self.config.with_paths(unchanged)).push()
-        return changes
+        return [change for change in changes if change.type != preserved]
 
     def generate_paths_with_time(
         self,

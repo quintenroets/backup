@@ -6,6 +6,7 @@ from typing import TypeVar
 
 import superpathlib
 from cli.commands.commands import CommandItem
+from cli.commands.runner import Runner
 
 from backup.models import Changes
 from backup.path import Path as BackupPath
@@ -21,22 +22,22 @@ Path = TypeVar("Path", bound=superpathlib.Path)
 class Syncer:
     config: SyncConfig
 
-    def cli_runner(
+    def create_runner(
         self,
-        *,
+        *args: CommandItem,
         action: str | None = None,
         reverse: bool = False,
-    ) -> CliRunner:
-        return CliRunner(self.config, action=action, reverse=reverse)
+    ) -> Runner[str]:
+        return CliRunner(self.config, action, reverse=reverse).create_runner(*args)
 
     def capture_output(self, *args: CommandItem) -> str:
-        return self.cli_runner().capture_output(*args)
+        return self.create_runner(*args).capture_output()
 
     def push(self, *, reverse: bool = False) -> subprocess.CompletedProcess[str]:
-        return self.cli_runner(action="sync", reverse=reverse).run()
+        return self.create_runner(action="sync", reverse=reverse).run()
 
     def capture_push(self, *, reverse: bool = False) -> str:
-        return self.cli_runner(action="sync", reverse=reverse).capture_output()
+        return self.create_runner(action="sync", reverse=reverse).capture_output()
 
     def pull(self) -> subprocess.CompletedProcess[str]:
         return self.push(reverse=True)
@@ -45,10 +46,8 @@ class Syncer:
         return self.capture_push(reverse=True)
 
     def export_files(self, export_format: str) -> str:
-        return self.cli_runner(action="copy", reverse=True).capture_output(
-            "--drive-export-formats",
-            export_format,
-        )
+        args = "--drive-export-formats", export_format
+        return self.create_runner(*args, action="copy", reverse=True).capture_output()
 
     def capture_status(
         self,
@@ -56,13 +55,12 @@ class Syncer:
         quiet: bool = False,
         reverse: bool = False,
     ) -> Changes:
-        runner_factory = self.cli_runner(action="check", reverse=reverse)
-        with runner_factory.create_runner("--combined", "-") as runner:
-            processor = StatusProcessor(self.config, quiet)
-            changes, no_change_paths = processor.capture_changes(runner)
-            if no_change_paths:
-                # Update modified times to avoid checking again in the future
-                Syncer(self.config.with_paths(no_change_paths)).push()
+        runner = self.create_runner("--combined", "-", action="check", reverse=reverse)
+        processor = StatusProcessor(self.config, quiet)
+        changes, no_change_paths = processor.capture_changes(runner)
+        if no_change_paths:
+            # Update modified times to avoid checking again in the future
+            Syncer(self.config.with_paths(no_change_paths)).push()
         return changes
 
     def generate_paths_with_time(

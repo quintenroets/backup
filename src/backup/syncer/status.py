@@ -2,7 +2,7 @@ import select
 import subprocess
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from typing import IO
+from typing import IO, cast
 
 import cli
 from cli.commands.runner import Runner
@@ -44,7 +44,10 @@ class StatusProcessor:
 def generate_output_lines(runner: Runner[str]) -> Iterator[str]:
     runner.stdout = subprocess.PIPE
     runner.stderr = subprocess.PIPE
+    runner.subprocess_kwargs["stdin"] = subprocess.PIPE
     process = runner.launch()
+    with cast("IO[str]", process.stdin) as stdin:
+        stdin.write(cast("str", runner.input))
     extracted_outputs = extract_output_lines(process)
     error_lines = []
     output_generated = False

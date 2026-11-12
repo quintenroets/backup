@@ -1,5 +1,6 @@
 import os
 from collections.abc import Iterator
+from dataclasses import replace
 from unittest.mock import patch
 
 import cli
@@ -93,7 +94,7 @@ def test_pull_to_root_source(syncer_with_root_dest: Syncer) -> None:
 
 def test_pull_with_specified_paths(filled_syncer: Syncer) -> None:
     config = filled_syncer.config
-    Syncer(config.with_paths([Path("2.txt"), Path("directory")])).pull()
+    Syncer(replace(config, paths=[Path("2.txt"), Path("directory")])).pull()
     assert (config.source / "2.txt").exists()
     assert (config.source / "directory").exists()
     assert (config.source / "1.txt").exists()

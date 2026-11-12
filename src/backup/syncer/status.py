@@ -34,7 +34,7 @@ class StatusProcessor:
                 status_lines,
                 description="Checking",
                 unit="files",
-                total=len(self.config.paths) if self.config.paths else None,
+                total=len(self.config.paths),
                 cleanup_after_finish=True,
             )
         for line in status_lines:

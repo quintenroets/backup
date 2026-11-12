@@ -1,6 +1,6 @@
 import subprocess
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from typing import TypeVar
 
@@ -60,7 +60,7 @@ class Syncer:
         changes, no_change_paths = processor.capture_changes(runner)
         if no_change_paths:
             # Update modified times to avoid checking again in the future
-            Syncer(self.config.with_paths(no_change_paths)).push()
+            Syncer(replace(self.config, paths=no_change_paths)).push()
         return changes
 
     def generate_paths_with_time(

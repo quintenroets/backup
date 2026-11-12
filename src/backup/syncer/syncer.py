@@ -24,20 +24,19 @@ class Syncer:
     def cli_runner(
         self,
         *,
-        push: bool = False,
         action: str | None = None,
         reverse: bool = False,
     ) -> CliRunner:
-        return CliRunner(self.config, push=push, action=action, reverse=reverse)
+        return CliRunner(self.config, action=action, reverse=reverse)
 
     def capture_output(self, *args: CommandItem) -> str:
         return self.cli_runner().capture_output(*args)
 
     def push(self, *, reverse: bool = False) -> subprocess.CompletedProcess[str]:
-        return self.cli_runner(push=True, reverse=reverse).run()
+        return self.cli_runner(action="sync", reverse=reverse).run()
 
     def capture_push(self, *, reverse: bool = False) -> str:
-        return self.cli_runner(push=True, reverse=reverse).capture_output()
+        return self.cli_runner(action="sync", reverse=reverse).capture_output()
 
     def pull(self) -> subprocess.CompletedProcess[str]:
         return self.push(reverse=True)

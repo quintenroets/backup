@@ -20,7 +20,6 @@ from .sync_config import SyncConfig
 @dataclass
 class CliRunner:
     config: SyncConfig
-    push: bool = False
     action: str | None = None
     reverse: bool = False
 
@@ -58,15 +57,13 @@ class CliRunner:
             yield f"--{name.replace('_', '-')}={value}"
 
     def generate_action_parts(self) -> Iterator[CommandItem]:
-        if self.push:
-            self.action = "sync"
         if self.action is not None:
             yield self.action
             if self.reverse:
                 yield from (self.config.dest, self.config.source)
             else:
                 yield from (self.config.source, self.config.dest)
-        if self.push:
+        if self.action == "sync":
             yield from ("--create-empty-src-dirs", "--progress")
             if self.root:
                 yield "--no-update-dir-modtime"

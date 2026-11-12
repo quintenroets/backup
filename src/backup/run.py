@@ -51,7 +51,8 @@ def generate_plans(configs: list[BackupConfig], *, reverse: bool) -> Iterator[Pl
 def apply(plans: list[Plan], *, reverse: bool) -> Iterator[Path]:
     for config, changes in plans:
         paths = [change.path for change in changes]
-        create_syncer(config, config.dest, paths).push(reverse=reverse)
+        syncer = create_syncer(config, config.dest, paths)
+        (Syncer(syncer.config.reversed) if reverse else syncer).push()
         create_syncer(config, config.cache, paths).push()
         yield from (config.source / path for path in paths)
 

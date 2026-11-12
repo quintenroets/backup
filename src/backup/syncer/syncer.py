@@ -2,11 +2,8 @@ import subprocess
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import TypeVar
 
-import superpathlib
 from cli.commands.commands import CommandItem
-from cli.commands.runner import Runner
 
 from backup.models import Change, Changes, ChangeType
 from backup.path import Path as BackupPath
@@ -14,42 +11,31 @@ from backup.path import Path as BackupPath
 from .cli_runner import CliRunner
 from .sync_config import SyncConfig
 
-Path = TypeVar("Path", bound=superpathlib.Path)
-
 
 @dataclass
 class Syncer:
     config: SyncConfig
 
-    def create_runner(
-        self,
-        *args: CommandItem,
-        action: str | None = None,
-        reverse: bool = False,
-    ) -> Runner[str]:
-        return CliRunner(self.config, action, reverse=reverse).create_runner(*args)
-
     def capture_output(self, *args: CommandItem) -> str:
-        return self.create_runner(*args).capture_output()
+        return CliRunner(self.config).create_runner(*args).capture_output()
 
-    def push(self, *, reverse: bool = False) -> subprocess.CompletedProcess[str]:
-        return self.create_runner(action="sync", reverse=reverse).run()
+    def push(self) -> subprocess.CompletedProcess[str]:
+        return CliRunner(self.config, "sync").create_runner().run()
 
-    def capture_push(self, *, reverse: bool = False) -> str:
-        return self.create_runner(action="sync", reverse=reverse).capture_output()
-
-    def pull(self) -> subprocess.CompletedProcess[str]:
-        return self.push(reverse=True)
+    def capture_push(self) -> str:
+        return CliRunner(self.config, "sync").create_runner().capture_output()
 
     def capture_pull(self) -> str:
-        return self.capture_push(reverse=True)
+        return Syncer(self.config.reversed).capture_push()
 
     def export_files(self, export_format: str) -> str:
         args = "--drive-export-formats", export_format
-        return self.create_runner(*args, action="copy", reverse=True).capture_output()
+        runner = CliRunner(self.config.reversed, "copy").create_runner(*args)
+        return runner.capture_output()
 
     def capture_status(self, *, reverse: bool = False) -> Changes:
-        runner = self.create_runner("--combined", "-", action="check", reverse=reverse)
+        config = self.config.reversed if reverse else self.config
+        runner = CliRunner(config, "check").create_runner("--combined", "-")
         runner.check = False
         process = runner.run(capture_output=True)
         if not process.stdout:
@@ -62,11 +48,8 @@ class Syncer:
             Syncer(self.config.with_paths(unchanged)).push()
         return [change for change in changes if change.type != preserved]
 
-    def generate_paths_with_time(
-        self,
-        path: Path | None = None,
-    ) -> Iterator[tuple[BackupPath, datetime]]:
-        lines = self.capture_output("lsl", path or self.config.dest)
+    def generate_paths_with_time(self) -> Iterator[tuple[BackupPath, datetime]]:
+        lines = self.capture_output("lsl", self.config.dest)
         return extract_paths_with_time(lines)
 
 

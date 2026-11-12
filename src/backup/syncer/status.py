@@ -34,7 +34,7 @@ class StatusProcessor:
                 status_lines,
                 description="Checking",
                 unit="files",
-                total=len(self.config.paths),
+                total=sum(rule.include for rule in self.config.rules),
                 cleanup_after_finish=True,
             )
         for line in status_lines:

@@ -1,6 +1,5 @@
 import os
 from collections.abc import Iterator
-from dataclasses import replace
 from unittest.mock import patch
 
 import cli
@@ -31,7 +30,7 @@ def filled_syncer(syncer: Syncer) -> Syncer:
 
 
 def test_rclone_failures_raise(syncer: Syncer) -> None:
-    syncer.config.filter_rules = ["????"]
+    syncer.config.dest = Path("missing:")
     with pytest.raises(cli.CalledProcessError):
         syncer.capture_status()
 
@@ -94,7 +93,7 @@ def test_pull_to_root_source(syncer_with_root_dest: Syncer) -> None:
 
 def test_pull_with_specified_paths(filled_syncer: Syncer) -> None:
     config = filled_syncer.config
-    Syncer(replace(config, paths=[Path("2.txt"), Path("directory")])).pull()
+    Syncer(config.with_paths([Path("2.txt"), Path("directory")])).pull()
     assert (config.source / "2.txt").exists()
     assert (config.source / "directory").exists()
     assert (config.source / "1.txt").exists()

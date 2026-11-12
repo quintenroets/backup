@@ -28,7 +28,7 @@ class Ignores:
 
 @dataclass
 class PathRule:
-    path: Path
+    path: superpathlib.Path
     include: bool
 
 

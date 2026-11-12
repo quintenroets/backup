@@ -1,4 +1,5 @@
 import os
+import subprocess
 from collections.abc import Iterator
 from unittest.mock import patch
 
@@ -31,14 +32,14 @@ def filled_syncer(syncer: Syncer) -> Syncer:
 
 def test_rclone_failures_raise(syncer: Syncer) -> None:
     syncer.config.dest = Path("missing:")
-    with pytest.raises(cli.CalledProcessError):
+    with pytest.raises(subprocess.CalledProcessError):
         syncer.capture_status()
 
 
 def test_status(filled_syncer: Syncer) -> None:
     for directory in (filled_syncer.config.source, filled_syncer.config.dest):
         (directory / "3.txt").text = "a"
-    status = filled_syncer.capture_status(quiet=True)
+    status = filled_syncer.capture_status()
     changes = {change.path: change.type for change in status}
     assert changes == {
         Path("0.txt"): ChangeType.modified,

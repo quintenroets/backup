@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+import json
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -12,8 +12,6 @@ from backup.syncer import SyncConfig, Syncer
 @dataclass
 class CacheSyncer:
     backup_config: BackupConfig
-    date_start: str = "── ["
-    date_end: str = "]  /"
 
     def sync_from_remote(self) -> None:
         path = str(self.backup_config.dest).split(":")[-1]
@@ -23,44 +21,25 @@ class CacheSyncer:
     def update_cache(self) -> None:
         backup = self.backup_config
         config = SyncConfig(backup.cache, backup.dest, backup.rules)
-        remote_pairs = Syncer(config).generate_paths_with_time()
-        remote_pairs = self.modify_changed_paths(remote_pairs)
-        remote_paths = {path for path, _ in remote_pairs}
-        self.remove_paths_missing_in_remote(remote_paths, config)
+        remote_mtimes = list_mtimes(config)
+        for path, mtime in remote_mtimes.items():
+            cache_path = backup.cache / path
+            if cache_path.mtime != mtime:
+                source_path = backup.source / path
+                if source_path.exists() and source_path.mtime == mtime:
+                    source_path.copy_to(cache_path)
+                else:
+                    # change content and mtime to trigger update
+                    cache_path.text = "" if source_path.size else " "
+                    cache_path.touch(mtime=cache_path.mtime + 1)
+        backup.cache.mkdir(parents=True, exist_ok=True)
+        for path in list_mtimes(config.reversed).keys() - remote_mtimes:
+            (backup.cache / path).unlink()
 
-    def modify_changed_paths(
-        self,
-        pairs: Iterator[tuple[Path, datetime]],
-    ) -> Iterator[tuple[Path, datetime]]:
-        for path, date in pairs:
-            cache_path = self.backup_config.cache / path
-            if not cache_path.has_date(date):
-                self.handle_cache_mismatch(cache_path, date)
-            yield path, date
 
-    def handle_cache_mismatch(self, cache_path: Path, date: datetime) -> None:
-        relative = cache_path.relative_to(self.backup_config.cache)
-        source_path = self.backup_config.source / relative
-        if source_path.exists() and source_path.has_date(date):
-            source_path.copy_to(cache_path)
-        else:
-            self.change_path(cache_path)
-
-    def change_path(self, path: Path) -> None:
-        # change content and mtime trigger update
-        source_path = self.backup_config.source / path.relative_to(
-            self.backup_config.cache,
-        )
-        path.text = "" if source_path.size else " "
-        path.touch(mtime=path.mtime + 1)
-
-    def remove_paths_missing_in_remote(
-        self,
-        remote_paths: set[Path],
-        config: SyncConfig,
-    ) -> None:
-        config.source.mkdir(parents=True, exist_ok=True)
-        pairs = Syncer(config.reversed).generate_paths_with_time()
-        for path, _ in pairs:
-            if path not in remote_paths:
-                (self.backup_config.cache / path).unlink()
+def list_mtimes(config: SyncConfig) -> dict[Path, int]:
+    args = "lsjson", "-R", "--files-only", "--no-mimetype", config.dest
+    return {
+        Path(row["Path"]): int(datetime.fromisoformat(row["ModTime"]).timestamp())
+        for row in json.loads(Syncer(config).capture_output(*args))
+    }

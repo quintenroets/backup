@@ -21,12 +21,8 @@ class CacheSyncer:
             self.update_cache()
 
     def update_cache(self) -> None:
-        filter_rules = list(self.generate_pull_filters())
-        config = SyncConfig(
-            self.backup_config.cache,
-            self.backup_config.dest,
-            filter_rules=filter_rules,
-        )
+        backup = self.backup_config
+        config = SyncConfig(backup.cache, backup.dest, backup.rules)
         remote_pairs = Syncer(config).generate_paths_with_time()
         remote_pairs = self.modify_changed_paths(remote_pairs)
         remote_paths = {path for path, _ in remote_pairs}
@@ -68,10 +64,3 @@ class CacheSyncer:
         for path, _ in pairs:
             if path not in remote_paths:
                 (self.backup_config.cache / path).unlink()
-
-    def generate_pull_filters(self) -> Iterator[str]:
-        for rule in self.backup_config.rules:
-            sign = "+" if rule.include else "-"
-            pattern = f"{sign} /{rule.path}"
-            yield pattern
-            yield f"{pattern}/**"

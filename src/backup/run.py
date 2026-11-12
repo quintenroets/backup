@@ -74,4 +74,4 @@ def create_syncer(
     dest: Path,
     paths: Iterable[superpathlib.Path],
 ) -> Syncer:
-    return Syncer(SyncConfig(source=config.source, dest=dest, paths=list(paths)))
+    return Syncer(SyncConfig(config.source, dest).with_paths(paths))

@@ -8,9 +8,9 @@ import cli
 from cli.commands.commands import CommandItem
 from cli.commands.runner import Runner
 from package_utils.secrets_ import load_secret
-from superpathlib import Path
 
 from backup.context import context
+from backup.models import PathRule
 
 from .sync_config import SyncConfig
 
@@ -29,9 +29,9 @@ class CliRunner:
 
     def create_runner(self, *args: CommandItem) -> Runner[str]:
         command = tuple(self.generate_command_parts(*args))
-        rules = self.config.filter_rules or generate_filters(self.config.paths)
+        filters = (line for rule in self.config.rules for line in create_filters(rule))
         kwargs = {"env": load_rclone_env()}
-        return Runner(command, root=self.root, input="\n".join(rules), kwargs=kwargs)
+        return Runner(command, root=self.root, input="\n".join(filters), kwargs=kwargs)
 
     def generate_command_parts(self, *args: CommandItem) -> Iterator[CommandItem]:
         if self.root:
@@ -54,13 +54,10 @@ class CliRunner:
                 yield "--no-update-dir-modtime"
 
 
-def generate_filters(paths: list[Path]) -> Iterator[str]:
-    for path in paths:
-        escaped = re.sub(r"[\\\[\]*?{}]", r"\\\g<0>", str(path))
-        yield f"+ /{escaped}"
-        yield f"+ /{escaped}/**"
-    if paths:
-        yield "- *"
+def create_filters(rule: PathRule) -> tuple[str, str]:
+    sign = "+" if rule.include else "-"
+    path = re.escape(str(rule.path)) if rule.path.parts else "**"
+    return f"{sign} /{path}", f"{sign} /{path}/**"
 
 
 @cache

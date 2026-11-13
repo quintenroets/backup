@@ -1,12 +1,13 @@
 import subprocess
 from dataclasses import dataclass
 
+import superpathlib
 from cli.commands.commands import CommandItem
 
 from backup.models import Change, Changes, ChangeType
 from backup.path import Path as BackupPath
 
-from .cli_runner import CliRunner
+from .cli_runner import CliRunner, resolve_remote
 from .sync_config import SyncConfig
 
 
@@ -45,3 +46,12 @@ class Syncer:
             # Update modified times to avoid checking again in the future
             Syncer(self.config.with_paths(unchanged)).push()
         return [change for change in changes if change.type != preserved]
+
+
+def create_syncer(path: superpathlib.Path) -> Syncer:
+    source = BackupPath.backup_source
+    dest = BackupPath(resolve_remote())
+    if path.is_relative_to(BackupPath.HOME):
+        source = BackupPath.HOME
+        dest /= "home"
+    return Syncer(SyncConfig(source, dest).with_paths([path.relative_to(source)]))

@@ -8,7 +8,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "package-utils[context] >=0.9.2, <1",
-    "powercli >=0.4.0, <0.5",
+    "powercli >=0.4.0, <0.6",
     "rich >=15.0.0, <16",
     "superpathlib >=2.1.1, <3",
 ]

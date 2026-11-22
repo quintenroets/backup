@@ -7,17 +7,15 @@ from itertools import chain, groupby
 from typing import TYPE_CHECKING, Any
 
 import cli
+from superpathlib import Path
 
 from .cache import CacheScanner
 from .context import Action, context
 from .parser import parse_config
-from .path import Path
 from .syncer import SyncConfig, Syncer
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-
-    import superpathlib
 
     from .models import BackupConfig, PathRule, Plan
 
@@ -89,11 +87,7 @@ def confirm(plans: list[Plan], *, reverse: bool) -> Iterator[bool]:
         yield True
 
 
-def create_syncer(
-    config: BackupConfig,
-    dest: Path,
-    paths: Iterable[superpathlib.Path],
-) -> Syncer:
+def create_syncer(config: BackupConfig, dest: Path, paths: Iterable[Path]) -> Syncer:
     return Syncer(SyncConfig(config.source, dest).with_paths(paths))
 
 

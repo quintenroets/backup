@@ -5,10 +5,10 @@ from unittest.mock import patch
 
 import cli
 import pytest
+from superpathlib import Path
 
 from backup.context import context
 from backup.models import ChangeType
-from backup.path import Path
 from backup.syncer import SyncConfig, Syncer, create_syncer
 from backup.syncer.cli_runner import load_rclone_env
 

@@ -23,14 +23,13 @@ def test_exclude_precedes_parent_include() -> None:
 
 def test_home_source() -> None:
     with Path.tempdir() as home, patch.object(Path, "HOME", home):
-        sync = {"includes": [""], "source": "/HOME"}
-        config = {"dest": home, "syncs": [sync]}
+        config = {"source": "/HOME", "dest": home, "syncs": [{"includes": [""]}]}
         assert next(parse_config(config, Path("/"))).source == home
 
 
 def test_backup_root() -> None:
     with Path.tempdir() as path:
-        sync = {"includes": [""], "source": path.parent}
-        parsed = next(parse_config({"dest": path, "syncs": [sync]}, path))
+        config = {"source": path.parent, "dest": path, "syncs": [{"includes": [""]}]}
+        parsed = next(parse_config(config, path))
     assert parsed.source == path
     assert parsed.rules == [PathRule(Path(), include=True)]

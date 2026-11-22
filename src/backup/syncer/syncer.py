@@ -49,7 +49,7 @@ class Syncer:
 
 
 def create_syncer(path: superpathlib.Path) -> Syncer:
-    source = BackupPath.backup_source
+    source = BackupPath("/")
     dest = BackupPath(resolve_remote())
     if path.is_relative_to(BackupPath.HOME):
         source = BackupPath.HOME

@@ -12,7 +12,7 @@ from superpathlib import Path
 from .cache import CacheScanner
 from .context import Action, context
 from .parser import parse_config
-from .syncer import SyncConfig, Syncer
+from .syncer import Syncer
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -60,7 +60,7 @@ def generate_plans(configs: list[BackupConfig], *, reverse: bool) -> Iterator[Pl
     changed = (entry for entry in entries if entry.is_changed())
     for config, group in groupby(changed, key=lambda entry: entry.config):
         paths = {entry.relative for entry in group}
-        syncer = Syncer(SyncConfig(config.source, config.cache).with_paths(paths))
+        syncer = Syncer(config.source, config.cache).with_paths(paths)
         if changes := syncer.capture_status(reverse=reverse):
             yield config, changes
 
@@ -68,9 +68,9 @@ def generate_plans(configs: list[BackupConfig], *, reverse: bool) -> Iterator[Pl
 def apply(plans: list[Plan], *, reverse: bool) -> Iterator[Path]:
     for config, changes in plans:
         paths = [change.path for change in changes]
-        syncer = Syncer(SyncConfig(config.source, config.dest).with_paths(paths))
-        (Syncer(syncer.config.reversed) if reverse else syncer).push()
-        Syncer(SyncConfig(config.source, config.cache).with_paths(paths)).push()
+        syncer = Syncer(config.source, config.dest).with_paths(paths)
+        (syncer.reversed if reverse else syncer).push()
+        Syncer(config.source, config.cache).with_paths(paths).push()
         yield from (config.source / path for path in paths)
 
 
@@ -88,9 +88,8 @@ def confirm(plans: list[Plan], *, reverse: bool) -> Iterator[bool]:
 
 
 def list_mtimes(directory: Path, rules: list[PathRule]) -> dict[Path, int]:
-    syncer = Syncer(SyncConfig(directory, directory, rules))
     args = "lsjson", "-R", "--files-only", "--no-mimetype", directory
     return {
         Path(row["Path"]): int(datetime.fromisoformat(row["ModTime"]).timestamp())
-        for row in json.loads(syncer.capture_output(*args))
+        for row in json.loads(Syncer(directory, directory, rules).capture_output(*args))
     }

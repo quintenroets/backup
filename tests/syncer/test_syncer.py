@@ -9,34 +9,34 @@ from superpathlib import Path
 
 from backup.context import context
 from backup.models import ChangeType
-from backup.syncer import SyncConfig, Syncer, create_syncer
+from backup.syncer import Syncer, create_syncer
 from backup.syncer.cli_runner import load_rclone_env
 
 
 @pytest.fixture
 def syncer() -> Iterator[Syncer]:
     with Path.tempdir() as source, Path.tempdir() as dest:
-        yield Syncer(SyncConfig(source=source, dest=dest))
+        yield Syncer(source, dest)
 
 
 @pytest.fixture
 def filled_syncer(syncer: Syncer) -> Syncer:
     for number in (0, 1):
-        (syncer.config.source / f"{number}.txt").text = "a"
+        (syncer.source / f"{number}.txt").text = "a"
     for number in (0, 2):
-        (syncer.config.dest / f"{number}.txt").text = "aa"
-    (syncer.config.dest / "directory" / "file.txt").text = "aa"
+        (syncer.dest / f"{number}.txt").text = "aa"
+    (syncer.dest / "directory" / "file.txt").text = "aa"
     return syncer
 
 
 def test_rclone_failures_raise(syncer: Syncer) -> None:
-    syncer.config.dest = Path("missing:")
+    syncer.dest = Path("missing:")
     with pytest.raises(subprocess.CalledProcessError):
         syncer.capture_status()
 
 
 def test_status(filled_syncer: Syncer) -> None:
-    for directory in (filled_syncer.config.source, filled_syncer.config.dest):
+    for directory in (filled_syncer.source, filled_syncer.dest):
         (directory / "3.txt").text = "a"
     status = filled_syncer.capture_status()
     changes = {change.path: change.type for change in status}
@@ -49,20 +49,20 @@ def test_status(filled_syncer: Syncer) -> None:
 
 
 def test_push(filled_syncer: Syncer) -> None:
-    source_hash = filled_syncer.config.source.content_hash
+    source_hash = filled_syncer.source.content_hash
     filled_syncer.capture_push()
-    assert filled_syncer.config.dest.content_hash == source_hash
+    assert filled_syncer.dest.content_hash == source_hash
 
 
 def test_pull(filled_syncer: Syncer) -> None:
-    dest_hash = filled_syncer.config.dest.content_hash
+    dest_hash = filled_syncer.dest.content_hash
     filled_syncer.capture_pull()
-    assert filled_syncer.config.source.content_hash == dest_hash
+    assert filled_syncer.source.content_hash == dest_hash
 
 
 def test_push_skips_newer(syncer: Syncer) -> None:
-    (syncer.config.source / "0.txt").touch(mtime=1)
-    dest = syncer.config.dest / "0.txt"
+    (syncer.source / "0.txt").touch(mtime=1)
+    dest = syncer.dest / "0.txt"
     dest.text = "newer"
     with patch.object(context.config.rclone, "update", new=True):
         syncer.capture_push()
@@ -71,25 +71,23 @@ def test_push_skips_newer(syncer: Syncer) -> None:
 
 @pytest.fixture
 def syncer_with_root_dest(filled_syncer: Syncer) -> Iterator[Syncer]:
-    config = filled_syncer.config
-    cli.run("rm -r", config.dest)
-    cli.run("sudo mkdir", config.dest)
+    cli.run("rm -r", filled_syncer.dest)
+    cli.run("sudo mkdir", filled_syncer.dest)
     yield filled_syncer
-    cli.run("sudo rm -r", config.dest)
+    cli.run("sudo rm -r", filled_syncer.dest)
 
 
 def test_push_to_root_dest(syncer_with_root_dest: Syncer) -> None:
-    source_hash = syncer_with_root_dest.config.source.content_hash
+    source_hash = syncer_with_root_dest.source.content_hash
     syncer_with_root_dest.push()
-    assert syncer_with_root_dest.config.dest.content_hash == source_hash
+    assert syncer_with_root_dest.dest.content_hash == source_hash
 
 
 def test_pull_with_specified_paths(filled_syncer: Syncer) -> None:
-    config = filled_syncer.config
-    Syncer(config.with_paths([Path("2.txt"), Path("directory")])).capture_pull()
-    assert (config.source / "2.txt").exists()
-    assert (config.source / "directory").exists()
-    assert (config.source / "1.txt").exists()
+    filled_syncer.with_paths([Path("2.txt"), Path("directory")]).capture_pull()
+    assert (filled_syncer.source / "2.txt").exists()
+    assert (filled_syncer.source / "directory").exists()
+    assert (filled_syncer.source / "1.txt").exists()
 
 
 def test_create_syncer() -> None:

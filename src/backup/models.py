@@ -3,14 +3,12 @@ from __future__ import annotations
 import fnmatch
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from package_utils.dataclasses.mixins import SerializationMixin
+from superpathlib import Path
 
-from .path import Path
-
-if TYPE_CHECKING:
-    import superpathlib
+assets_directory = Path.script_assets / "backup"
 
 Entries = list[str | dict[str, "Entries"] | Any]
 
@@ -28,7 +26,7 @@ class Ignores:
 
 @dataclass
 class PathRule:
-    path: superpathlib.Path
+    path: Path
     include: bool
 
 
@@ -45,7 +43,7 @@ class SerializedBackupConfig(SerializationMixin):
     source: Path
     dest: Path
     syncs: list[SerializedEntryConfig]
-    cache: Path = Path.assets / "cache"
+    cache: Path = assets_directory / "cache"
     ignores: Ignores = field(default_factory=Ignores)
 
 
@@ -60,7 +58,7 @@ class BackupConfig:
 
 @dataclass(frozen=True)
 class Change:
-    path: superpathlib.Path
+    path: Path
     type: ChangeType
 
 

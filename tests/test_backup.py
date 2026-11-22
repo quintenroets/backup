@@ -4,11 +4,11 @@ from unittest.mock import patch
 
 import cli
 import pytest
+from superpathlib import Path
 
 from backup import run
 from backup.context import Action, context
 from backup.models import SerializedBackupConfig
-from backup.path import Path
 
 
 @pytest.fixture

@@ -5,8 +5,7 @@ from unittest.mock import patch
 
 import cli
 import pytest
-
-from backup.path import Path
+from superpathlib import Path
 
 
 @pytest.fixture(scope="session", autouse=True)

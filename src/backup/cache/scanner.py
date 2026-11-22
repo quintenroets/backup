@@ -2,8 +2,9 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
+from superpathlib import Path
+
 from backup.models import BackupConfig
-from backup.path import Path
 
 from .entry import Entry
 

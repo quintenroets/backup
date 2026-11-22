@@ -15,7 +15,7 @@ from .parser import parse_config
 from .syncer import SyncConfig, Syncer
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterator
 
     from .models import BackupConfig, PathRule, Plan
 
@@ -60,7 +60,7 @@ def generate_plans(configs: list[BackupConfig], *, reverse: bool) -> Iterator[Pl
     changed = (entry for entry in entries if entry.is_changed())
     for config, group in groupby(changed, key=lambda entry: entry.config):
         paths = {entry.relative for entry in group}
-        syncer = create_syncer(config, config.cache, paths)
+        syncer = Syncer(SyncConfig(config.source, config.cache).with_paths(paths))
         if changes := syncer.capture_status(reverse=reverse):
             yield config, changes
 
@@ -68,9 +68,9 @@ def generate_plans(configs: list[BackupConfig], *, reverse: bool) -> Iterator[Pl
 def apply(plans: list[Plan], *, reverse: bool) -> Iterator[Path]:
     for config, changes in plans:
         paths = [change.path for change in changes]
-        syncer = create_syncer(config, config.dest, paths)
+        syncer = Syncer(SyncConfig(config.source, config.dest).with_paths(paths))
         (Syncer(syncer.config.reversed) if reverse else syncer).push()
-        create_syncer(config, config.cache, paths).push()
+        Syncer(SyncConfig(config.source, config.cache).with_paths(paths)).push()
         yield from (config.source / path for path in paths)
 
 
@@ -85,10 +85,6 @@ def confirm(plans: list[Plan], *, reverse: bool) -> Iterator[bool]:
             yield cli.confirm(f"{context.options.action.capitalize()}?", default=True)
     else:
         yield True
-
-
-def create_syncer(config: BackupConfig, dest: Path, paths: Iterable[Path]) -> Syncer:
-    return Syncer(SyncConfig(config.source, dest).with_paths(paths))
 
 
 def list_mtimes(directory: Path, rules: list[PathRule]) -> dict[Path, int]:

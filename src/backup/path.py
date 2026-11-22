@@ -9,8 +9,3 @@ class Path(superpathlib.Path):
     @classproperty
     def assets(cls) -> Self:
         return cast("Self", cls.script_assets / "backup")
-
-    @classmethod
-    @classproperty
-    def backup_source(cls) -> Self:
-        return cls("/")

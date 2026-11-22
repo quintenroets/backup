@@ -1,39 +1,49 @@
 import subprocess
-from dataclasses import dataclass
+from collections.abc import Iterable
+from dataclasses import dataclass, field, replace
+from typing import Self
 
 from cli.commands.commands import CommandItem
 from superpathlib import Path
 
-from backup.models import Change, Changes, ChangeType
+from backup.models import Change, Changes, ChangeType, PathRule
 
 from .cli_runner import CliRunner, resolve_remote
-from .sync_config import SyncConfig
 
 
 @dataclass
 class Syncer:
-    config: SyncConfig
+    source: Path
+    dest: Path
+    rules: list[PathRule] = field(default_factory=list)
+
+    @property
+    def reversed(self) -> Self:
+        return replace(self, source=self.dest, dest=self.source)
+
+    def with_paths(self, paths: Iterable[Path]) -> Self:
+        includes = [PathRule(path, include=True) for path in paths]
+        return replace(self, rules=[*includes, PathRule(Path(), include=False)])
 
     def capture_output(self, *args: CommandItem) -> str:
-        return CliRunner(self.config).create_runner(*args).capture_output()
+        return CliRunner(self).create_runner(*args).capture_output()
 
     def push(self) -> subprocess.CompletedProcess[str]:
-        return CliRunner(self.config, "sync").create_runner().run()
+        return CliRunner(self, "sync").create_runner().run()
 
     def capture_push(self) -> str:
-        return CliRunner(self.config, "sync").create_runner().capture_output()
+        return CliRunner(self, "sync").create_runner().capture_output()
 
     def capture_pull(self) -> str:
-        return Syncer(self.config.reversed).capture_push()
+        return self.reversed.capture_push()
 
     def export_files(self, export_format: str) -> str:
         args = "--drive-export-formats", export_format
-        runner = CliRunner(self.config.reversed, "copy").create_runner(*args)
-        return runner.capture_output()
+        return CliRunner(self.reversed, "copy").create_runner(*args).capture_output()
 
     def capture_status(self, *, reverse: bool = False) -> Changes:
-        config = self.config.reversed if reverse else self.config
-        runner = CliRunner(config, "check").create_runner("--combined", "-")
+        syncer = self.reversed if reverse else self
+        runner = CliRunner(syncer, "check").create_runner("--combined", "-")
         runner.check = False
         process = runner.run(capture_output=True)
         if not process.stdout:
@@ -43,7 +53,7 @@ class Syncer:
         preserved = ChangeType.preserved
         if unchanged := [change.path for change in changes if change.type == preserved]:
             # Update modified times to avoid checking again in the future
-            Syncer(self.config.with_paths(unchanged)).push()
+            self.with_paths(unchanged).push()
         return [change for change in changes if change.type != preserved]
 
 
@@ -53,4 +63,4 @@ def create_syncer(path: Path) -> Syncer:
     if path.is_relative_to(Path.HOME):
         source = Path.HOME
         dest /= "home"
-    return Syncer(SyncConfig(source, dest).with_paths([path.relative_to(source)]))
+    return Syncer(source, dest).with_paths([path.relative_to(source)])

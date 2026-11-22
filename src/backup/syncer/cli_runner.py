@@ -1,34 +1,41 @@
+from __future__ import annotations
+
 import os
 import re
-from collections.abc import Iterator
 from dataclasses import asdict, dataclass
 from functools import cache
+from typing import TYPE_CHECKING
 
 import cli
-from cli.commands.commands import CommandItem
 from cli.commands.runner import Runner
 from package_utils.secrets_ import load_secret
 
 from backup.context import context
-from backup.models import PathRule
 
-from .sync_config import SyncConfig
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from cli.commands.commands import CommandItem
+
+    from backup.models import PathRule
+
+    from .syncer import Syncer
 
 
 @dataclass
 class CliRunner:
-    config: SyncConfig
+    syncer: Syncer
     action: str | None = None
 
     @property
     def root(self) -> bool:
-        dest = self.config.dest
+        dest = self.syncer.dest
         existing = (path for path in (dest, *dest.parents) if path.exists())
         return ":" not in dest.parts[0] and not os.access(next(existing), os.W_OK)
 
     def create_runner(self, *args: CommandItem) -> Runner[str]:
         command = tuple(self.generate_command_parts(*args))
-        filters = (line for rule in self.config.rules for line in create_filters(rule))
+        filters = (line for rule in self.syncer.rules for line in create_filters(rule))
         kwargs = {"env": load_rclone_env()}
         return Runner(command, root=self.root, input="\n".join(filters), kwargs=kwargs)
 
@@ -37,7 +44,7 @@ class CliRunner:
             yield "-E"
         yield "rclone"
         if self.action is not None:
-            yield from (self.action, self.config.source, self.config.dest)
+            yield from (self.action, self.syncer.source, self.syncer.dest)
         if self.action == "sync":
             yield from ("--create-empty-src-dirs", "--progress")
             if self.root:

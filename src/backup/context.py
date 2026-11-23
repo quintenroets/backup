@@ -20,7 +20,6 @@ class Action(StrEnum):
 
 class Help:
     action: str = "The action to do"
-    configure: str = "Open configuration"
     confirm_push: str = "Ask confirmation before pushing"
     sub_check: str = "only check subpath of current working directory"
     cache_only: str = "pull from local cache without syncing from remote"
@@ -29,7 +28,6 @@ class Help:
 @dataclass
 class Options:
     action: Annotated[Action, typer.Argument(help=Help.action)] = Action.push
-    configure: Annotated[bool, typer.Option(help=Help.configure)] = False
     confirm_push: Annotated[bool, typer.Option(help=Help.confirm_push)] = True
     sub_check: Annotated[bool, typer.Option(help=Help.sub_check)] = False
     cache_only: Annotated[bool, typer.Option(help=Help.cache_only)] = False

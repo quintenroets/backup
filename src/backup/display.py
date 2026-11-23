@@ -26,12 +26,12 @@ colors: dict[str | None, str] = {
 
 
 def print_changes(plan: Plan, *, show_diff: bool, reverse: bool) -> None:
-    config, changes = plan
-    sides = (config.source, config.cache) if reverse else (config.cache, config.source)
+    backup, changes = plan
+    sides = (backup.source, backup.cache) if reverse else (backup.cache, backup.source)
     types = dict(sorted((change.path, change.type) for change in changes)[:1000])
     parents = [path.parent for path in types]
     common = Path(commonpath(parents))
-    root = config.source / common
+    root = backup.source / common
     is_home = root.is_relative_to(Path.HOME)
     tree = Tree(Text(str("HOME" / root.relative_to(Path.HOME) if is_home else root)))
     directories = {Path(commonpath(pair)) for pair in pairwise(parents)} - {common}

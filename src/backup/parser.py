@@ -4,10 +4,10 @@ from typing import Any
 
 from superpathlib import Path
 
-from .models import BackupConfig, Entries, PathRule, SerializedBackupConfig
+from .models import Backup, Entries, PathRule, SerializedBackupConfig
 
 
-def parse_config(raw: dict[str, Any], backup_root: Path) -> Iterator[BackupConfig]:
+def parse_config(raw: dict[str, Any], backup_root: Path) -> Iterator[Backup]:
     config = SerializedBackupConfig.from_dict(raw)
     cache_rule = PathRule(config.cache, include=False)
     for sync in config.syncs:
@@ -23,7 +23,7 @@ def parse_config(raw: dict[str, Any], backup_root: Path) -> Iterator[BackupConfi
         if root.exists() and any(rule.include for rule in rules):
             path = sync.dest / root.relative_to(source)
             cache = config.cache / path
-            yield BackupConfig(root, config.dest / path, cache, rules, config.ignores)
+            yield Backup(root, config.dest / path, cache, rules, config.ignores)
 
 
 def make_relative(rules: Iterable[PathRule], root: Path) -> Iterator[PathRule]:

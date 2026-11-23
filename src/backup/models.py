@@ -31,7 +31,7 @@ class PathRule:
 
 
 @dataclass
-class SerializedEntryConfig(SerializationMixin):
+class SyncEntry:
     source: Path = field(default_factory=Path)
     dest: Path = field(default_factory=Path)
     includes: Entries = field(default_factory=list)
@@ -42,13 +42,13 @@ class SerializedEntryConfig(SerializationMixin):
 class SerializedBackupConfig(SerializationMixin):
     source: Path
     dest: Path
-    syncs: list[SerializedEntryConfig]
+    syncs: list[SyncEntry]
     cache: Path = assets_directory / "cache"
     ignores: Ignores = field(default_factory=Ignores)
 
 
 @dataclass
-class BackupConfig:
+class Backup:
     source: Path
     dest: Path
     cache: Path
@@ -62,8 +62,7 @@ class Change:
     type: ChangeType
 
 
-Changes = list[Change]
-Plan = tuple[BackupConfig, Changes]
+Plan = tuple[Backup, list[Change]]
 
 
 class ChangeType(StrEnum):

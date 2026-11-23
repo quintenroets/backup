@@ -15,22 +15,22 @@ from .syncer import Syncer
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from .models import BackupConfig, Plan
+    from .models import Backup, Plan
 
 
 def run(config: dict[str, Any]) -> list[Path]:
     root = Path.cwd() if context.options.sub_check else Path("/")
-    backup_configs = list(parse_config(config, root))
+    backups = list(parse_config(config, root))
     reverse = context.options.action == Action.pull
     if reverse and not context.options.cache_only:
-        for backup_config in backup_configs:
-            sync_cache(backup_config)
-    plans = list(generate_plans(backup_configs, reverse=reverse))
+        for backup in backups:
+            sync_cache(backup)
+    plans = list(generate_plans(backups, reverse=reverse))
     confirmed = any(confirm(plans, reverse=reverse))
     return list(apply(plans, reverse=reverse)) if confirmed else []
 
 
-def sync_cache(backup: BackupConfig) -> None:
+def sync_cache(backup: Backup) -> None:
     backup.cache.mkdir(parents=True, exist_ok=True)
     location = str(backup.dest).split(":")[-1]
     with cli.console.status(f"Reading remote filesystem at {location}"):
@@ -47,24 +47,24 @@ def sync_cache(backup: BackupConfig) -> None:
             cache_path.text = "" if source_path.size else " "
 
 
-def generate_plans(configs: list[BackupConfig], *, reverse: bool) -> Iterator[Plan]:
-    scans = (CacheScanner(config).generate_entries() for config in configs)
+def generate_plans(backups: list[Backup], *, reverse: bool) -> Iterator[Plan]:
+    scans = (CacheScanner(backup).generate_entries() for backup in backups)
     entries = cli.track_progress(chain.from_iterable(scans), "Checking", "Files")
     changed = (entry for entry in entries if entry.is_changed())
-    for config, group in groupby(changed, key=lambda entry: entry.config):
+    for backup, group in groupby(changed, key=lambda entry: entry.backup):
         paths = {entry.relative for entry in group}
-        syncer = Syncer(config.source, config.cache).with_paths(paths)
+        syncer = Syncer(backup.source, backup.cache).with_paths(paths)
         if changes := syncer.capture_status(reverse=reverse):
-            yield config, changes
+            yield backup, changes
 
 
 def apply(plans: list[Plan], *, reverse: bool) -> Iterator[Path]:
-    for config, changes in plans:
+    for backup, changes in plans:
         paths = [change.path for change in changes]
-        syncer = Syncer(config.source, config.dest).with_paths(paths)
+        syncer = Syncer(backup.source, backup.dest).with_paths(paths)
         (syncer.reversed if reverse else syncer).sync()
-        Syncer(config.source, config.cache).with_paths(paths).sync()
-        yield from (config.source / path for path in paths)
+        Syncer(backup.source, backup.cache).with_paths(paths).sync()
+        yield from (backup.source / path for path in paths)
 
 
 def confirm(plans: list[Plan], *, reverse: bool) -> Iterator[bool]:

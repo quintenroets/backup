@@ -18,19 +18,10 @@ class CacheScanner:
             source_path = self.backup.source / rule.path
             dest_path = self.backup.cache / rule.path
             if rule.include:
-                is_file = source_path.is_file() or dest_path.is_file()
-                if is_file:
-                    if source_path.exists():
-                        yield Entry(self.backup, source=source_path)
-                    else:
-                        yield Entry(self.backup, dest=dest_path)
-                else:
-                    for entry_path in source_path.find(exclude=self.exclude_root):
-                        yield Entry(self.backup, source=entry_path)
-                    for entry_path in dest_path.find(
-                        exclude=lambda path_: path_ in self.visited,
-                    ):
-                        yield Entry(self.backup, dest=entry_path)
+                sources = source_path.find(Path.is_file, exclude=self.exclude_root)
+                yield from (Entry(self.backup, source=path) for path in sources)
+                cached = dest_path.find(Path.is_file, exclude=self.visited.__contains__)
+                yield from (Entry(self.backup, dest=path) for path in cached)
             self.visited.add(source_path)
             self.visited.add(dest_path)
 

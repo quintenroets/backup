@@ -25,11 +25,7 @@ class Entry:
             self.dest = self.backup.cache / self.relative
 
     def is_changed(self) -> bool:
-        return (
-            self.existing.is_file()
-            and (self.source.mtime != self.dest.mtime)
-            and not self.exclude()
-        )
+        return self.source.mtime != self.dest.mtime and not self.exclude()
 
     def exclude(self) -> bool:
         return self.relative.suffix == ".part" or (

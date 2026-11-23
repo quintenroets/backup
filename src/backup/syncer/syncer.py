@@ -1,9 +1,8 @@
 import subprocess
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field, replace
 from typing import Self
 
-from cli.commands.commands import CommandItem
 from superpathlib import Path
 
 from backup.models import Change, Changes, ChangeType, PathRule
@@ -25,8 +24,11 @@ class Syncer:
         includes = [PathRule(path, include=True) for path in paths]
         return replace(self, rules=[*includes, PathRule(Path(), include=False)])
 
-    def capture_output(self, *args: CommandItem) -> str:
-        return CliRunner(self).create_runner(*args).capture_output()
+    def list_mtimes(self) -> Iterator[dict[str, str]]:
+        args = "lsf", "-R", "--files-only", "--format=pt", "--time-format=unix"
+        for directory in (self.source, self.dest):
+            output = CliRunner(self).create_runner(*args, directory).capture_output()
+            yield dict(line.rsplit(";", 1) for line in output.splitlines())
 
     def push(self) -> subprocess.CompletedProcess[str]:
         return CliRunner(self, "sync").create_runner().run()

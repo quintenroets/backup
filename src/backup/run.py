@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import sys
-from datetime import datetime
 from itertools import chain, groupby
 from typing import TYPE_CHECKING, Any
 
@@ -17,7 +15,7 @@ from .syncer import Syncer
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from .models import BackupConfig, PathRule, Plan
+    from .models import BackupConfig, Plan
 
 
 def run(config: dict[str, Any]) -> list[Path]:
@@ -33,16 +31,15 @@ def run(config: dict[str, Any]) -> list[Path]:
 
 
 def sync_cache(backup: BackupConfig) -> None:
-    with cli.status(f"Reading remote filesystem at {str(backup.dest).split(':')[-1]}"):
-        remote_mtimes = list_mtimes(backup.dest, backup.rules)
     backup.cache.mkdir(parents=True, exist_ok=True)
-    cache_mtimes = list_mtimes(backup.cache, backup.rules)
-    for path in cache_mtimes.keys() - remote_mtimes:
+    with cli.status(f"Reading remote filesystem at {str(backup.dest).split(':')[-1]}"):
+        cache, remote = Syncer(backup.cache, backup.dest, backup.rules).list_mtimes()
+    for path in cache.keys() - remote:
         (backup.cache / path).unlink()
-    for path, mtime in remote_mtimes.items() - cache_mtimes.items():
+    for path, mtime in remote.items() - cache.items():
         cache_path = backup.cache / path
         source_path = backup.source / path
-        if int(source_path.mtime) == mtime:
+        if int(source_path.mtime) == int(mtime):
             source_path.copy_to(cache_path)
         else:
             # trigger update
@@ -85,11 +82,3 @@ def confirm(plans: list[Plan], *, reverse: bool) -> Iterator[bool]:
             yield cli.confirm(f"{context.options.action.capitalize()}?", default=True)
     else:
         yield True
-
-
-def list_mtimes(directory: Path, rules: list[PathRule]) -> dict[Path, int]:
-    args = "lsjson", "-R", "--files-only", "--no-mimetype", directory
-    return {
-        Path(row["Path"]): int(datetime.fromisoformat(row["ModTime"]).timestamp())
-        for row in json.loads(Syncer(directory, directory, rules).capture_output(*args))
-    }

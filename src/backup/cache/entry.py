@@ -3,12 +3,12 @@ from dataclasses import dataclass, field
 from superpathlib import Path
 
 from backup.context import context
-from backup.models import BackupConfig
+from backup.models import Backup
 
 
 @dataclass
 class Entry:
-    config: BackupConfig
+    backup: Backup
     source: Path = None  # type: ignore[assignment]
     dest: Path = None  # type: ignore[assignment]
     existing: Path = field(init=False)
@@ -17,12 +17,12 @@ class Entry:
     def __post_init__(self) -> None:
         if self.source is None:
             self.existing = self.dest
-            self.relative = self.dest.relative_to(self.config.cache)
-            self.source = self.config.source / self.relative
+            self.relative = self.dest.relative_to(self.backup.cache)
+            self.source = self.backup.source / self.relative
         else:
             self.existing = self.source
-            self.relative = self.source.relative_to(self.config.source)
-            self.dest = self.config.cache / self.relative
+            self.relative = self.source.relative_to(self.backup.source)
+            self.dest = self.backup.cache / self.relative
 
     def is_changed(self) -> bool:
         return (

@@ -11,7 +11,7 @@ from package_utils.secrets_ import load_secret
 from superpathlib import Path
 
 from .context import context
-from .models import Change, Changes, ChangeType, PathRule
+from .models import Change, ChangeType, PathRule
 
 if TYPE_CHECKING:
     import subprocess
@@ -37,7 +37,7 @@ class Syncer:
             output = self.run_rclone(*args, directory, capture_output=True).stdout
             yield dict(line.rsplit(";", 1) for line in output.splitlines())
 
-    def capture_status(self, *, reverse: bool = False) -> Changes:
+    def capture_status(self, *, reverse: bool = False) -> list[Change]:
         syncer = self.reversed if reverse else self
         process = syncer.run("check", "--combined=-", check=False, capture_output=True)
         if not process.stdout:

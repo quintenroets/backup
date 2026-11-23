@@ -66,8 +66,8 @@ def apply(plans: list[Plan], *, reverse: bool) -> Iterator[Path]:
     for config, changes in plans:
         paths = [change.path for change in changes]
         syncer = Syncer(config.source, config.dest).with_paths(paths)
-        (syncer.reversed if reverse else syncer).push()
-        Syncer(config.source, config.cache).with_paths(paths).push()
+        (syncer.reversed if reverse else syncer).sync()
+        Syncer(config.source, config.cache).with_paths(paths).sync()
         yield from (config.source / path for path in paths)
 
 

@@ -9,8 +9,7 @@ from superpathlib import Path
 
 from backup.context import context
 from backup.models import ChangeType
-from backup.syncer import Syncer, create_syncer
-from backup.syncer.cli_runner import load_rclone_env
+from backup.syncer import Syncer, create_syncer, load_env
 
 
 @pytest.fixture
@@ -48,43 +47,30 @@ def test_status(filled_syncer: Syncer) -> None:
     }
 
 
-def test_push(filled_syncer: Syncer) -> None:
-    source_hash = filled_syncer.source.content_hash
-    filled_syncer.capture_push()
-    assert filled_syncer.dest.content_hash == source_hash
-
-
-def test_pull(filled_syncer: Syncer) -> None:
-    dest_hash = filled_syncer.dest.content_hash
-    filled_syncer.capture_pull()
-    assert filled_syncer.source.content_hash == dest_hash
-
-
 def test_push_skips_newer(syncer: Syncer) -> None:
     (syncer.source / "0.txt").touch(mtime=1)
     dest = syncer.dest / "0.txt"
     dest.text = "newer"
     with patch.object(context.config.rclone, "update", new=True):
-        syncer.capture_push()
+        syncer.sync()
     assert dest.text == "newer"
 
 
 @pytest.fixture
 def syncer_with_root_dest(filled_syncer: Syncer) -> Iterator[Syncer]:
-    cli.run("rm -r", filled_syncer.dest)
-    cli.run("sudo mkdir", filled_syncer.dest)
+    cli.run("sudo chown -R root", filled_syncer.dest)
     yield filled_syncer
     cli.run("sudo rm -r", filled_syncer.dest)
 
 
 def test_push_to_root_dest(syncer_with_root_dest: Syncer) -> None:
     source_hash = syncer_with_root_dest.source.content_hash
-    syncer_with_root_dest.push()
+    syncer_with_root_dest.sync()
     assert syncer_with_root_dest.dest.content_hash == source_hash
 
 
 def test_pull_with_specified_paths(filled_syncer: Syncer) -> None:
-    filled_syncer.with_paths([Path("2.txt"), Path("directory")]).capture_pull()
+    filled_syncer.with_paths([Path("2.txt"), Path("directory")]).reversed.sync()
     assert (filled_syncer.source / "2.txt").exists()
     assert (filled_syncer.source / "directory").exists()
     assert (filled_syncer.source / "1.txt").exists()
@@ -101,8 +87,8 @@ def test_export_files(syncer: Syncer) -> None:
 def test_load_rclone_password() -> None:
     with (
         patch.dict(os.environ, {"RCLONE_PASSWORD_COMMAND": "command"}),
-        patch("backup.syncer.cli_runner.load_secret", return_value="secret"),
+        patch("backup.syncer.load_secret", return_value="secret"),
     ):
-        env = load_rclone_env.__wrapped__()
+        env = load_env.__wrapped__()
     assert env["RCLONE_CONFIG_PASS"] == "secret"  # noqa: S105
     assert "RCLONE_PASSWORD_COMMAND" not in env

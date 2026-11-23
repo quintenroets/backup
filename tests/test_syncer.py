@@ -9,7 +9,7 @@ from superpathlib import Path
 
 from backup.context import context
 from backup.models import ChangeType
-from backup.syncer import Syncer, create_syncer, load_env
+from backup.syncer import Syncer, create_syncer, load_rclone_env
 
 
 @pytest.fixture
@@ -89,6 +89,6 @@ def test_load_rclone_password() -> None:
         patch.dict(os.environ, {"RCLONE_PASSWORD_COMMAND": "command"}),
         patch("backup.syncer.load_secret", return_value="secret"),
     ):
-        env = load_env.__wrapped__()
+        env = load_rclone_env.__wrapped__()
     assert env["RCLONE_CONFIG_PASS"] == "secret"  # noqa: S105
     assert "RCLONE_PASSWORD_COMMAND" not in env

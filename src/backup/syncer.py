@@ -1,10 +1,10 @@
+from __future__ import annotations
+
 import os
 import re
-import subprocess
-from collections.abc import Iterable, Iterator
 from dataclasses import asdict, dataclass, field, replace
 from functools import cache
-from typing import Self
+from typing import TYPE_CHECKING, Self, Unpack
 
 import cli
 from package_utils.secrets_ import load_secret
@@ -13,7 +13,13 @@ from superpathlib import Path
 from .context import context
 from .models import Change, Changes, ChangeType, PathRule
 
-Process = subprocess.CompletedProcess[str]
+if TYPE_CHECKING:
+    import subprocess
+    from collections.abc import Iterable, Iterator
+
+    from cli.commands import RunOptions
+
+    Process = subprocess.CompletedProcess[str]
 
 
 @dataclass
@@ -22,18 +28,18 @@ class Syncer:
     dest: Path
     rules: list[PathRule] = field(default_factory=list)
 
-    def sync(self, *, quiet: bool = False) -> Process:
-        return self.run("sync", "--create-empty-src-dirs", "--progress", quiet=quiet)
+    def sync(self, **kwargs: Unpack[RunOptions]) -> Process:
+        return self.run("sync", "--create-empty-src-dirs", "--progress", **kwargs)
 
     def list_mtimes(self) -> Iterator[dict[str, str]]:
         args = "lsf", "-R", "--files-only", "--format=pt", "--time-format=unix"
         for directory in (self.source, self.dest):
-            output = self.run_rclone(*args, directory, quiet=True).stdout
+            output = self.run_rclone(*args, directory, capture_output=True).stdout
             yield dict(line.rsplit(";", 1) for line in output.splitlines())
 
     def capture_status(self, *, reverse: bool = False) -> Changes:
         syncer = self.reversed if reverse else self
-        process = syncer.run("check", "--combined", "-", check=False, quiet=True)
+        process = syncer.run("check", "--combined=-", check=False, capture_output=True)
         if not process.stdout:
             process.check_returncode()
         lines = process.stdout.splitlines()
@@ -45,15 +51,16 @@ class Syncer:
         return [change for change in changes if change.type != preserved]
 
     def export_files(self, format_: str) -> Process:
-        return self.reversed.run("copy", "--drive-export-formats", format_, quiet=True)
+        args = "copy", "--drive-export-formats", format_
+        return self.reversed.run(*args, capture_output=True)
 
-    def run(self, verb: str, *args: object, **kwargs: bool) -> Process:
+    def run(self, verb: str, *args: object, **kwargs: Unpack[RunOptions]) -> Process:
         return self.run_rclone(verb, self.source, self.dest, *args, **kwargs)
 
-    def run_rclone(self, *args: object, **kwargs: bool) -> Process:
+    def run_rclone(self, *args: object, **kwargs: Unpack[RunOptions]) -> Process:
         filters = (line for rule in self.rules for line in create_filters(rule))
-        command = self.generate_command(*args)
-        return cli.run(*command, input="\n".join(filters), env=load_env(), **kwargs)
+        options = kwargs | {"input": "\n".join(filters), "env": load_rclone_env()}
+        return cli.run(*self.generate_command(*args), **options)
 
     def generate_command(self, *args: object) -> Iterator[object]:
         existing = (path for path in (self.dest, *self.dest.parents) if path.exists())
@@ -83,7 +90,7 @@ def create_syncer(path: Path) -> Syncer:
 
 @cache
 def resolve_remote() -> str:
-    return cli.capture_output_lines("rclone listremotes", env=load_env())[0]
+    return cli.capture_output_lines("rclone listremotes", env=load_rclone_env())[0]
 
 
 def create_filters(rule: PathRule) -> tuple[str, str]:
@@ -93,7 +100,7 @@ def create_filters(rule: PathRule) -> tuple[str, str]:
 
 
 @cache
-def load_env() -> dict[str, str]:
+def load_rclone_env() -> dict[str, str]:
     env = dict(os.environ)
     if env.pop("RCLONE_PASSWORD_COMMAND", None) is not None:
         env["RCLONE_CONFIG_PASS"] = load_secret("rclone")

@@ -32,7 +32,8 @@ def run(config: dict[str, Any]) -> list[Path]:
 
 def sync_cache(backup: BackupConfig) -> None:
     backup.cache.mkdir(parents=True, exist_ok=True)
-    with cli.status(f"Reading remote filesystem at {str(backup.dest).split(':')[-1]}"):
+    location = str(backup.dest).split(":")[-1]
+    with cli.console.status(f"Reading remote filesystem at {location}"):
         cache, remote = Syncer(backup.cache, backup.dest, backup.rules).list_mtimes()
     for path in cache.keys() - remote:
         (backup.cache / path).unlink()
@@ -48,12 +49,7 @@ def sync_cache(backup: BackupConfig) -> None:
 
 def generate_plans(configs: list[BackupConfig], *, reverse: bool) -> Iterator[Plan]:
     scans = (CacheScanner(config).generate_entries() for config in configs)
-    entries = cli.track_progress(
-        chain.from_iterable(scans),
-        description="Checking",
-        unit="Files",
-        cleanup_after_finish=True,
-    )
+    entries = cli.track_progress(chain.from_iterable(scans), "Checking", "Files")
     changed = (entry for entry in entries if entry.is_changed())
     for config, group in groupby(changed, key=lambda entry: entry.config):
         paths = {entry.relative for entry in group}

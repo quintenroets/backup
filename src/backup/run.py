@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import sys
-from itertools import chain, groupby
+from functools import partial
+from itertools import groupby
 from typing import TYPE_CHECKING, Any
 
 import cli
 from superpathlib import Path
 
-from .cache import CacheScanner
 from .context import Action, context
 from .parser import parse_config
 from .syncer import Syncer
@@ -48,14 +48,36 @@ def sync_cache(backup: Backup) -> None:
 
 
 def generate_plans(backups: list[Backup], *, reverse: bool) -> Iterator[Plan]:
-    scans = (CacheScanner(backup).generate_entries() for backup in backups)
-    entries = cli.track_progress(chain.from_iterable(scans), "Checking", "Files")
-    changed = (entry for entry in entries if entry.is_changed())
-    for backup, group in groupby(changed, key=lambda entry: entry.backup):
-        paths = {entry.relative for entry in group}
+    scans = (entry for backup in backups for entry in scan_cache(backup))
+    entries = cli.track_progress(scans, "Checking", "Files")
+    changed = (entry for entry in entries if is_changed(*entry))
+    for backup, group in groupby(changed, key=lambda entry: entry[0]):
+        paths = {path for *_, path in group}
         syncer = Syncer(backup.source, backup.cache).with_paths(paths)
         if changes := syncer.capture_status(reverse=reverse):
             yield backup, changes
+
+
+def scan_cache(backup: Backup) -> Iterator[tuple[Backup, Path, Path]]:
+    visited: set[Path] = set()
+    exclude_source = partial(is_excluded, backup, visited)
+    sides = (backup.source, exclude_source), (backup.cache, visited.__contains__)
+    for rule in backup.rules:
+        if rule.include:
+            for root, exclude in sides:
+                for path in (root / rule.path).find(Path.is_file, exclude=exclude):
+                    yield backup, root, path.relative_to(root)
+        visited.update(root / rule.path for root, _ in sides)
+
+
+def is_excluded(backup: Backup, visited: set[Path], path: Path) -> bool:
+    return path in visited or (path / ".git").exists() or backup.ignores.matches(path)
+
+
+def is_changed(backup: Backup, root: Path, path: Path) -> bool:
+    changed = (backup.source / path).mtime != (backup.cache / path).mtime
+    max_size = context.config.max_backup_size
+    return changed and ((root / path).size <= max_size or path.suffix == ".zip")
 
 
 def apply(plans: list[Plan], *, reverse: bool) -> Iterator[Path]:

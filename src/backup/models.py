@@ -3,10 +3,13 @@ from __future__ import annotations
 import fnmatch
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 from package_utils.dataclasses.mixins import SerializationMixin
 from superpathlib import Path
+
+if TYPE_CHECKING:
+    import typer
 
 assets_directory = Path.script_assets / "backup"
 
@@ -83,3 +86,23 @@ class ChangeType(StrEnum):
     modified = "*"
     deleted = "-"
     preserved = "="
+
+
+class Action(StrEnum):
+    push = "push"
+    pull = "pull"
+
+
+class Help:
+    action: str = "The action to do"
+    confirm_push: str = "Ask confirmation before pushing"
+    sub_check: str = "only check subpath of current working directory"
+    cache_only: str = "pull from local cache without syncing from remote"
+
+
+@dataclass
+class Options:
+    action: Annotated[Action, typer.Argument(help=Help.action)] = Action.push
+    confirm_push: Annotated[bool, typer.Option(help=Help.confirm_push)] = True
+    sub_check: Annotated[bool, typer.Option(help=Help.sub_check)] = False
+    cache_only: Annotated[bool, typer.Option(help=Help.cache_only)] = False

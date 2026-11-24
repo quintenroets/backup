@@ -1,14 +1,12 @@
 from collections.abc import Iterable, Iterator
 from operator import attrgetter
-from typing import Any
 
 from superpathlib import Path
 
-from .models import Backup, Entries, PathRule, SerializedBackupConfig
+from .models import Backup, Config, Entries, PathRule
 
 
-def parse_config(raw: dict[str, Any], backup_root: Path) -> Iterator[Backup]:
-    config = SerializedBackupConfig.from_dict(raw)
+def parse_config(config: Config, backup_root: Path) -> Iterator[Backup]:
     cache_rule = PathRule(config.cache, include=False)
     for sync in config.syncs:
         source = config.source / sync.source

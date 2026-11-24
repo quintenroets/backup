@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from functools import partial
 from itertools import groupby
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import cli
 from superpathlib import Path
@@ -15,10 +15,10 @@ from .syncer import Syncer
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from .models import Backup, Plan
+    from .models import Backup, Config, Plan
 
 
-def run(config: dict[str, Any]) -> list[Path]:
+def run(config: Config) -> list[Path]:
     root = Path.cwd() if context.options.sub_check else Path("/")
     backups = list(parse_config(config, root))
     reverse = context.options.action == Action.pull

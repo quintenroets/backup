@@ -39,7 +39,7 @@ class SyncEntry:
 
 
 @dataclass
-class SerializedBackupConfig(SerializationMixin):
+class Config(SerializationMixin):
     source: Path
     dest: Path
     syncs: list[SyncEntry]

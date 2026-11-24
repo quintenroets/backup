@@ -1,3 +1,3 @@
-from .models import Action, Config, Options
+from .models import Action, Config, Options, SyncEntry
 from .run import run
 from .syncer import Syncer, create_syncer, load_rclone_env, resolve_remote

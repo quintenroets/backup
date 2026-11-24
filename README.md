@@ -12,17 +12,15 @@ Generic engine to back up important files across an entire disk to an [rclone](h
 
 ## Usage
 ```python
+from pathlib import Path
+
 import backup
 
-config = {
-    "source": "/home/user",
-    "dest": "remote:backup",  # any rclone destination; a local path also works
-    "syncs": [
-        {"includes": [".ssh", ".config/git"], "excludes": ["*.log"]},
-    ],
-}
+syncs = [backup.SyncEntry(includes=[".ssh", ".config/git"], excludes=["*.log"])]
+dest = Path("remote:backup")  # rclone remote or local path
+config = backup.Config(source=Path.home(), dest=dest, syncs=syncs)
 
-backup.run(backup.Config.from_dict(config))  # back up changed files under each include
+backup.run(config)  # back up changed files under each include
 ```
 
 ## Installation

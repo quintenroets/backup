@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import cli
 from superpathlib import Path
 
-from .context import Action, context
+from .models import Action, Options
 from .parser import parse_config
 from .syncer import Syncer
 
@@ -18,15 +18,16 @@ if TYPE_CHECKING:
     from .models import Backup, Config, Ignores, Plan
 
 
-def run(config: Config) -> list[Path]:
-    root = Path.cwd() if context.options.sub_check else Path("/")
+def run(config: Config, options: Options | None = None) -> list[Path]:
+    options = options or Options()
+    root = Path.cwd() if options.sub_check else Path("/")
     backups = list(parse_config(config, root))
-    reverse = context.options.action == Action.pull
-    if reverse and not context.options.cache_only:
+    reverse = options.action == Action.pull
+    if reverse and not options.cache_only:
         for backup in backups:
             sync_cache(backup)
     plans = list(generate_plans(backups, reverse=reverse))
-    confirmed = any(confirm(plans, reverse=reverse))
+    confirmed = not options.confirm_push or any(confirm(plans, reverse=reverse))
     return list(apply(plans, reverse=reverse)) if confirmed else []
 
 
@@ -92,13 +93,13 @@ def apply(plans: list[Plan], *, reverse: bool) -> Iterator[Path]:
 
 
 def confirm(plans: list[Plan], *, reverse: bool) -> Iterator[bool]:
-    if plans and context.options.confirm_push and sys.stdin.isatty():
+    if plans and sys.stdin.isatty():
         from .display import print_changes  # noqa: PLC0415
 
         cli.console.rule("Backup")
         for show_diff in (False, True):
             for plan in plans:
                 print_changes(plan, show_diff=show_diff, reverse=reverse)
-            yield cli.confirm(f"{context.options.action.capitalize()}?", default=True)
+            yield cli.confirm("Pull?" if reverse else "Push?", default=True)
     else:
         yield True

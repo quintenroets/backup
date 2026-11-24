@@ -6,8 +6,7 @@ import cli
 import pytest
 from superpathlib import Path
 
-from backup import Config, run
-from backup.context import Action, context
+from backup import Action, Config, Options, run
 from backup.models import SyncEntry
 
 
@@ -48,11 +47,10 @@ def test_pull(config: Config) -> None:
     (config.dest / "1.txt").text = "pulled"
     (config.cache / "2.txt").touch()
     with (
-        patch.object(context.options, "action", Action.pull),
         patch.object(cli, "confirm", side_effect=[False, True]),
         cli.console.capture() as capture,
     ):
-        assert run(config) == [config.source / "1.txt"]
+        assert run(config, Options(action=Action.pull)) == [config.source / "1.txt"]
     assert (config.source / "1.txt").exists()
     assert "@@ -0,0 +1 @@" in capture.get()
 

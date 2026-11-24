@@ -10,8 +10,7 @@ import cli
 from package_utils.secrets_ import load_secret
 from superpathlib import Path
 
-from .context import context
-from .models import Change, ChangeType, PathRule
+from .models import Change, ChangeType, PathRule, RcloneConfig
 
 if TYPE_CHECKING:
     import subprocess
@@ -26,6 +25,7 @@ if TYPE_CHECKING:
 class Syncer:
     source: Path
     dest: Path
+    config: RcloneConfig = field(default_factory=RcloneConfig)
     rules: list[PathRule] = field(default_factory=list)
 
     def sync(self, **kwargs: Unpack[RunOptions]) -> Process:
@@ -67,7 +67,7 @@ class Syncer:
         root = ":" not in self.dest.parts[0] and not os.access(next(existing), os.W_OK)
         yield "sudo -E rclone --no-update-dir-modtime" if root else "rclone"
         yield from (*args, "--filter-from=-", "--skip-links")
-        for name, value in asdict(context.config.rclone).items():
+        for name, value in asdict(self.config).items():
             yield f"--{name.replace('_', '-')}={value}"
 
     @property

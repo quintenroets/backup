@@ -39,12 +39,25 @@ class SyncEntry:
 
 
 @dataclass
+class RcloneConfig:
+    update: bool = False
+    retries: int = 5
+    retries_sleep: str = "30s"
+    checkers: int = 100
+    transfers: int = 100
+    order_by: str = "size,desc"
+    drive_import_formats: str = "docx, xlsx"
+
+
+@dataclass
 class Config(SerializationMixin):
     source: Path
     dest: Path
     syncs: list[SyncEntry]
     cache: Path = assets_directory / "cache"
     ignores: Ignores = field(default_factory=Ignores)
+    max_backup_size: int = int(50e6)
+    rclone: RcloneConfig = field(default_factory=RcloneConfig)
 
 
 @dataclass
@@ -53,7 +66,7 @@ class Backup:
     dest: Path
     cache: Path
     rules: list[PathRule]
-    ignores: Ignores
+    config: Config
 
 
 @dataclass(frozen=True)

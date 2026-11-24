@@ -20,8 +20,7 @@ def parse_config(config: Config, backup_root: Path) -> Iterator[Backup]:
         rules = list(make_relative([cache_rule, *absolute_rules], root))
         if root.exists() and any(rule.include for rule in rules):
             path = sync.dest / root.relative_to(source)
-            cache = config.cache / path
-            yield Backup(root, config.dest / path, cache, rules, config.ignores)
+            yield Backup(root, config.dest / path, config.cache / path, rules, config)
 
 
 def make_relative(rules: Iterable[PathRule], root: Path) -> Iterator[PathRule]:

@@ -1,14 +1,14 @@
 import os
 import subprocess
 from collections.abc import Iterator
+from dataclasses import replace
 from unittest.mock import patch
 
 import cli
 import pytest
 from superpathlib import Path
 
-from backup.context import context
-from backup.models import ChangeType
+from backup.models import ChangeType, RcloneConfig
 from backup.syncer import Syncer, create_syncer, load_rclone_env
 
 
@@ -51,8 +51,7 @@ def test_push_skips_newer(syncer: Syncer) -> None:
     (syncer.source / "0.txt").touch(mtime=1)
     dest = syncer.dest / "0.txt"
     dest.text = "newer"
-    with patch.object(context.config.rclone, "update", new=True):
-        syncer.sync()
+    replace(syncer, config=RcloneConfig(update=True)).sync()
     assert dest.text == "newer"
 
 

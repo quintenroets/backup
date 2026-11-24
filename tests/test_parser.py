@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from superpathlib import Path
 
-from backup.models import PathRule
+from backup.models import Config, PathRule, SyncEntry
 from backup.parser import flatten, make_relative, parse_config, resolve_pattern
 
 
@@ -24,13 +24,13 @@ def test_exclude_precedes_parent_include() -> None:
 
 def test_home_source() -> None:
     with Path.tempdir() as home, patch.object(Path, "HOME", home):
-        config = {"source": "/HOME", "dest": home, "syncs": [{"includes": [""]}]}
+        config = Config(Path("/HOME"), home, [SyncEntry(includes=[""])])
         assert next(parse_config(config, Path("/"))).source == home
 
 
 def test_backup_root() -> None:
     with Path.tempdir() as path:
-        config = {"source": path.parent, "dest": path, "syncs": [{"includes": [""]}]}
+        config = Config(path.parent, path, [SyncEntry(includes=[""])])
         parsed = next(parse_config(config, path))
     assert parsed.source == path
     assert parsed.rules == [PathRule(Path(), include=True)]

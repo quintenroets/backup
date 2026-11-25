@@ -20,35 +20,40 @@ colors = {"+": "green", "*": "blue", "-": "red", directory_symbol: "dim"}
 
 
 def print_changes(plan: Plan, *, show_diff: bool, reverse: bool) -> None:
-    backup, changes = plan
+    backup, paths = plan
     sides = (backup.source, backup.cache) if reverse else (backup.cache, backup.source)
-    shown = dict(sorted((change.path, change.type) for change in changes)[:1000])
+    shown = sorted(paths)[:1000]
     parents = [path.parent for path in shown]
     common = Path(commonpath(parents))
     root = backup.source / common
     is_home = root.is_relative_to(Path.HOME)
     tree = Tree(Text(str("HOME" / root.relative_to(Path.HOME) if is_home else root)))
     directories = {Path(commonpath(pair)) for pair in pairwise(parents)} - {common}
-    symbols = shown | dict.fromkeys(directories, directory_symbol)
     nodes = {common: tree}
-    for path, symbol in sorted(symbols.items()):
+    for path in sorted({*shown, *directories}):
+        old, new = (side / path for side in sides)
         ancestor = next(directory for directory in path.parents if directory in nodes)
+        symbol = directory_symbol if path in directories else determine_symbol(old, new)
         label = Table.grid(Column(), Column(overflow="fold"), padding=(0, 1))
         name = Text(str(path.relative_to(ancestor)))
         label.add_row(symbol, name, style=f"bold {colors[symbol]}")
         nodes[path] = nodes[ancestor].add(label)
         if show_diff and path not in directories:
-            nodes[path].add(render_diff(*(side / path for side in sides)))
-    if hidden := len(changes) - len(shown):
+            nodes[path].add(render_diff(old, new))
+    if hidden := len(paths) - len(shown):
         tree.add(f"… {hidden} more")
     cli.console.print(tree)
+
+
+def determine_symbol(old: Path, new: Path) -> str:
+    return "-" if not new.is_file() else "*" if old.is_file() else "+"
 
 
 def render_diff(old: Path, new: Path) -> Text | str:
     read_limit = 64_000
     contents = []
     for file in (old, new):
-        with file.open("rb") if file.exists() else io.BytesIO() as stream:
+        with file.open("rb") if file.is_file() else io.BytesIO() as stream:
             contents.append(stream.read(read_limit + 1))
     line_limit = 20
     binary = b"\0" in b"".join(contents)

@@ -72,20 +72,7 @@ class Backup:
     config: Config
 
 
-@dataclass(frozen=True)
-class Change:
-    path: Path
-    type: ChangeType
-
-
-Plan = tuple[Backup, list[Change]]
-
-
-class ChangeType(StrEnum):
-    created = "+"
-    modified = "*"
-    deleted = "-"
-    preserved = "="
+Plan = tuple[Backup, set[Path]]
 
 
 class Action(StrEnum):

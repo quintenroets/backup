@@ -83,8 +83,7 @@ def is_changed(backup: Backup, root: Path, path: Path) -> bool:
 
 
 def apply(plans: list[Plan], *, reverse: bool) -> Iterator[Path]:
-    for backup, changes in plans:
-        paths = [change.path for change in changes]
+    for backup, paths in plans:
         config = backup.config.rclone
         syncer = Syncer(backup.source, backup.dest, config).with_paths(paths)
         (syncer.reversed if reverse else syncer).sync()

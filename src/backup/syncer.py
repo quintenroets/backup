@@ -10,7 +10,7 @@ import cli
 from package_utils.secrets_ import load_secret
 from superpathlib import Path
 
-from .models import Change, ChangeType, PathRule, RcloneConfig
+from .models import PathRule, RcloneConfig
 
 if TYPE_CHECKING:
     import subprocess
@@ -37,18 +37,16 @@ class Syncer:
             output = self.run_rclone(*args, directory, capture_output=True).stdout
             yield dict(line.rsplit(";", 1) for line in output.splitlines())
 
-    def capture_status(self, *, reverse: bool = False) -> list[Change]:
+    def capture_status(self, *, reverse: bool = False) -> set[Path]:
         syncer = self.reversed if reverse else self
         process = syncer.run("check", "--combined=-", check=False, capture_output=True)
         if not process.stdout:
             process.check_returncode()
-        lines = process.stdout.splitlines()
-        changes = [Change(Path(line[2:]), ChangeType(line[0])) for line in lines]
-        preserved = ChangeType.preserved
-        if unchanged := [change.path for change in changes if change.type == preserved]:
+        entries = [(line[0], Path(line[2:])) for line in process.stdout.splitlines()]
+        if unchanged := [path for symbol, path in entries if symbol == "="]:
             # Update modified times to avoid checking again in the future
             self.with_paths(unchanged).sync()
-        return [change for change in changes if change.type != preserved]
+        return {path for symbol, path in entries if symbol != "="}
 
     def export_files(self, format_: str) -> Process:
         args = "copy", "--drive-export-formats", format_

@@ -40,12 +40,7 @@ def sync_cache(backup: Backup) -> None:
     for path in cache_mtimes.keys() - remote_mtimes:
         (backup.cache / path).unlink()
     for path, mtime in remote_mtimes.items() - cache_mtimes.items():
-        cache_path = backup.cache / path
-        source_path = backup.source / path
-        if int(source_path.mtime) == int(mtime):
-            source_path.copy_to(cache_path)
-        else:
-            cache_path.touch()
+        (backup.cache / path).touch(mtime=int(mtime))
 
 
 def generate_plans(backups: list[Backup]) -> Iterator[Plan]:
@@ -73,7 +68,7 @@ def is_excluded(ignores: Ignores, visited: set[Path], path: Path) -> bool:
 
 
 def is_changed(backup: Backup, root: Path, path: Path) -> bool:
-    changed = (backup.source / path).mtime != (backup.cache / path).mtime
+    changed = int((backup.source / path).mtime) != int((backup.cache / path).mtime)
     max_size = backup.config.max_backup_size
     return changed and ((root / path).size <= max_size or path.suffix == ".zip")
 

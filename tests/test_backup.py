@@ -43,8 +43,8 @@ def test_push_skips_nested_cache(config: Config) -> None:
 
 
 def test_pull(config: Config) -> None:
-    (config.source / "0.txt").touch(mtime=60)
-    (config.dest / "0.txt").touch(mtime=60)
+    (config.source / "0.txt").touch(mtime=60.5)
+    (config.dest / "0.txt").touch(mtime=60.5)
     (config.dest / "1.txt").text = "pulled"
     (config.cache / "2.txt").touch()
     with (

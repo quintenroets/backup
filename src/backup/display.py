@@ -12,8 +12,10 @@ from rich.text import Text
 from rich.tree import Tree
 from superpathlib import Path
 
+from .syncer import Syncer
+
 if TYPE_CHECKING:
-    from .models import Plan
+    from .models import Backup, Plan
 
 directory_symbol = "•"
 colors = {"+": "green", "*": "blue", "-": "red", directory_symbol: "dim"}
@@ -38,11 +40,22 @@ def print_changes(plan: Plan, *, show_diff: bool, reverse: bool) -> None:
         name = Text(str(path.relative_to(ancestor)))
         label.add_row(symbol, name, style=f"bold {colors[symbol]}")
         nodes[path] = nodes[ancestor].add(label)
-        if show_diff and path not in directories:
-            nodes[path].add(render_diff(old, new))
+    if show_diff:
+        add_diffs(backup, {path: nodes[path] for path in shown}, reverse=reverse)
     if hidden := len(paths) - len(shown):
         tree.add(f"… {hidden} more")
     cli.console.print(tree)
+
+
+def add_diffs(backup: Backup, nodes: dict[Path, Tree], *, reverse: bool) -> None:
+    with Path.tempdir(in_memory=False) as remote:
+        if remote_files := [path for path in nodes if (backup.cache / path).is_file()]:
+            syncer = Syncer(backup.dest, remote, backup.config.rclone)
+            with cli.console.status("Loading remote content"):
+                syncer.with_paths(remote_files).run("copy")
+        sides = (backup.source, remote) if reverse else (remote, backup.source)
+        for path, node in nodes.items():
+            node.add(render_diff(*(side / path for side in sides)))
 
 
 def determine_symbol(old: Path, new: Path) -> str:

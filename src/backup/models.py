@@ -72,7 +72,7 @@ class Backup:
     config: Config
 
 
-Plan = tuple[Backup, set[Path]]
+Plan = tuple[Backup, dict[Path, str]]
 
 
 class Action(StrEnum):

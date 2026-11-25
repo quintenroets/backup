@@ -15,16 +15,14 @@ from superpathlib import Path
 from .syncer import Syncer
 
 if TYPE_CHECKING:
-    from .models import Backup, Plan
+    from .models import Plan
 
-directory_symbol = "•"
-colors = {"+": "green", "*": "blue", "-": "red", directory_symbol: "dim"}
+colors = {"+": "green", "*": "blue", "-": "red", "•": "dim"}
 
 
 def print_changes(plan: Plan, *, show_diff: bool, reverse: bool) -> None:
-    backup, paths = plan
-    sides = (backup.source, backup.cache) if reverse else (backup.cache, backup.source)
-    shown = sorted(paths)[:1000]
+    backup, changes = plan
+    shown = dict(sorted(changes.items())[:1000])
     parents = [path.parent for path in shown]
     common = Path(commonpath(parents))
     root = backup.source / common
@@ -32,34 +30,30 @@ def print_changes(plan: Plan, *, show_diff: bool, reverse: bool) -> None:
     tree = Tree(Text(str("HOME" / root.relative_to(Path.HOME) if is_home else root)))
     directories = {Path(commonpath(pair)) for pair in pairwise(parents)} - {common}
     nodes = {common: tree}
-    for path in sorted({*shown, *directories}):
-        old, new = (side / path for side in sides)
+    for path, symbol in sorted((shown | dict.fromkeys(directories, "•")).items()):
         ancestor = next(directory for directory in path.parents if directory in nodes)
-        symbol = directory_symbol if path in directories else determine_symbol(old, new)
         label = Table.grid(Column(), Column(overflow="fold"), padding=(0, 1))
         name = Text(str(path.relative_to(ancestor)))
         label.add_row(symbol, name, style=f"bold {colors[symbol]}")
         nodes[path] = nodes[ancestor].add(label)
     if show_diff:
-        add_diffs(backup, {path: nodes[path] for path in shown}, reverse=reverse)
-    if hidden := len(paths) - len(shown):
+        add_diffs((backup, shown), nodes, reverse=reverse)
+    if hidden := len(changes) - len(shown):
         tree.add(f"… {hidden} more")
     cli.console.print(tree)
 
 
-def add_diffs(backup: Backup, nodes: dict[Path, Tree], *, reverse: bool) -> None:
+def add_diffs(plan: Plan, nodes: dict[Path, Tree], *, reverse: bool) -> None:
+    backup, changes = plan
+    on_remote = "+*" if reverse else "*-"
     with Path.tempdir(in_memory=False) as remote:
-        if remote_files := [path for path in nodes if (backup.cache / path).is_file()]:
+        if files := [path for path, symbol in changes.items() if symbol in on_remote]:
             syncer = Syncer(backup.dest, remote, backup.config.rclone)
             with cli.console.status("Loading remote content"):
-                syncer.with_paths(remote_files).run("copy")
+                syncer.with_paths(files).run("copy")
         sides = (backup.source, remote) if reverse else (remote, backup.source)
-        for path, node in nodes.items():
-            node.add(render_diff(*(side / path for side in sides)))
-
-
-def determine_symbol(old: Path, new: Path) -> str:
-    return "-" if not new.is_file() else "*" if old.is_file() else "+"
+        for path in changes:
+            nodes[path].add(render_diff(*(side / path for side in sides)))
 
 
 def render_diff(old: Path, new: Path) -> Text | str:

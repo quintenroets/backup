@@ -26,7 +26,7 @@ def run(config: Config, options: Options | None = None) -> list[Path]:
     if reverse and not options.cache_only:
         for backup in backups:
             sync_cache(backup)
-    plans = list(generate_plans(backups, reverse=reverse))
+    plans = list(generate_plans(backups))
     confirmed = not options.confirm_push or any(confirm(plans, reverse=reverse))
     return list(apply(plans, reverse=reverse)) if confirmed else []
 
@@ -45,19 +45,15 @@ def sync_cache(backup: Backup) -> None:
         if int(source_path.mtime) == int(mtime):
             source_path.copy_to(cache_path)
         else:
-            # trigger update
-            cache_path.text = "" if source_path.size else " "
+            cache_path.touch()
 
 
-def generate_plans(backups: list[Backup], *, reverse: bool) -> Iterator[Plan]:
+def generate_plans(backups: list[Backup]) -> Iterator[Plan]:
     scans = (entry for backup in backups for entry in scan_cache(backup))
     entries = cli.track_progress(scans, "Checking", "Files")
     changed = (entry for entry in entries if is_changed(*entry))
     for backup, group in groupby(changed, key=lambda entry: entry[0]):
-        paths = {path for *_, path in group}
-        syncer = Syncer(backup.source, backup.cache, backup.config.rclone)
-        if changes := syncer.with_paths(paths).capture_status(reverse=reverse):
-            yield backup, changes
+        yield backup, {path for *_, path in group}
 
 
 def scan_cache(backup: Backup) -> Iterator[tuple[Backup, Path, Path]]:

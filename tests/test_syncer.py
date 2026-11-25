@@ -1,5 +1,4 @@
 import os
-import subprocess
 from collections.abc import Iterator
 from dataclasses import replace
 from unittest.mock import patch
@@ -26,19 +25,6 @@ def filled_syncer(syncer: Syncer) -> Syncer:
         (syncer.dest / f"{number}.txt").text = "aa"
     (syncer.dest / "directory" / "file.txt").text = "aa"
     return syncer
-
-
-def test_rclone_failures_raise(syncer: Syncer) -> None:
-    syncer.dest = Path("missing:")
-    with pytest.raises(subprocess.CalledProcessError):
-        syncer.capture_status()
-
-
-def test_status(filled_syncer: Syncer) -> None:
-    for directory in (filled_syncer.source, filled_syncer.dest):
-        (directory / "3.txt").text = "a"
-    changed = {"0.txt", "1.txt", "2.txt", "directory/file.txt"}
-    assert filled_syncer.capture_status() == {Path(path) for path in changed}
 
 
 def test_push_skips_newer(syncer: Syncer) -> None:

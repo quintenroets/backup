@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import cli
 import pytest
+from rich.text import Text
 from superpathlib import Path
 
 from backup import Action, Config, Options, run
@@ -52,7 +53,7 @@ def test_pull(config: Config) -> None:
     ):
         assert run(config, Options(action=Action.pull)) == [config.source / "1.txt"]
     assert (config.source / "1.txt").exists()
-    assert "@@ -0,0 +1 @@" in capture.get()
+    assert "+ 1.txt" in Text.from_ansi(capture.get()).plain
 
 
 def test_import_skips_typer() -> None:

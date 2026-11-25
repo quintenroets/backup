@@ -53,7 +53,7 @@ def test_pull(config: Config) -> None:
     ):
         assert run(config, Options(action=Action.pull)) == [config.source / "1.txt"]
     assert (config.source / "1.txt").exists()
-    assert "+ 1.txt" in Text.from_ansi(capture.get()).plain
+    assert "+pulled" in Text.from_ansi(capture.get()).plain
 
 
 def test_import_skips_typer() -> None:

@@ -8,7 +8,7 @@ import cli
 import pytest
 from superpathlib import Path
 
-from backup.models import ChangeType, RcloneConfig
+from backup.models import RcloneConfig
 from backup.syncer import Syncer, create_syncer, load_rclone_env
 
 
@@ -37,14 +37,8 @@ def test_rclone_failures_raise(syncer: Syncer) -> None:
 def test_status(filled_syncer: Syncer) -> None:
     for directory in (filled_syncer.source, filled_syncer.dest):
         (directory / "3.txt").text = "a"
-    status = filled_syncer.capture_status()
-    changes = {change.path: change.type for change in status}
-    assert changes == {
-        Path("0.txt"): ChangeType.modified,
-        Path("1.txt"): ChangeType.created,
-        Path("2.txt"): ChangeType.deleted,
-        Path("directory") / "file.txt": ChangeType.deleted,
-    }
+    changed = {"0.txt", "1.txt", "2.txt", "directory/file.txt"}
+    assert filled_syncer.capture_status() == {Path(path) for path in changed}
 
 
 def test_push_skips_newer(syncer: Syncer) -> None:

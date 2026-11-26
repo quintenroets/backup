@@ -59,10 +59,6 @@ def test_create_syncer() -> None:
     create_syncer(Path.HOME)
 
 
-def test_export_files(syncer: Syncer) -> None:
-    syncer.export_files("csv")
-
-
 def test_load_rclone_password() -> None:
     with (
         patch.dict(os.environ, {"RCLONE_PASSWORD_COMMAND": "command"}),

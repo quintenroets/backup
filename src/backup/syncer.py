@@ -37,10 +37,6 @@ class Syncer:
             output = self.run_rclone(*args, directory, capture_output=True).stdout
             yield dict(line.rsplit(";", 1) for line in output.splitlines())
 
-    def export_files(self, format_: str) -> Process:
-        args = "copy", "--drive-export-formats", format_
-        return self.reversed.run(*args, capture_output=True)
-
     def run(self, verb: str, *args: object, **kwargs: Unpack[RunOptions]) -> Process:
         return self.run_rclone(verb, self.source, self.dest, *args, **kwargs)
 
